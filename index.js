@@ -184,7 +184,7 @@ app.get("/getLink", async (req, res) => {
 
 app.get("/", (req, res) => {
   res.status(200).send({
-    message: "Server Started 👌🤳",
+    message: "Server Started 👌🤳 ",
   });
 });
 
