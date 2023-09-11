@@ -91,8 +91,8 @@ const getMeetingLink = async (email) => {
       const year = date.getFullYear();
       const month = (date.getMonth() + 1).toString().padStart(2, "0");
       const day = date.getDate().toString().padStart(2, "0");
-      const time = date.getHours().toString().padStart(2, "0");
-      const minutes = date.getMinutes().toString().padStart(2, "0");
+      const time = (date.getHours() + 5).toString().padStart(2, "0");
+      const minutes = (date.getMinutes() + 30).toString().padStart(2, "0");
       const formattedDate = `${year}-${month}-${day}T${time}:${minutes}:00`;
       status = "approved";
       await updateStatus(contactid, "Workshop_Attended_Date", formattedDate);
