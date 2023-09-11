@@ -107,6 +107,10 @@ const getMeetingLink = async (email) => {
       status,
       date: parentWorkshopDate,
     };
+  } else {
+    return {
+      mode: "noWorkshopSlot",
+    };
   }
 };
 
