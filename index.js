@@ -13,6 +13,7 @@ const refreshToken = process.env.REFRESH_TOKEN;
 const links = {
   workshop:
     "https://us06web.zoom.us/j/9387978938?pwd=NjdOTTZzNndPd1hWMEdYMi9zM2xGdz09",
+  quizlink: "https://wisechamps.app/mod/lti/view.php?id=43490",
 };
 
 const getZohoToken = async () => {
@@ -78,8 +79,6 @@ const getMeetingLink = async (email) => {
   const contactid = contact.data.data[0].id;
   const parentWorkshopSlot = contact.data.data[0].Parent_Workshop_Slot;
   const workshopAttendedDate = contact.data.data[0].Workshop_Attended_Date;
-  const workshopQuizAttendedDate =
-    contact.data.data[0].Workshop_Quiz_Attended_Date;
   const currentDate = Math.floor(new Date() / 1000);
   if (parentWorkshopSlot && !workshopAttendedDate) {
     let status = "";
@@ -139,6 +138,10 @@ const getQuizLink = async (email) => {
     return {
       link: links.quizlink,
       mode: "quizlink",
+    };
+  } else {
+    return {
+      mode: "noWorkshopDate",
     };
   }
 };
