@@ -11,9 +11,14 @@ const clientSecret = process.env.CLIENT_SECRET;
 const refreshToken = process.env.REFRESH_TOKEN;
 
 const links = {
-  workshop:
-    "https://us06web.zoom.us/j/9387978938?pwd=NjdOTTZzNndPd1hWMEdYMi9zM2xGdz09",
-  quizlink: "https://wisechamps.app/mod/lti/view.php?id=43490",
+  QG5: "https://wisechamps.app/mod/lti/view.php?id=43490",
+  QG6: "https://wisechamps.app/mod/lti/view.php?id=43490",
+  QG7: "https://wisechamps.app/mod/lti/view.php?id=43490",
+  QG8: "https://wisechamps.app/mod/lti/view.php?id=43490",
+  ZG5: "https://us06web.zoom.us/j/9387978938?pwd=NjdOTTZzNndPd1hWMEdYMi9zM2xGdz09",
+  ZG6: "https://us06web.zoom.us/j/9387978938?pwd=testing",
+  ZG7: "https://us06web.zoom.us/j/9387978938?pwd=NjdOTTZzNndPd1hWMEdYMi9zM2xGdz09",
+  ZG8: "https://us06web.zoom.us/j/9387978938?pwd=NjdOTTZzNndPd1hWMEdYMi9zM2xGdz09",
 };
 
 const getZohoToken = async () => {
@@ -77,10 +82,11 @@ const getMeetingLink = async (email) => {
     zohoConfig
   );
   const contactid = contact.data.data[0].id;
+  const grade = `ZG${contact.data.data[0].Student_Grade}`;
   const parentWorkshopSlot = contact.data.data[0].Parent_Workshop_Slot;
   const workshopAttendedDate = contact.data.data[0].Workshop_Attended_Date;
   const currentDate = Math.floor(new Date() / 1000);
-  if (parentWorkshopSlot && !workshopAttendedDate) {
+  if (parentWorkshopSlot && !workshopAttendedDate && links[grade]) {
     let status = "";
     const parentWorkshopDate = Math.floor(new Date(parentWorkshopSlot) / 1000);
     if (
@@ -102,7 +108,7 @@ const getMeetingLink = async (email) => {
       status = "expired";
     }
     return {
-      link: links.workshop,
+      link: links[grade],
       mode: "parentWorkshop",
       status,
       date: parentWorkshopDate,
@@ -114,7 +120,29 @@ const getMeetingLink = async (email) => {
   }
 };
 
-const getQuizLink = async (email) => {
+const getZohoUserData = async (phone) => {
+  const zohoToken = await getZohoToken();
+  const zohoConfig = {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${zohoToken}`,
+    },
+  };
+  const contact = await axios.get(
+    `https://www.zohoapis.com/crm/v2/Contacts/search?phone=${phone}`,
+    zohoConfig
+  );
+
+  if (!contact || !contact.data || !contact.data.data) {
+    return { phone, message: "No Contact Found" };
+  }
+
+  const name = contact.data.data[0].Full_Name;
+  return { name };
+};
+
+const getQuizLink = async (query, value) => {
   const zohoToken = await getZohoToken();
   const zohoConfig = {
     headers: {
@@ -128,6 +156,7 @@ const getQuizLink = async (email) => {
     zohoConfig
   );
   const contactid = contact.data.data[0].id;
+  const grade = `QG${contact.data.data[0].Student_Grade}`;
   const parentWorkshopSlot = contact.data.data[0].Parent_Workshop_Slot;
   const workshopAttendedDate = contact.data.data[0].Workshop_Attended_Date;
   if (parentWorkshopSlot && workshopAttendedDate) {
@@ -138,7 +167,7 @@ const getQuizLink = async (email) => {
     const formattedDate = `${year}-${month}-${day}`;
     await updateStatus(contactid, "Workshop_Quiz_Attended_Date", formattedDate);
     return {
-      link: links.quizlink,
+      link: links[grade],
       mode: "quizlink",
     };
   } else {
@@ -158,7 +187,18 @@ app.get("/meeting", async (req, res) => {
 
 app.get("/quiz", async (req, res) => {
   const email = req.query.email;
-  const data = await getQuizLink(email);
+  const phone = req.query.phone;
+  if (phone) {
+  }
+  const data = await getQuizLink();
+  res.status(200).send({
+    ...data,
+  });
+});
+
+app.get("/referral", async (req, res) => {
+  const phone = req.query.phone;
+  const data = await getZohoUserData(phone);
   res.status(200).send({
     ...data,
   });
