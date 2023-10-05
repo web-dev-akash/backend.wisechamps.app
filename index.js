@@ -142,7 +142,7 @@ const getZohoUserData = async (phone) => {
   return { name, contactid };
 };
 
-const getQuizLink = async (query, value) => {
+const getQuizLink = async (emailParam) => {
   const zohoToken = await getZohoToken();
   const zohoConfig = {
     headers: {
@@ -152,29 +152,65 @@ const getQuizLink = async (query, value) => {
     },
   };
   const contact = await axios.get(
-    `https://www.zohoapis.com/crm/v2/Contacts/search?email=${email}`,
+    `https://www.zohoapis.com/crm/v2/Contacts/search?email=${emailParam}`,
     zohoConfig
   );
-  const contactid = contact.data.data[0].id;
-  const grade = `QG${contact.data.data[0].Student_Grade}`;
-  const parentWorkshopSlot = contact.data.data[0].Parent_Workshop_Slot;
-  const workshopAttendedDate = contact.data.data[0].Workshop_Attended_Date;
-  if (parentWorkshopSlot && workshopAttendedDate) {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const day = date.getDate().toString().padStart(2, "0");
-    const formattedDate = `${year}-${month}-${day}`;
-    await updateStatus(contactid, "Workshop_Quiz_Attended_Date", formattedDate);
+  console.log(contact.data.data);
+  if (!contact || !contact.data || !contact.data.data) {
     return {
-      link: links[grade],
-      mode: "quizlink",
-    };
-  } else {
-    return {
-      mode: "noWorkshopDate",
+      mode: "nouser",
     };
   }
+  const contactid = contact.data.data[0].id;
+  const email = contact.data.data[0].Email;
+  const grade = contact.data.data[0].Student_Grade;
+  const date = new Date();
+  const start = new Date();
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  const startHours = start.getHours().toString().padStart(2, "0");
+  const endHours = end.getHours().toString().padStart(2, "0");
+  const startMinutes = start.getMinutes().toString().padStart(2, "0");
+  const endMinutes = end.getMinutes().toString().padStart(2, "0");
+  const formattedDateStart = `${year}-${month}-${day}T${startHours}:${startMinutes}:00+05:30`;
+  const formattedDateEnd = `${year}-${month}-${day}T${endHours}:${endMinutes}:00+05:30`;
+
+  const sessionBody = {
+    select_query: `select Session_Grade, LMS_Activity_ID from Sessions where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
+  };
+
+  const session = await axios.post(
+    `https://www.zohoapis.com/crm/v3/coql`,
+    sessionBody,
+    zohoConfig
+  );
+
+  console.log(session.data.data);
+
+  if (!session || !session.data || !session.data.data) {
+    return {
+      mode: "nosession",
+    };
+  }
+  // console.log(session.data.data);
+  for (let i = 0; i < session.data.data.length; i++) {
+    const sessionGrade = session.data.data[i].Session_Grade;
+    const sessionid = session.data.data[i].LMS_Activity_ID.toString();
+    const correctSession = sessionGrade.find((res) => res === grade);
+    if (correctSession) {
+      return {
+        mode: "quizlink",
+        email,
+        link: `https://wisechamps.app/mod/lti/view.php?id=${sessionid}`,
+      };
+    }
+  }
+  return {
+    mode: "nosession",
+  };
 };
 
 app.get("/meeting", async (req, res) => {
@@ -185,12 +221,9 @@ app.get("/meeting", async (req, res) => {
   });
 });
 
-app.get("/quiz", async (req, res) => {
-  const email = req.query.email;
-  const phone = req.query.phone;
-  if (phone) {
-  }
-  const data = await getQuizLink();
+app.post("/quiz", async (req, res) => {
+  const { email } = req.body;
+  const data = await getQuizLink(email);
   res.status(200).send({
     ...data,
   });
