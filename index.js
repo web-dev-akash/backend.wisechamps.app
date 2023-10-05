@@ -213,6 +213,38 @@ const getQuizLink = async (emailParam) => {
   };
 };
 
+const getZohoUserDetails = async (email) => {
+  const zohoToken = await getZohoToken();
+  const zohoConfig = {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${zohoToken}`,
+    },
+  };
+  const contact = await axios.get(
+    `https://www.zohoapis.com/crm/v2/Contacts/search?email=${email}`,
+    zohoConfig
+  );
+  if (!contact || !contact.data || !contact.data.data) {
+    return {
+      mode: "nouser",
+    };
+  }
+  const grade = contact.data.data[0].Student_Grade;
+  const phone = contact.data.data[0].Phone;
+  const name = contact.data.data[0].Full_Name;
+  const student_name = contact.data.data[0].Student_Name;
+  return {
+    mode: "user",
+    name,
+    phone,
+    email,
+    grade,
+    student_name,
+  };
+};
+
 app.get("/meeting", async (req, res) => {
   const email = req.query.email;
   const data = await getMeetingLink(email);
@@ -232,6 +264,14 @@ app.post("/quiz", async (req, res) => {
 app.get("/referral", async (req, res) => {
   const phone = req.query.phone;
   const data = await getZohoUserData(phone);
+  res.status(200).send({
+    ...data,
+  });
+});
+
+app.get("/user", async (req, res) => {
+  const email = req.query.email;
+  const data = await getZohoUserDetails(email);
   res.status(200).send({
     ...data,
   });
