@@ -192,6 +192,8 @@ const getQuizLink = async (emailParam) => {
 
   if (!session || !session.data || !session.data.data) {
     return {
+      formattedDateStart,
+      formattedDateEnd,
       mode: "nosession",
     };
   }
