@@ -179,7 +179,7 @@ const getQuizLink = async (emailParam) => {
   const endMinutes = end.getMinutes().toString().padStart(2, "0");
   const formattedDateStart = `${year}-${month}-${day}T${startHours}:${startMinutes}:00+05:30`;
   const formattedDateEnd = `${year}-${month}-${day}T${endHours}:${endMinutes}:00+05:30`;
-
+  // console.log("Start", formattedDateStart);
   const sessionBody = {
     select_query: `select Session_Grade, LMS_Activity_ID from Sessions where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
   };
@@ -195,13 +195,15 @@ const getQuizLink = async (emailParam) => {
       mode: "nosession",
     };
   }
-
+  // console.log(session.data.data);
   for (let i = 0; i < session.data.data.length; i++) {
     const sessionGrade = session.data.data[i].Session_Grade;
     const sessionid = session.data.data[i].LMS_Activity_ID.toString();
     const correctSession = sessionGrade.find((res) => res === grade);
     if (correctSession) {
       return {
+        formattedDateStart,
+        formattedDateEnd,
         mode: "quizlink",
         email,
         link: `https://wisechamps.app/mod/lti/view.php?id=${sessionid}`,
