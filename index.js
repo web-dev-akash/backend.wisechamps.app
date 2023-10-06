@@ -341,7 +341,7 @@ app.post("/payment_links", async (req, res) => {
       customer: {
         email,
       },
-      callback_url: `https://payment.wisechamps.com?email=${email}`,
+      callback_url: `https://wisechamps.app`,
       callback_method: "get",
     });
     res.status(200).send(data);
