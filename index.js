@@ -167,7 +167,7 @@ const getQuizLink = async (emailParam) => {
   const grade = contact.data.data[0].Student_Grade;
   const date = new Date();
   const start = new Date();
-  start.setMinutes(start.getMinutes() - 30);
+  start.setMinutes(start.getMinutes() + 300);
   const end = new Date();
   end.setHours(23, 59, 59, 999);
   const year = date.getFullYear();
