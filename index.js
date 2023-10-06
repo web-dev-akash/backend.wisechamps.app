@@ -293,8 +293,8 @@ app.post("/payment_links", async (req, res) => {
     const credits = {
       39: 1,
       119: 4,
-      999: 20,
-      1999: 50,
+      999: 50,
+      1999: 200,
     };
     const instance = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
