@@ -289,7 +289,7 @@ app.get("/", (req, res) => {
 
 app.post("/payment_links", async (req, res) => {
   try {
-    const { email, phone, name, amount } = req.body;
+    const { email, amount } = req.body;
     const instance = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_SECRET,
@@ -299,9 +299,7 @@ app.post("/payment_links", async (req, res) => {
       currency: "INR",
       description: "Live Quiz Payment",
       customer: {
-        name,
         email,
-        contact: `+${phone}`,
       },
       callback_url: `https://quiz.wisechamps.com?email=${email}`,
       callback_method: "get",
