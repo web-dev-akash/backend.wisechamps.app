@@ -290,6 +290,12 @@ app.get("/", (req, res) => {
 app.post("/payment_links", async (req, res) => {
   try {
     const { email, amount } = req.body;
+    const credits = {
+      39: 1,
+      119: 4,
+      999: 20,
+      1999: 50,
+    };
     const instance = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_SECRET,
@@ -297,11 +303,11 @@ app.post("/payment_links", async (req, res) => {
     const data = await instance.paymentLink.create({
       amount: amount * 100,
       currency: "INR",
-      description: "Live Quiz Payment",
+      description: `Live Quiz Payment for ${credits[amount]} Credits`,
       customer: {
         email,
       },
-      callback_url: `https://quiz.wisechamps.com?email=${email}`,
+      callback_url: `https://payment.wisechamps.com?email=${email}`,
       callback_method: "get",
     });
     res.status(200).send(data);
