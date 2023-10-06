@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
+const Razorpay = require("razorpay");
 require("dotenv").config();
 const app = express();
 app.use(express.json());
@@ -166,6 +167,7 @@ const getQuizLink = async (emailParam) => {
   const grade = contact.data.data[0].Student_Grade;
   const date = new Date();
   const start = new Date();
+  start.setMinutes(start.getMinutes() - 30);
   const end = new Date();
   end.setHours(23, 59, 59, 999);
   const year = date.getFullYear();
@@ -188,14 +190,12 @@ const getQuizLink = async (emailParam) => {
     zohoConfig
   );
 
-  console.log(session.data.data);
-
   if (!session || !session.data || !session.data.data) {
     return {
       mode: "nosession",
     };
   }
-  // console.log(session.data.data);
+
   for (let i = 0; i < session.data.data.length; i++) {
     const sessionGrade = session.data.data[i].Session_Grade;
     const sessionid = session.data.data[i].LMS_Activity_ID.toString();
@@ -283,6 +283,31 @@ app.get("/", (req, res) => {
   });
 });
 
+app.post("/payment_links", async (req, res) => {
+  try {
+    const { email, phone, name, amount } = req.body;
+    const instance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_SECRET,
+    });
+    const data = await instance.paymentLink.create({
+      amount: amount * 100,
+      currency: "INR",
+      description: "For Testing",
+      customer: {
+        name,
+        email,
+        contact: `+${phone}`,
+      },
+      callback_url: `https://quiz.wisechamps.com?email=${email}`,
+      callback_method: "get",
+    });
+    res.status(200).send(data);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
 app.listen(PORT, () => {
-  console.log("Server Started 🎈🎈");
+  console.log(`Server Started 🎈🎈 http://localhost:${PORT}`);
 });
