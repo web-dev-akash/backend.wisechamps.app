@@ -249,6 +249,40 @@ const getZohoUserDetails = async (email) => {
   };
 };
 
+const createPaymentEntry = async (response) => {
+  const zohoToken = await getZohoToken();
+  const zohoConfig = {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${zohoToken}`,
+    },
+  };
+  const body = {
+    data: [
+      {
+        id: response,
+        [key]: value,
+        $append_values: {
+          [key]: true,
+        },
+      },
+    ],
+    duplicate_check_fields: ["id"],
+    apply_feature_execution: [
+      {
+        name: "layout_rules",
+      },
+    ],
+    trigger: ["workflow"],
+  };
+  await axios.post(
+    `https://www.zohoapis.com/crm/v3/Contacts/upsert`,
+    body,
+    zohoConfig
+  );
+};
+
 app.get("/meeting", async (req, res) => {
   const email = req.query.email;
   const data = await getMeetingLink(email);
@@ -293,7 +327,7 @@ app.post("/payment_links", async (req, res) => {
     const credits = {
       39: 1,
       119: 4,
-      999: 50,
+      999: 52,
       1999: 200,
     };
     const instance = new Razorpay({
@@ -311,8 +345,10 @@ app.post("/payment_links", async (req, res) => {
       callback_method: "get",
     });
     res.status(200).send(data);
+    // await createPaymentEntry(data);
+    return;
   } catch (error) {
-    res.status(500).send(error);
+    return res.status(500).send(error);
   }
 });
 
