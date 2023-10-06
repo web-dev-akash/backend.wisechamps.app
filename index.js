@@ -297,7 +297,7 @@ app.post("/payment_links", async (req, res) => {
     const data = await instance.paymentLink.create({
       amount: amount * 100,
       currency: "INR",
-      description: "For Testing",
+      description: "Live Quiz Payment",
       customer: {
         name,
         email,
