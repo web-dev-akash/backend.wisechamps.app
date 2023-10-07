@@ -249,7 +249,7 @@ const getZohoUserDetails = async (email) => {
   };
 };
 
-const createPaymentEntry = async (response) => {
+const createPaymentEntry = async ({ amount, id, customer }) => {
   const zohoToken = await getZohoToken();
   const zohoConfig = {
     headers: {
@@ -258,17 +258,39 @@ const createPaymentEntry = async (response) => {
       Authorization: `Bearer ${zohoToken}`,
     },
   };
+  const email = customer.email;
+  const contact = await axios.get(
+    `https://www.zohoapis.com/crm/v2/Contacts/search?email=${email}`,
+    zohoConfig
+  );
+  if (!contact || !contact.data || !contact.data.data) {
+    return {
+      mode: "nouser",
+    };
+  }
+
+  const contactid = contact.data.data[0].id;
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  const formattedDate = `${year}-${month}-${day}`;
   const body = {
     data: [
       {
-        id: response,
-        [key]: value,
+        Payment_Demanded: amount / 100,
+        Payment_Link_ID: id,
+        Conntact: contactid,
+        Payment_Date: formattedDate,
         $append_values: {
-          [key]: true,
+          Payment_Demanded: true,
+          Payment_Link_ID: true,
+          Conntact: true,
+          Payment_Date: true,
         },
       },
     ],
-    duplicate_check_fields: ["id"],
+    duplicate_check_fields: ["Payment_Link_ID"],
     apply_feature_execution: [
       {
         name: "layout_rules",
@@ -277,7 +299,7 @@ const createPaymentEntry = async (response) => {
     trigger: ["workflow"],
   };
   await axios.post(
-    `https://www.zohoapis.com/crm/v3/Contacts/upsert`,
+    `https://www.zohoapis.com/crm/v3/Payments/upsert`,
     body,
     zohoConfig
   );
@@ -345,7 +367,7 @@ app.post("/payment_links", async (req, res) => {
       callback_method: "get",
     });
     res.status(200).send(data);
-    // await createPaymentEntry(data);
+    await createPaymentEntry(data);
     return;
   } catch (error) {
     return res.status(500).send(error);
