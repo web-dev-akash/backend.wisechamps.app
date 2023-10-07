@@ -258,6 +258,12 @@ const createPaymentEntry = async ({ amount, id, customer }) => {
       Authorization: `Bearer ${zohoToken}`,
     },
   };
+  const attemptsCount = await axios.get(
+    `https://www.zohoapis.com/crm/v2.1/Attempts/actions/count`,
+    zohoConfig
+  );
+
+  let attemptNumber = attemptsCount.data.count;
   const email = customer.email;
   const contact = await axios.get(
     `https://www.zohoapis.com/crm/v2/Contacts/search?email=${email}`,
@@ -278,6 +284,7 @@ const createPaymentEntry = async ({ amount, id, customer }) => {
   const body = {
     data: [
       {
+        Name: attemptNumber + 1,
         Payment_Demanded: amount / 100,
         Payment_Link_ID: id,
         Conntact: contactid,
