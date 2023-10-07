@@ -249,7 +249,8 @@ const getZohoUserDetails = async (email) => {
   };
 };
 
-const createPaymentEntry = async ({ amount, id, customer }) => {
+const createPaymentEntry = async ({ amount, id, email, credits }) => {
+  amount = amount / 100;
   const zohoToken = await getZohoToken();
   const zohoConfig = {
     headers: {
@@ -262,19 +263,15 @@ const createPaymentEntry = async ({ amount, id, customer }) => {
     `https://www.zohoapis.com/crm/v2.1/Attempts/actions/count`,
     zohoConfig
   );
-
-  let attemptNumber = attemptsCount.data.count;
-  const email = customer.email;
+  let attemptNumber = attemptsCount.data.count + 1;
   const contact = await axios.get(
     `https://www.zohoapis.com/crm/v2/Contacts/search?email=${email}`,
     zohoConfig
   );
   if (!contact || !contact.data || !contact.data.data) {
-    return {
-      mode: "nouser",
-    };
+    console.log("no contacts");
+    return;
   }
-
   const contactid = contact.data.data[0].id;
   const date = new Date();
   const year = date.getFullYear();
@@ -284,20 +281,22 @@ const createPaymentEntry = async ({ amount, id, customer }) => {
   const body = {
     data: [
       {
-        Name: attemptNumber + 1,
-        Payment_Demanded: amount / 100,
+        Name: `${attemptNumber}`,
+        Payment_Demanded: amount,
         Payment_Link_ID: id,
         Conntact: contactid,
         Payment_Date: formattedDate,
+        Credits: credits,
         $append_values: {
           Payment_Demanded: true,
           Payment_Link_ID: true,
           Conntact: true,
           Payment_Date: true,
+          Credits: true,
         },
       },
     ],
-    duplicate_check_fields: ["Payment_Link_ID"],
+    duplicate_check_fields: ["Name"],
     apply_feature_execution: [
       {
         name: "layout_rules",
@@ -305,11 +304,13 @@ const createPaymentEntry = async ({ amount, id, customer }) => {
     ],
     trigger: ["workflow"],
   };
-  await axios.post(
+  const result = await axios.post(
     `https://www.zohoapis.com/crm/v3/Payments/upsert`,
     body,
     zohoConfig
   );
+  console.log(result);
+  return result;
 };
 
 app.get("/meeting", async (req, res) => {
@@ -373,9 +374,13 @@ app.post("/payment_links", async (req, res) => {
       callback_url: `https://wisechamps.app`,
       callback_method: "get",
     });
-    res.status(200).send(data);
-    await createPaymentEntry(data);
-    return;
+    await createPaymentEntry({
+      amount: data.amount,
+      id: data.id,
+      email: data.customer.email,
+      credits: credits[amount],
+    });
+    return res.status(200).send(data);
   } catch (error) {
     return res.status(500).send(error);
   }
