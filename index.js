@@ -27,7 +27,7 @@ const getZohoToken = async () => {
     const res = await axios.post(
       `https://accounts.zoho.com/oauth/v2/token?client_id=${clientId}&grant_type=refresh_token&client_secret=${clientSecret}&refresh_token=${refreshToken}`
     );
-    console.log(res.data);
+    // console.log(res.data);
     const token = res.data.access_token;
     return token;
   } catch (error) {
@@ -68,9 +68,19 @@ const updateStatus = async (contactid, key, value) => {
     zohoConfig
   );
 };
-
+let zohoToken = "";
+let tokenTime = "";
 const getMeetingLink = async (email) => {
-  const zohoToken = await getZohoToken();
+  if (!zohoToken) {
+    zohoToken = await getZohoToken();
+    tokenTime = Math.floor(new Date() / 1000);
+  } else {
+    if (Math.floor(new Date() / 1000) - tokenTime > 2400) {
+      zohoToken = await getZohoToken();
+      tokenTime = Math.floor(new Date() / 1000);
+    }
+  }
+  console.log("Token", zohoToken);
   const zohoConfig = {
     headers: {
       "Content-Type": "application/json",
@@ -144,7 +154,16 @@ const getZohoUserData = async (phone) => {
 };
 
 const getQuizLink = async (emailParam) => {
-  const zohoToken = await getZohoToken();
+  if (!zohoToken) {
+    zohoToken = await getZohoToken();
+    tokenTime = Math.floor(new Date() / 1000);
+  } else {
+    if (Math.floor(new Date() / 1000) - tokenTime > 2400) {
+      zohoToken = await getZohoToken();
+      tokenTime = Math.floor(new Date() / 1000);
+    }
+  }
+  console.log("Token", zohoToken);
   const zohoConfig = {
     headers: {
       "Content-Type": "application/json",
@@ -156,7 +175,7 @@ const getQuizLink = async (emailParam) => {
     `https://www.zohoapis.com/crm/v2/Contacts/search?email=${emailParam}`,
     zohoConfig
   );
-  console.log(contact.data.data);
+  // console.log(contact.data.data);
   if (!contact || !contact.data || !contact.data.data) {
     return {
       mode: "nouser",
@@ -309,7 +328,7 @@ const createPaymentEntry = async ({ amount, id, email, credits }) => {
     body,
     zohoConfig
   );
-  console.log(result);
+  // console.log(result);
   return result;
 };
 
@@ -382,6 +401,70 @@ app.post("/payment_links", async (req, res) => {
     });
     return res.status(200).send(data);
   } catch (error) {
+    return res.status(500).send(error);
+  }
+});
+
+const updateCreditsOnLMS = async ({ email, credits }) => {
+  try {
+  } catch (error) {
+    console.log(error);
+    return error;
+  }
+};
+
+app.post("/payment/capture", async (req, res) => {
+  try {
+    const { linkId, payId, email } = req.body;
+    const zohoToken = await getZohoToken();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${zohoToken}`,
+      },
+    };
+
+    const payment = await axios.get(
+      `https://www.zohoapis.com/crm/v2/Payments/search?criteria=(Payment_Link_ID:equals:${linkId})`,
+      zohoConfig
+    );
+    if (!payment || !payment.data || !payment.data.data) {
+      console.log("no payment");
+      return res.status(400).send({
+        status: "nopayment",
+      });
+    }
+    const paymentId = payment.data.data[0].Name;
+    const credits = payment.data.data[0].Credits;
+    await updateCreditsOnLMS({ email, credits });
+    const body = {
+      data: [
+        {
+          Name: paymentId,
+          Reference_ID: payId,
+          $append_values: {
+            Reference_ID: true,
+          },
+        },
+      ],
+      duplicate_check_fields: ["Name"],
+      apply_feature_execution: [
+        {
+          name: "layout_rules",
+        },
+      ],
+      trigger: ["workflow"],
+    };
+    const result = await axios.post(
+      `https://www.zohoapis.com/crm/v3/Payments/upsert`,
+      body,
+      zohoConfig
+    );
+
+    console.log(result);
+  } catch (error) {
+    console.log(error);
     return res.status(500).send(error);
   }
 });
