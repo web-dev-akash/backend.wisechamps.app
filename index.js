@@ -360,7 +360,7 @@ app.post("/quiz", async (req, res) => {
   const { email } = req.body;
   const data = await getQuizLink(email);
   res.status(200).send({
-    data,
+    ...data,
   });
 });
 
