@@ -70,6 +70,7 @@ const updateStatus = async (contactid, key, value) => {
 };
 let zohoToken = "";
 let tokenTime = "";
+
 const getMeetingLink = async (email) => {
   if (!zohoToken) {
     zohoToken = await getZohoToken();
@@ -163,7 +164,6 @@ const getQuizLink = async (emailParam) => {
       tokenTime = Math.floor(new Date() / 1000);
     }
   }
-  console.log("Token", zohoToken);
   const zohoConfig = {
     headers: {
       "Content-Type": "application/json",
@@ -175,9 +175,17 @@ const getQuizLink = async (emailParam) => {
     `https://www.zohoapis.com/crm/v2/Contacts/search?email=${emailParam}`,
     zohoConfig
   );
-  // console.log(contact.data.data);
-  if (!contact || !contact.data || !contact.data.data) {
+
+  if (contact.status >= 400) {
     return {
+      status: contact.status,
+      mode: "internalservererrorinfindinguser",
+    };
+  }
+  // return { contact };
+  if (contact.status === 204) {
+    return {
+      status: contact.status,
       mode: "nouser",
     };
   }
@@ -209,10 +217,16 @@ const getQuizLink = async (emailParam) => {
     zohoConfig
   );
 
-  if (!session || !session.data || !session.data.data) {
+  if (session.status >= 400) {
     return {
-      formattedDateStart,
-      formattedDateEnd,
+      status: session.status,
+      mode: "internalservererrorinfindingsession",
+    };
+  }
+
+  if (session.status === 204) {
+    return {
+      status: session.status,
       mode: "nosession",
     };
   }
@@ -223,6 +237,7 @@ const getQuizLink = async (emailParam) => {
     const correctSession = sessionGrade.find((res) => res === grade);
     if (correctSession) {
       return {
+        status: 200,
         formattedDateStart,
         formattedDateEnd,
         mode: "quizlink",
@@ -232,6 +247,7 @@ const getQuizLink = async (emailParam) => {
     }
   }
   return {
+    status: session.status,
     mode: "nosession",
   };
 };
@@ -344,7 +360,7 @@ app.post("/quiz", async (req, res) => {
   const { email } = req.body;
   const data = await getQuizLink(email);
   res.status(200).send({
-    ...data,
+    data,
   });
 });
 
