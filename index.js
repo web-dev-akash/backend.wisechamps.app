@@ -1,3 +1,4 @@
+const fs = require("fs");
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
@@ -10,6 +11,14 @@ const PORT = process.env.PORT || 8080;
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 const refreshToken = process.env.REFRESH_TOKEN;
+let accessToken = "";
+let tokenTime = 0;
+fs.readFile("./token.json", function (err, data) {
+  if (err) throw err;
+  const token = JSON.parse(data);
+  accessToken = token.token;
+  tokenTime = token.time;
+});
 
 const links = {
   QG5: "https://wisechamps.app/mod/lti/view.php?id=43490",
@@ -33,6 +42,39 @@ const getZohoToken = async () => {
   } catch (error) {
     return error;
   }
+};
+
+const getZohoTokenOptimized = async () => {
+  if (!accessToken) {
+    accessToken = await getZohoToken();
+    tokenTime = Math.floor(new Date() / 1000);
+    const tokenData = {
+      token: accessToken,
+      time: tokenTime,
+    };
+    fs.writeFile("./token.json", JSON.stringify(tokenData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
+  } else {
+    if (Math.floor(new Date() / 1000) - tokenTime > 2400) {
+      accessToken = await getZohoToken();
+      tokenTime = Math.floor(new Date() / 1000);
+      const tokenData = {
+        token: accessToken,
+        time: tokenTime,
+      };
+      fs.writeFile(
+        "./token.json",
+        JSON.stringify(tokenData, null, 2),
+        (err) => {
+          if (err) throw err;
+          console.log("Done writing");
+        }
+      );
+    }
+  }
+  return accessToken;
 };
 
 const updateStatus = async (contactid, key, value) => {
@@ -68,20 +110,9 @@ const updateStatus = async (contactid, key, value) => {
     zohoConfig
   );
 };
-let zohoToken = "";
-let tokenTime = "";
 
 const getMeetingLink = async (email) => {
-  if (!zohoToken) {
-    zohoToken = await getZohoToken();
-    tokenTime = Math.floor(new Date() / 1000);
-  } else {
-    if (Math.floor(new Date() / 1000) - tokenTime > 2400) {
-      zohoToken = await getZohoToken();
-      tokenTime = Math.floor(new Date() / 1000);
-    }
-  }
-  console.log("Token", zohoToken);
+  const zohoToken = await getZohoToken();
   const zohoConfig = {
     headers: {
       "Content-Type": "application/json",
@@ -155,20 +186,13 @@ const getZohoUserData = async (phone) => {
 };
 
 const getQuizLink = async (emailParam) => {
-  if (!zohoToken) {
-    zohoToken = await getZohoToken();
-    tokenTime = Math.floor(new Date() / 1000);
-  } else {
-    if (Math.floor(new Date() / 1000) - tokenTime > 2400) {
-      zohoToken = await getZohoToken();
-      tokenTime = Math.floor(new Date() / 1000);
-    }
-  }
+  const accessToken = await getZohoTokenOptimized();
+  console.log("Token :", accessToken);
   const zohoConfig = {
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
-      Authorization: `Bearer ${zohoToken}`,
+      Authorization: `Bearer ${accessToken}`,
     },
   };
   const contact = await axios.get(
