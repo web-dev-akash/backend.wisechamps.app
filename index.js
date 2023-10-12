@@ -20,16 +20,7 @@ fs.readFile("./token.json", function (err, data) {
   tokenTime = token.time;
 });
 
-const links = {
-  QG5: "https://wisechamps.app/mod/lti/view.php?id=43490",
-  QG6: "https://wisechamps.app/mod/lti/view.php?id=43490",
-  QG7: "https://wisechamps.app/mod/lti/view.php?id=43490",
-  QG8: "https://wisechamps.app/mod/lti/view.php?id=43490",
-  ZG5: "https://us06web.zoom.us/j/9387978938?pwd=NjdOTTZzNndPd1hWMEdYMi9zM2xGdz09",
-  ZG6: "https://us06web.zoom.us/j/9387978938?pwd=testing",
-  ZG7: "https://us06web.zoom.us/j/9387978938?pwd=NjdOTTZzNndPd1hWMEdYMi9zM2xGdz09",
-  ZG8: "https://us06web.zoom.us/j/9387978938?pwd=NjdOTTZzNndPd1hWMEdYMi9zM2xGdz09",
-};
+const freeMeetLink = `https://zoom.us`;
 
 const getZohoToken = async () => {
   try {
@@ -111,56 +102,96 @@ const updateStatus = async (contactid, key, value) => {
   );
 };
 
-const getMeetingLink = async (email) => {
-  const zohoToken = await getZohoToken();
+const getMeetingLink = async (emailParam) => {
+  const accessToken = await getZohoTokenOptimized();
+  console.log("Token :", accessToken);
   const zohoConfig = {
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
-      Authorization: `Bearer ${zohoToken}`,
+      Authorization: `Bearer ${accessToken}`,
     },
   };
+
   const contact = await axios.get(
-    `https://www.zohoapis.com/crm/v2/Contacts/search?email=${email}`,
+    `https://www.zohoapis.com/crm/v2/Contacts/search?email=${emailParam}`,
     zohoConfig
   );
-  const contactid = contact.data.data[0].id;
-  const grade = `ZG${contact.data.data[0].Student_Grade}`;
-  const parentWorkshopSlot = contact.data.data[0].Parent_Workshop_Slot;
-  const workshopAttendedDate = contact.data.data[0].Workshop_Attended_Date;
-  const currentDate = Math.floor(new Date() / 1000);
-  if (parentWorkshopSlot && !workshopAttendedDate && links[grade]) {
-    let status = "";
-    const parentWorkshopDate = Math.floor(new Date(parentWorkshopSlot) / 1000);
-    if (
-      currentDate >= parentWorkshopDate - 600 &&
-      currentDate < parentWorkshopDate + 1800
-    ) {
-      const date = new Date();
-      const year = date.getFullYear();
-      const month = (date.getMonth() + 1).toString().padStart(2, "0");
-      const day = date.getDate().toString().padStart(2, "0");
-      const time = (date.getHours() + 5).toString().padStart(2, "0");
-      const minutes = (date.getMinutes() + 30).toString().padStart(2, "0");
-      const formattedDate = `${year}-${month}-${day}T${time}:${minutes}:00`;
-      status = "approved";
-      await updateStatus(contactid, "Workshop_Attended_Date", formattedDate);
-    } else if (currentDate + 600 < parentWorkshopDate) {
-      status = "notstartedyet";
-    } else if (currentDate >= parentWorkshopDate + 1800) {
-      status = "expired";
-    }
+
+  if (contact.status >= 400) {
     return {
-      link: links[grade],
-      mode: "parentWorkshop",
-      status,
-      date: parentWorkshopDate,
-    };
-  } else {
-    return {
-      mode: "noWorkshopSlot",
+      status: contact.status,
+      mode: "internalservererrorinfindinguser",
     };
   }
+  // return { contact };
+  if (contact.status === 204) {
+    return {
+      status: contact.status,
+      mode: "nouser",
+    };
+  }
+
+  const email = contact.data.data[0].Email;
+  const grade = contact.data.data[0].Student_Grade;
+  const credits = contact.data.data[0].Credits;
+  const date = new Date();
+  const start = new Date();
+  start.setMinutes(start.getMinutes() + 270);
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  const startHours = start.getHours().toString().padStart(2, "0");
+  const endHours = end.getHours().toString().padStart(2, "0");
+  const startMinutes = start.getMinutes().toString().padStart(2, "0");
+  const endMinutes = end.getMinutes().toString().padStart(2, "0");
+  const formattedDateStart = `${year}-${month}-${day}T${startHours}:${startMinutes}:00+05:30`;
+  const formattedDateEnd = `${year}-${month}-${day}T${endHours}:${endMinutes}:00+05:30`;
+  const sessionBody = {
+    select_query: `select Session_Grade, LMS_Activity_ID, Explanation_Meeting_Link from Sessions where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
+  };
+
+  const session = await axios.post(
+    `https://www.zohoapis.com/crm/v3/coql`,
+    sessionBody,
+    zohoConfig
+  );
+
+  if (session.status >= 400) {
+    return {
+      status: session.status,
+      mode: "internalservererrorinfindingsession",
+    };
+  }
+
+  if (session.status === 204) {
+    return {
+      status: session.status,
+      mode: "nosession",
+    };
+  }
+  for (let i = 0; i < session.data.data.length; i++) {
+    const sessionGrade = session.data.data[i].Session_Grade;
+    const paidMeetLink = session.data.data[i].Explanation_Meeting_Link;
+    const link = !credits || credits == 0 ? freeMeetLink : paidMeetLink;
+    const correctSession = sessionGrade.find((res) => res === grade);
+    if (correctSession) {
+      return {
+        status: 200,
+        formattedDateStart,
+        formattedDateEnd,
+        mode: "zoomlink",
+        email,
+        link,
+      };
+    }
+  }
+  return {
+    status: session.status,
+    mode: "nosession",
+  };
 };
 
 const getZohoUserData = async (phone) => {
@@ -372,8 +403,8 @@ const createPaymentEntry = async ({ amount, id, email, credits }) => {
   return result;
 };
 
-app.get("/meeting", async (req, res) => {
-  const email = req.query.email;
+app.post("/meeting", async (req, res) => {
+  const { email } = req.body;
   const data = await getMeetingLink(email);
   res.status(200).send({
     ...data,
