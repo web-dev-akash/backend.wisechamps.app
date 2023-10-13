@@ -392,7 +392,7 @@ const createPaymentEntry = async ({ amount, id, email, credits }) => {
         },
       },
     ],
-    duplicate_check_fields: ["Name"],
+    duplicate_check_fields: [""],
     apply_feature_execution: [
       {
         name: "layout_rules",
