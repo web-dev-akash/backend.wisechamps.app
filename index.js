@@ -37,7 +37,7 @@ const getZohoToken = async () => {
 
 const getZohoTokenOptimized = async () => {
   if (!accessToken) {
-    accessToken = await getZohoToken();
+    accessToken = await getZohoTokenOptimized();
     tokenTime = Math.floor(new Date() / 1000);
     const tokenData = {
       token: accessToken,
@@ -49,7 +49,7 @@ const getZohoTokenOptimized = async () => {
     });
   } else {
     if (Math.floor(new Date() / 1000) - tokenTime > 2400) {
-      accessToken = await getZohoToken();
+      accessToken = await getZohoTokenOptimized();
       tokenTime = Math.floor(new Date() / 1000);
       const tokenData = {
         token: accessToken,
@@ -69,7 +69,7 @@ const getZohoTokenOptimized = async () => {
 };
 
 const updateStatus = async (contactid, key, value) => {
-  const zohoToken = await getZohoToken();
+  const zohoToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
       "Content-Type": "application/json",
@@ -195,7 +195,7 @@ const getMeetingLink = async (emailParam) => {
 };
 
 const getZohoUserData = async (phone) => {
-  const zohoToken = await getZohoToken();
+  const zohoToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
       "Content-Type": "application/json",
@@ -308,7 +308,7 @@ const getQuizLink = async (emailParam) => {
 };
 
 const getZohoUserDetails = async (email) => {
-  const zohoToken = await getZohoToken();
+  const zohoToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
       "Content-Type": "application/json",
@@ -341,7 +341,7 @@ const getZohoUserDetails = async (email) => {
 
 const createPaymentEntry = async ({ amount, id, email, credits }) => {
   amount = amount / 100;
-  const zohoToken = await getZohoToken();
+  const zohoToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
       "Content-Type": "application/json",
@@ -427,8 +427,8 @@ app.get("/referral", async (req, res) => {
   });
 });
 
-app.get("/user", async (req, res) => {
-  const email = req.query.email;
+app.post("/user", async (req, res) => {
+  const { email } = req.body;
   const data = await getZohoUserDetails(email);
   res.status(200).send({
     ...data,
@@ -461,7 +461,7 @@ app.post("/payment_links", async (req, res) => {
       customer: {
         email,
       },
-      callback_url: `https://wisechamps.app`,
+      callback_url: `https://zoom.wisechamps.com?email=${email}`,
       callback_method: "get",
     });
     await createPaymentEntry({
@@ -487,7 +487,7 @@ const updateCreditsOnLMS = async ({ email, credits }) => {
 app.post("/payment/capture", async (req, res) => {
   try {
     const { linkId, payId, email } = req.body;
-    const zohoToken = await getZohoToken();
+    const zohoToken = await getZohoTokenOptimized();
     const zohoConfig = {
       headers: {
         "Content-Type": "application/json",
