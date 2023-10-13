@@ -102,7 +102,7 @@ const updateStatus = async (contactid, key, value) => {
   );
 };
 
-const getMeetingLink = async (emailParam) => {
+const getMeetingLink = async (emailParam, payId) => {
   const accessToken = await getZohoTokenOptimized();
   console.log("Token :", accessToken);
   const zohoConfig = {
@@ -172,10 +172,12 @@ const getMeetingLink = async (emailParam) => {
       mode: "nosession",
     };
   }
+
   for (let i = 0; i < session.data.data.length; i++) {
     const sessionGrade = session.data.data[i].Session_Grade;
     const paidMeetLink = session.data.data[i].Explanation_Meeting_Link;
-    const link = !credits || credits == 0 ? freeMeetLink : paidMeetLink;
+    let link = !credits || credits == 0 ? freeMeetLink : paidMeetLink;
+    link = payId ? paidMeetLink : link;
     const correctSession = sessionGrade.find((res) => res === grade);
     if (correctSession) {
       return {
@@ -188,6 +190,7 @@ const getMeetingLink = async (emailParam) => {
       };
     }
   }
+
   return {
     status: session.status,
     mode: "nosession",
@@ -407,8 +410,8 @@ const createPaymentEntry = async ({ amount, id, email, credits }) => {
 };
 
 app.post("/meeting", async (req, res) => {
-  const { email } = req.body;
-  const data = await getMeetingLink(email);
+  const { email, payId } = req.body;
+  const data = await getMeetingLink(email, payId);
   res.status(200).send({
     ...data,
   });
