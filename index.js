@@ -37,7 +37,7 @@ const getZohoToken = async () => {
 
 const getZohoTokenOptimized = async () => {
   if (!accessToken) {
-    accessToken = await getZohoTokenOptimized();
+    accessToken = await getZohoToken();
     tokenTime = Math.floor(new Date() / 1000);
     const tokenData = {
       token: accessToken,
@@ -49,7 +49,7 @@ const getZohoTokenOptimized = async () => {
     });
   } else {
     if (Math.floor(new Date() / 1000) - tokenTime > 2400) {
-      accessToken = await getZohoTokenOptimized();
+      accessToken = await getZohoToken();
       tokenTime = Math.floor(new Date() / 1000);
       const tokenData = {
         token: accessToken,
@@ -308,12 +308,12 @@ const getQuizLink = async (emailParam) => {
 };
 
 const getZohoUserDetails = async (email) => {
-  const zohoToken = await getZohoTokenOptimized();
+  const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
-      Authorization: `Bearer ${zohoToken}`,
+      Authorization: `Bearer ${accessToken}`,
     },
   };
   const contact = await axios.get(
@@ -431,7 +431,7 @@ app.post("/user", async (req, res) => {
   const { email } = req.body;
   const data = await getZohoUserDetails(email);
   res.status(200).send({
-    ...data,
+    data,
   });
 });
 
