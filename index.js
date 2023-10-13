@@ -434,7 +434,7 @@ app.post("/user", async (req, res) => {
   const { email } = req.body;
   const data = await getZohoUserDetails(email);
   res.status(200).send({
-    data,
+    ...data,
   });
 });
 
