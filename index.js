@@ -320,22 +320,25 @@ const getZohoUserDetails = async (email) => {
     `https://www.zohoapis.com/crm/v2/Contacts/search?email=${email}`,
     zohoConfig
   );
-  if (!contact || !contact.data || !contact.data.data) {
+
+  if (contact.status >= 400) {
     return {
+      status: contact.status,
+      mode: "internalservererrorinfindinguser",
+    };
+  }
+  // return { contact };
+  if (contact.status === 204) {
+    return {
+      status: contact.status,
       mode: "nouser",
     };
   }
-  const grade = contact.data.data[0].Student_Grade;
-  const phone = contact.data.data[0].Phone;
-  const name = contact.data.data[0].Full_Name;
-  const student_name = contact.data.data[0].Student_Name;
+
   return {
+    status: 200,
     mode: "user",
-    name,
-    phone,
     email,
-    grade,
-    student_name,
   };
 };
 
