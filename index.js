@@ -20,7 +20,7 @@ fs.readFile("./token.json", function (err, data) {
   tokenTime = token.time;
 });
 
-const freeMeetLink = `https://zoom.us`;
+const freeMeetLink = `https://us06web.zoom.us/j/89063805547?pwd=ubhcbvHRnETo8zkHAjeguJnxJOEyWz.1`;
 
 const getZohoToken = async () => {
   try {
