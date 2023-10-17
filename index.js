@@ -13,11 +13,18 @@ const clientSecret = process.env.CLIENT_SECRET;
 const refreshToken = process.env.REFRESH_TOKEN;
 let accessToken = "";
 let tokenTime = 0;
+let logsData = {};
 fs.readFile("./token.json", function (err, data) {
   if (err) throw err;
   const token = JSON.parse(data);
   accessToken = token.token;
   tokenTime = token.time;
+});
+
+fs.readFile("./logs.json", function (err, data) {
+  if (err) throw err;
+  const logs = JSON.parse(data);
+  logsData = { ...logs };
 });
 
 const freeMeetLink = `https://us06web.zoom.us/j/2616664243?pwd=TVVzblZXd1Nwb20wRi9zWVJURGJsQT09`;
@@ -103,6 +110,15 @@ const updateStatus = async (contactid, key, value) => {
 };
 
 const getMeetingLink = async (emailParam, payId) => {
+  logsData.zoomLogs.push({
+    email: emailParam,
+    description: "EnteredEmail",
+  });
+  fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+    if (err) throw err;
+    console.log("Done writing");
+  });
+  // return "success";
   const accessToken = await getZohoTokenOptimized();
   console.log("Token :", accessToken);
   const zohoConfig = {
@@ -119,13 +135,29 @@ const getMeetingLink = async (emailParam, payId) => {
   );
 
   if (contact.status >= 400) {
+    logsData.zoomLogs.push({
+      email: emailParam,
+      description: `internalservererrorinfindinguser ${contact.status}`,
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
     return {
       status: contact.status,
       mode: "internalservererrorinfindinguser",
     };
   }
-  // return { contact };
+  // // return { contact };
   if (contact.status === 204) {
+    logsData.zoomLogs.push({
+      email: emailParam,
+      description: `nouser 204`,
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
     return {
       status: contact.status,
       mode: "nouser",
@@ -160,6 +192,14 @@ const getMeetingLink = async (emailParam, payId) => {
   );
 
   if (session.status >= 400) {
+    logsData.zoomLogs.push({
+      email: emailParam,
+      description: `internalservererrorinfindingsession ${session.status}`,
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
     return {
       status: session.status,
       mode: "internalservererrorinfindingsession",
@@ -167,6 +207,14 @@ const getMeetingLink = async (emailParam, payId) => {
   }
 
   if (session.status === 204) {
+    logsData.zoomLogs.push({
+      email: emailParam,
+      description: `nosession ${session.status}`,
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
     return {
       status: session.status,
       mode: "nosession",
@@ -180,6 +228,14 @@ const getMeetingLink = async (emailParam, payId) => {
     link = payId ? paidMeetLink : link;
     const correctSession = sessionGrade.find((res) => res === grade);
     if (correctSession) {
+      logsData.zoomLogs.push({
+        email: emailParam,
+        description: `LinkGenerated 200`,
+      });
+      fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+        if (err) throw err;
+        console.log("Done writing");
+      });
       return {
         status: 200,
         formattedDateStart,
@@ -191,6 +247,14 @@ const getMeetingLink = async (emailParam, payId) => {
     }
   }
 
+  logsData.zoomLogs.push({
+    email: emailParam,
+    description: `nosession 204`,
+  });
+  fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+    if (err) throw err;
+    console.log("Done writing");
+  });
   return {
     status: session.status,
     mode: "nosession",
@@ -220,6 +284,14 @@ const getZohoUserData = async (phone) => {
 };
 
 const getQuizLink = async (emailParam) => {
+  logsData.quizLogs.push({
+    email: emailParam,
+    description: "EnteredEmail",
+  });
+  fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+    if (err) throw err;
+    console.log("Done writing");
+  });
   const accessToken = await getZohoTokenOptimized();
   console.log("Token :", accessToken);
   const zohoConfig = {
@@ -235,6 +307,14 @@ const getQuizLink = async (emailParam) => {
   );
 
   if (contact.status >= 400) {
+    logsData.quizLogs.push({
+      email: emailParam,
+      description: `internalservererrorinfindinguser ${contact.status}`,
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
     return {
       status: contact.status,
       mode: "internalservererrorinfindinguser",
@@ -242,6 +322,14 @@ const getQuizLink = async (emailParam) => {
   }
   // return { contact };
   if (contact.status === 204) {
+    logsData.quizLogs.push({
+      email: emailParam,
+      description: `nouser ${contact.status}`,
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
     return {
       status: contact.status,
       mode: "nouser",
@@ -276,6 +364,14 @@ const getQuizLink = async (emailParam) => {
   );
 
   if (session.status >= 400) {
+    logsData.quizLogs.push({
+      email: emailParam,
+      description: `internalservererrorinfindingsession ${session.status}`,
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
     return {
       status: session.status,
       mode: "internalservererrorinfindingsession",
@@ -283,6 +379,14 @@ const getQuizLink = async (emailParam) => {
   }
 
   if (session.status === 204) {
+    logsData.quizLogs.push({
+      email: emailParam,
+      description: `nosession ${session.status}`,
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
     return {
       status: session.status,
       mode: "nosession",
@@ -294,6 +398,14 @@ const getQuizLink = async (emailParam) => {
     const sessionid = session.data.data[i].LMS_Activity_ID.toString();
     const correctSession = sessionGrade.find((res) => res === grade);
     if (correctSession) {
+      logsData.quizLogs.push({
+        email: emailParam,
+        description: `LinkGenerated 200`,
+      });
+      fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+        if (err) throw err;
+        console.log("Done writing");
+      });
       return {
         status: 200,
         formattedDateStart,
@@ -304,6 +416,16 @@ const getQuizLink = async (emailParam) => {
       };
     }
   }
+
+  logsData.quizLogs.push({
+    email: emailParam,
+    description: `nosession 204`,
+  });
+  fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+    if (err) throw err;
+    console.log("Done writing");
+  });
+
   return {
     status: session.status,
     mode: "nosession",
