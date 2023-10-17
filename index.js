@@ -114,6 +114,8 @@ const getMeetingLink = async (emailParam, payId) => {
   logsData.zoomLogs.push({
     email: emailParam,
     description: "EnteredEmail",
+    date: new Date().toDateString(),
+    time: new Date().toTimeString(),
   });
   fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
     if (err) throw err;
@@ -139,6 +141,8 @@ const getMeetingLink = async (emailParam, payId) => {
     logsData.zoomLogs.push({
       email: emailParam,
       description: `internalservererrorinfindinguser ${contact.status}`,
+      date: new Date().toDateString(),
+      time: new Date().toTimeString(),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -154,6 +158,8 @@ const getMeetingLink = async (emailParam, payId) => {
     logsData.zoomLogs.push({
       email: emailParam,
       description: `nouser 204`,
+      date: new Date().toDateString(),
+      time: new Date().toTimeString(),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -196,6 +202,8 @@ const getMeetingLink = async (emailParam, payId) => {
     logsData.zoomLogs.push({
       email: emailParam,
       description: `internalservererrorinfindingsession ${session.status}`,
+      date: new Date().toDateString(),
+      time: new Date().toTimeString(),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -211,6 +219,8 @@ const getMeetingLink = async (emailParam, payId) => {
     logsData.zoomLogs.push({
       email: emailParam,
       description: `nosession ${session.status}`,
+      date: new Date().toDateString(),
+      time: new Date().toTimeString(),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -232,6 +242,8 @@ const getMeetingLink = async (emailParam, payId) => {
       logsData.zoomLogs.push({
         email: emailParam,
         description: `LinkGenerated 200`,
+        date: new Date().toDateString(),
+        time: new Date().toTimeString(),
       });
       fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
         if (err) throw err;
@@ -251,6 +263,8 @@ const getMeetingLink = async (emailParam, payId) => {
   logsData.zoomLogs.push({
     email: emailParam,
     description: `nosession 204`,
+    date: new Date().toDateString(),
+    time: new Date().toTimeString(),
   });
   fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
     if (err) throw err;
@@ -288,6 +302,8 @@ const getQuizLink = async (emailParam) => {
   logsData.quizLogs.push({
     email: emailParam,
     description: "EnteredEmail",
+    date: new Date().toDateString(),
+    time: new Date().toTimeString(),
   });
   fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
     if (err) throw err;
@@ -311,6 +327,8 @@ const getQuizLink = async (emailParam) => {
     logsData.quizLogs.push({
       email: emailParam,
       description: `internalservererrorinfindinguser ${contact.status}`,
+      date: new Date().toDateString(),
+      time: new Date().toTimeString(),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -326,6 +344,8 @@ const getQuizLink = async (emailParam) => {
     logsData.quizLogs.push({
       email: emailParam,
       description: `nouser ${contact.status}`,
+      date: new Date().toDateString(),
+      time: new Date().toTimeString(),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -368,6 +388,8 @@ const getQuizLink = async (emailParam) => {
     logsData.quizLogs.push({
       email: emailParam,
       description: `internalservererrorinfindingsession ${session.status}`,
+      date: new Date().toDateString(),
+      time: new Date().toTimeString(),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -383,6 +405,8 @@ const getQuizLink = async (emailParam) => {
     logsData.quizLogs.push({
       email: emailParam,
       description: `nosession ${session.status}`,
+      date: new Date().toDateString(),
+      time: new Date().toTimeString(),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -402,6 +426,8 @@ const getQuizLink = async (emailParam) => {
       logsData.quizLogs.push({
         email: emailParam,
         description: `LinkGenerated 200`,
+        date: new Date().toDateString(),
+        time: new Date().toTimeString(),
       });
       fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
         if (err) throw err;
@@ -421,6 +447,8 @@ const getQuizLink = async (emailParam) => {
   logsData.quizLogs.push({
     email: emailParam,
     description: `nosession 204`,
+    date: new Date().toDateString(),
+    time: new Date().toTimeString(),
   });
   fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
     if (err) throw err;
