@@ -582,7 +582,7 @@ app.post("/payment_links", async (req, res) => {
       customer: {
         email,
       },
-      callback_url: `https://zoom.wisechamps.com?email=${email}`,
+      callback_url: `https://zoom.wisechamps.com?email=${email}&credits=${credits[amount]}`,
       callback_method: "get",
     });
     const createdPayment = await createPaymentEntry({
