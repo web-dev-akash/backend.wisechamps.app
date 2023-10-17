@@ -582,7 +582,9 @@ app.post("/payment_links", async (req, res) => {
       customer: {
         email,
       },
-      callback_url: `https://zoom.wisechamps.com?email=${email}&credits=${credits[amount]}&amount=${amount}`,
+      callback_url: `https://zoom.wisechamps.com?email=${email}&credits=${
+        credits[amount]
+      }&amount=${amount * 100}`,
       callback_method: "get",
     });
     return res.status(200).send(data);
