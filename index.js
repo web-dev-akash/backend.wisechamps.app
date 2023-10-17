@@ -14,6 +14,7 @@ const refreshToken = process.env.REFRESH_TOKEN;
 let accessToken = "";
 let tokenTime = 0;
 let logsData = {};
+
 fs.readFile("./token.json", function (err, data) {
   if (err) throw err;
   const token = JSON.parse(data);
