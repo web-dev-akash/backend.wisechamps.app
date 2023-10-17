@@ -590,14 +590,6 @@ app.post("/payment_links", async (req, res) => {
   }
 });
 
-const updateCreditsOnLMS = async ({ email, credits }) => {
-  try {
-  } catch (error) {
-    console.log(error);
-    return error;
-  }
-};
-
 app.post("/payment/capture", async (req, res) => {
   try {
     const { linkId, payId, email, credits, amount } = req.body;
