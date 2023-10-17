@@ -501,14 +501,13 @@ app.post("/payment/capture", async (req, res) => {
       zohoConfig
     );
     if (!payment || !payment.data || !payment.data.data) {
-      console.log("no payment");
       return res.status(400).send({
         status: "nopayment",
       });
     }
     const paymentId = payment.data.data[0].Name;
-    const credits = payment.data.data[0].Credits;
-    await updateCreditsOnLMS({ email, credits });
+    // const credits = payment.data.data[0].Credits;
+    // await updateCreditsOnLMS({ email, credits });
     const body = {
       data: [
         {
@@ -532,8 +531,7 @@ app.post("/payment/capture", async (req, res) => {
       body,
       zohoConfig
     );
-
-    console.log(result);
+    return res.status(200).send(result.data);
   } catch (error) {
     console.log(error);
     return res.status(500).send(error);
