@@ -111,11 +111,12 @@ const updateStatus = async (contactid, key, value) => {
 };
 
 const getMeetingLink = async (emailParam, payId) => {
+  let oldDate = new Date().setMinutes(new Date().getMinutes());
   logsData.zoomLogs.push({
     email: emailParam,
     description: "EnteredEmail",
     date: new Date().toDateString(),
-    time: new Date().setMinutes(new Date().getMinutes() + 330),
+    time: new Date(oldDate).toTimeString(),
   });
   fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
     if (err) throw err;
@@ -138,11 +139,12 @@ const getMeetingLink = async (emailParam, payId) => {
   );
 
   if (contact.status >= 400) {
+    let oldDate = new Date().setMinutes(new Date().getMinutes());
     logsData.zoomLogs.push({
       email: emailParam,
       description: `internalservererrorinfindinguser ${contact.status}`,
       date: new Date().toDateString(),
-      time: new Date().setMinutes(new Date().getMinutes() + 330),
+      time: new Date(oldDate).toTimeString(),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -155,11 +157,12 @@ const getMeetingLink = async (emailParam, payId) => {
   }
   // // return { contact };
   if (contact.status === 204) {
+    let oldDate = new Date().setMinutes(new Date().getMinutes());
     logsData.zoomLogs.push({
       email: emailParam,
       description: `nouser 204`,
       date: new Date().toDateString(),
-      time: new Date().setMinutes(new Date().getMinutes() + 330),
+      time: new Date(oldDate).toTimeString(),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -199,11 +202,12 @@ const getMeetingLink = async (emailParam, payId) => {
   );
 
   if (session.status >= 400) {
+    let oldDate = new Date().setMinutes(new Date().getMinutes());
     logsData.zoomLogs.push({
       email: emailParam,
       description: `internalservererrorinfindingsession ${session.status}`,
       date: new Date().toDateString(),
-      time: new Date().setMinutes(new Date().getMinutes() + 330),
+      time: new Date(oldDate).toTimeString(),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -216,11 +220,12 @@ const getMeetingLink = async (emailParam, payId) => {
   }
 
   if (session.status === 204) {
+    let oldDate = new Date().setMinutes(new Date().getMinutes());
     logsData.zoomLogs.push({
       email: emailParam,
       description: `nosession ${session.status}`,
       date: new Date().toDateString(),
-      time: new Date().setMinutes(new Date().getMinutes() + 330),
+      time: new Date(oldDate).toTimeString(),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -239,11 +244,12 @@ const getMeetingLink = async (emailParam, payId) => {
     link = payId ? paidMeetLink : link;
     const correctSession = sessionGrade.find((res) => res === grade);
     if (correctSession) {
+      let oldDate = new Date().setMinutes(new Date().getMinutes());
       logsData.zoomLogs.push({
         email: emailParam,
         description: `LinkGenerated 200`,
         date: new Date().toDateString(),
-        time: new Date().setMinutes(new Date().getMinutes() + 330),
+        time: new Date(oldDate).toTimeString(),
       });
       fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
         if (err) throw err;
@@ -260,11 +266,12 @@ const getMeetingLink = async (emailParam, payId) => {
     }
   }
 
+  let oldDate1 = new Date().setMinutes(new Date().getMinutes());
   logsData.zoomLogs.push({
     email: emailParam,
     description: `nosession 204`,
     date: new Date().toDateString(),
-    time: new Date().setMinutes(new Date().getMinutes() + 330),
+    time: new Date(oldDate1).toTimeString(),
   });
   fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
     if (err) throw err;
@@ -299,11 +306,12 @@ const getZohoUserData = async (phone) => {
 };
 
 const getQuizLink = async (emailParam) => {
+  let oldDate = new Date().setMinutes(new Date().getMinutes());
   logsData.quizLogs.push({
     email: emailParam,
     description: "EnteredEmail",
     date: new Date().toDateString(),
-    time: new Date().setMinutes(new Date().getMinutes() + 330),
+    time: new Date(oldDate).toTimeString(),
   });
   fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
     if (err) throw err;
@@ -324,11 +332,12 @@ const getQuizLink = async (emailParam) => {
   );
 
   if (contact.status >= 400) {
+    let oldDate = new Date().setMinutes(new Date().getMinutes());
     logsData.quizLogs.push({
       email: emailParam,
       description: `internalservererrorinfindinguser ${contact.status}`,
       date: new Date().toDateString(),
-      time: new Date().setMinutes(new Date().getMinutes() + 330),
+      time: new Date(oldDate).toTimeString(),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -341,11 +350,12 @@ const getQuizLink = async (emailParam) => {
   }
   // return { contact };
   if (contact.status === 204) {
+    let oldDate = new Date().setMinutes(new Date().getMinutes());
     logsData.quizLogs.push({
       email: emailParam,
       description: `nouser ${contact.status}`,
       date: new Date().toDateString(),
-      time: new Date().setMinutes(new Date().getMinutes() + 330),
+      time: new Date(oldDate).toTimeString(),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -385,11 +395,12 @@ const getQuizLink = async (emailParam) => {
   );
 
   if (session.status >= 400) {
+    let oldDate = new Date().setMinutes(new Date().getMinutes());
     logsData.quizLogs.push({
       email: emailParam,
       description: `internalservererrorinfindingsession ${session.status}`,
       date: new Date().toDateString(),
-      time: new Date().setMinutes(new Date().getMinutes() + 330),
+      time: new Date(oldDate).toTimeString(),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -402,11 +413,12 @@ const getQuizLink = async (emailParam) => {
   }
 
   if (session.status === 204) {
+    let oldDate = new Date().setMinutes(new Date().getMinutes());
     logsData.quizLogs.push({
       email: emailParam,
       description: `nosession ${session.status}`,
       date: new Date().toDateString(),
-      time: new Date().setMinutes(new Date().getMinutes() + 330),
+      time: new Date(oldDate).toTimeString(),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -423,11 +435,12 @@ const getQuizLink = async (emailParam) => {
     const sessionid = session.data.data[i].LMS_Activity_ID.toString();
     const correctSession = sessionGrade.find((res) => res === grade);
     if (correctSession) {
+      let oldDate = new Date().setMinutes(new Date().getMinutes());
       logsData.quizLogs.push({
         email: emailParam,
         description: `LinkGenerated 200`,
         date: new Date().toDateString(),
-        time: new Date().setMinutes(new Date().getMinutes() + 330),
+        time: new Date(oldDate).toTimeString(),
       });
       fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
         if (err) throw err;
@@ -444,11 +457,12 @@ const getQuizLink = async (emailParam) => {
     }
   }
 
+  let oldDate1 = new Date().setMinutes(new Date().getMinutes());
   logsData.quizLogs.push({
     email: emailParam,
     description: `nosession 204`,
     date: new Date().toDateString(),
-    time: new Date().setMinutes(new Date().getMinutes() + 330),
+    time: new Date(oldDate1).toTimeString(),
   });
   fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
     if (err) throw err;
