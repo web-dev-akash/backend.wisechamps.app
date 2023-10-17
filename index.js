@@ -467,7 +467,7 @@ const getZohoUserDetails = async (email) => {
   };
 };
 
-const createPaymentEntry = async ({ amount, id, email, credits }) => {
+const createPaymentEntry = async ({ amount, id, email, credits, payId }) => {
   amount = amount / 100;
   const zohoToken = await getZohoTokenOptimized();
   const zohoConfig = {
@@ -481,9 +481,7 @@ const createPaymentEntry = async ({ amount, id, email, credits }) => {
     `https://www.zohoapis.com/crm/v2.1/Payments/actions/count`,
     zohoConfig
   );
-  console.log("Prev Count", attemptsCount.data.count);
   let attemptNumber = attemptsCount.data.count + 1;
-  console.log("New Count", attemptNumber);
   const contact = await axios.get(
     `https://www.zohoapis.com/crm/v2/Contacts/search?email=${email}`,
     zohoConfig
@@ -505,6 +503,7 @@ const createPaymentEntry = async ({ amount, id, email, credits }) => {
         Payment_Demanded: amount,
         Payment_Link_ID: id,
         Conntact: contactid,
+        Reference_ID: payId,
         Payment_Date: formattedDate,
         Credits: credits,
       },
@@ -585,13 +584,6 @@ app.post("/payment_links", async (req, res) => {
       callback_url: `https://zoom.wisechamps.com?email=${email}&credits=${credits[amount]}`,
       callback_method: "get",
     });
-    const createdPayment = await createPaymentEntry({
-      amount: data.amount,
-      id: data.id,
-      email: data.customer.email,
-      credits: credits[amount],
-    });
-    console.log(createdPayment.data.data);
     return res.status(200).send(data);
   } catch (error) {
     return res.status(500).send(error);
@@ -608,52 +600,15 @@ const updateCreditsOnLMS = async ({ email, credits }) => {
 
 app.post("/payment/capture", async (req, res) => {
   try {
-    const { linkId, payId, email } = req.body;
-    const zohoToken = await getZohoTokenOptimized();
-    const zohoConfig = {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        Authorization: `Bearer ${zohoToken}`,
-      },
-    };
-
-    const payment = await axios.get(
-      `https://www.zohoapis.com/crm/v2/Payments/search?criteria=(Payment_Link_ID:equals:${linkId})`,
-      zohoConfig
-    );
-    if (!payment || !payment.data || !payment.data.data) {
-      return res.status(400).send({
-        status: "nopayment",
-      });
-    }
-    const paymentId = payment.data.data[0].Name;
-    // const credits = payment.data.data[0].Credits;
-    // await updateCreditsOnLMS({ email, credits });
-    const body = {
-      data: [
-        {
-          Name: paymentId,
-          Reference_ID: payId,
-          $append_values: {
-            Reference_ID: true,
-          },
-        },
-      ],
-      duplicate_check_fields: ["Name"],
-      apply_feature_execution: [
-        {
-          name: "layout_rules",
-        },
-      ],
-      trigger: ["workflow"],
-    };
-    const result = await axios.post(
-      `https://www.zohoapis.com/crm/v3/Payments/upsert`,
-      body,
-      zohoConfig
-    );
-    return res.status(200).send(result.data);
+    const { linkId, payId, email, credits, amount } = req.body;
+    const createdPayment = await createPaymentEntry({
+      amount,
+      id: linkId,
+      email: email,
+      credits: credits,
+      payId: payId,
+    });
+    return res.status(200).send(createdPayment.data.data);
   } catch (error) {
     console.log(error);
     return res.status(500).send(error);
