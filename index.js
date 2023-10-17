@@ -116,7 +116,7 @@ const getMeetingLink = async (emailParam, payId) => {
     email: emailParam,
     description: "EnteredEmail",
     date: new Date().toDateString(),
-    time: new Date(oldDate).toTimeString(),
+    time: new Date(oldDate).toLocaleTimeString("en-US"),
   });
   fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
     if (err) throw err;
@@ -144,7 +144,7 @@ const getMeetingLink = async (emailParam, payId) => {
       email: emailParam,
       description: `internalservererrorinfindinguser ${contact.status}`,
       date: new Date().toDateString(),
-      time: new Date(oldDate).toTimeString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -162,7 +162,7 @@ const getMeetingLink = async (emailParam, payId) => {
       email: emailParam,
       description: `nouser 204`,
       date: new Date().toDateString(),
-      time: new Date(oldDate).toTimeString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -207,7 +207,7 @@ const getMeetingLink = async (emailParam, payId) => {
       email: emailParam,
       description: `internalservererrorinfindingsession ${session.status}`,
       date: new Date().toDateString(),
-      time: new Date(oldDate).toTimeString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -225,7 +225,7 @@ const getMeetingLink = async (emailParam, payId) => {
       email: emailParam,
       description: `nosession ${session.status}`,
       date: new Date().toDateString(),
-      time: new Date(oldDate).toTimeString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -249,7 +249,7 @@ const getMeetingLink = async (emailParam, payId) => {
         email: emailParam,
         description: `LinkGenerated 200`,
         date: new Date().toDateString(),
-        time: new Date(oldDate).toTimeString(),
+        time: new Date(oldDate).toLocaleTimeString("en-US"),
       });
       fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
         if (err) throw err;
@@ -271,7 +271,7 @@ const getMeetingLink = async (emailParam, payId) => {
     email: emailParam,
     description: `nosession 204`,
     date: new Date().toDateString(),
-    time: new Date(oldDate1).toTimeString(),
+    time: new Date(oldDate1).toLocaleTimeString("en-US"),
   });
   fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
     if (err) throw err;
@@ -311,7 +311,7 @@ const getQuizLink = async (emailParam) => {
     email: emailParam,
     description: "EnteredEmail",
     date: new Date().toDateString(),
-    time: new Date(oldDate).toTimeString(),
+    time: new Date(oldDate).toLocaleTimeString("en-US"),
   });
   fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
     if (err) throw err;
@@ -337,7 +337,7 @@ const getQuizLink = async (emailParam) => {
       email: emailParam,
       description: `internalservererrorinfindinguser ${contact.status}`,
       date: new Date().toDateString(),
-      time: new Date(oldDate).toTimeString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -355,7 +355,7 @@ const getQuizLink = async (emailParam) => {
       email: emailParam,
       description: `nouser ${contact.status}`,
       date: new Date().toDateString(),
-      time: new Date(oldDate).toTimeString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -400,7 +400,7 @@ const getQuizLink = async (emailParam) => {
       email: emailParam,
       description: `internalservererrorinfindingsession ${session.status}`,
       date: new Date().toDateString(),
-      time: new Date(oldDate).toTimeString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -418,7 +418,7 @@ const getQuizLink = async (emailParam) => {
       email: emailParam,
       description: `nosession ${session.status}`,
       date: new Date().toDateString(),
-      time: new Date(oldDate).toTimeString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
     });
     fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
       if (err) throw err;
@@ -440,7 +440,7 @@ const getQuizLink = async (emailParam) => {
         email: emailParam,
         description: `LinkGenerated 200`,
         date: new Date().toDateString(),
-        time: new Date(oldDate).toTimeString(),
+        time: new Date(oldDate).toLocaleTimeString("en-US"),
       });
       fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
         if (err) throw err;
@@ -462,7 +462,7 @@ const getQuizLink = async (emailParam) => {
     email: emailParam,
     description: `nosession 204`,
     date: new Date().toDateString(),
-    time: new Date(oldDate1).toTimeString(),
+    time: new Date(oldDate1).toLocaleTimeString("en-US"),
   });
   fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
     if (err) throw err;
