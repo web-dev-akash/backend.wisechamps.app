@@ -728,5 +728,5 @@ app.get("/updateLogs", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server Started 🎈 http://localhost:${PORT}`);
+  console.log(`Server Started 🎈🎈 http://localhost:${PORT}`);
 });
