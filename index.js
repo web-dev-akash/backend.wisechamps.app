@@ -607,6 +607,17 @@ app.get("/", (req, res) => {
 app.post("/payment_links", async (req, res) => {
   try {
     const { email, amount } = req.body;
+    let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+    logsData.paymentLogs.push({
+      email: email,
+      description: `EnteredEmail 200`,
+      date: new Date().toDateString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
     const credits = {
       39: 1,
       119: 4,
@@ -629,6 +640,17 @@ app.post("/payment_links", async (req, res) => {
       }&amount=${amount * 100}`,
       callback_method: "get",
     });
+    let oldDate1 = new Date().setMinutes(new Date().getMinutes() + 330);
+    logsData.paymentLogs.push({
+      email: email,
+      description: `PyamentLinkCreated 200`,
+      date: new Date().toDateString(),
+      time: new Date(oldDate1).toLocaleTimeString("en-US"),
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
     return res.status(200).send(data);
   } catch (error) {
     return res.status(500).send(error);
@@ -645,7 +667,60 @@ app.post("/payment/capture", async (req, res) => {
       credits: credits,
       payId: payId,
     });
+    let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+    logsData.paymentLogs.push({
+      email: email,
+      description: `PaymentCaptured 200`,
+      date: new Date().toDateString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
     return res.status(200).send(createdPayment.data.data);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send(error);
+  }
+});
+
+app.get("/updateLogs", (req, res) => {
+  try {
+    fs.readFile("./logs.json", async (err, data) => {
+      if (err) throw err;
+      const logsData = JSON.parse(data);
+      const zoomLogs = logsData.zoomLogs;
+      const quizLogs = logsData.quizLogs;
+      const paymentLogs = logsData.paymentLogs;
+      const urlZoom =
+        "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=zoom";
+      const responseZoom = await axios.post(urlZoom, zoomLogs);
+      const urlQuiz =
+        "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=quiz";
+      const responseQuiz = await axios.post(urlQuiz, quizLogs);
+      const urlPayment =
+        "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=payment";
+      const responsePayment = await axios.post(urlPayment, paymentLogs);
+      const newLogsData = {
+        zoomLogs: [],
+        quizLogs: [],
+        paymentLogs: [],
+      };
+      fs.writeFile(
+        "./logs.json",
+        JSON.stringify(newLogsData, null, 2),
+        (err) => {
+          if (err) throw err;
+          console.log("Done writing");
+        }
+      );
+      return res.status(200).send({
+        zoom: responseZoom.data,
+        quiz: responseQuiz.data,
+        payment: responsePayment.data,
+      });
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).send(error);
