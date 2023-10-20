@@ -727,6 +727,136 @@ app.get("/updateLogs", (req, res) => {
   }
 });
 
+const dailyQuizQuestions = async (email) => {
+  const accessToken = await getZohoTokenOptimized();
+  const zohoConfig = {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  };
+  const contact = await axios.get(
+    `https://www.zohoapis.com/crm/v2/Contacts/search?email=${email}`,
+    zohoConfig
+  );
+
+  if (contact.status >= 400) {
+    return {
+      status: contact.status,
+      mode: "internalservererrorinfindinguser",
+    };
+  }
+  // return { contact };
+  if (contact.status === 204) {
+    return {
+      status: contact.status,
+      mode: "nouser",
+    };
+  }
+
+  const grade = contact.data.data[0].Student_Grade;
+  const date = new Date();
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  const startHours = start.getHours().toString().padStart(2, "0");
+  const endHours = end.getHours().toString().padStart(2, "0");
+  const startMinutes = start.getMinutes().toString().padStart(2, "0");
+  const endMinutes = end.getMinutes().toString().padStart(2, "0");
+  const formattedDateStart = `${year}-${month}-${day}T${startHours}:${startMinutes}:00+05:30`;
+  const formattedDateEnd = `${year}-${month}-${day}T${endHours}:${endMinutes}:00+05:30`;
+  // console.log("Start", formattedDateStart);
+  const questionBody = {
+    select_query: `select Correct_Answer,Question,Question_Grade,Option_1,Option_2,Option_3,Option_4 from Questions where Question_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
+  };
+
+  const question = await axios.post(
+    `https://www.zohoapis.com/crm/v3/coql`,
+    questionBody,
+    zohoConfig
+  );
+
+  if (question.status >= 400) {
+    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+    // logsData.quizLogs.push({
+    //   email: emailParam,
+    //   description: `internalservererrorinfindingquestion ${question.status}`,
+    //   date: new Date().toDateString(),
+    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
+    // });
+    // fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+    //   if (err) throw err;
+    //   console.log("Done writing");
+    // });
+    return {
+      status: question.status,
+      mode: "internalservererrorinfindingquestion",
+    };
+  }
+
+  if (question.status === 204) {
+    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+    // logsData.quizLogs.push({
+    //   email: emailParam,
+    //   description: `noquestion ${question.status}`,
+    //   date: new Date().toDateString(),
+    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
+    // });
+    // fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+    //   if (err) throw err;
+    //   console.log("Done writing");
+    // });
+    return {
+      status: question.status,
+      mode: "noquestion",
+    };
+  }
+  for (let i = 0; i < question.data.data.length; i++) {
+    const questionGrade = question.data.data[i].Question_Grade;
+    const correctQuestion = questionGrade.find((res) => res === grade);
+    if (correctQuestion) {
+      // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+      // logsData.quizLogs.push({
+      //   email: emailParam,
+      //   description: `LinkGenerated 200`,
+      //   date: new Date().toDateString(),
+      //   time: new Date(oldDate).toLocaleTimeString("en-US"),
+      // });
+      // fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      //   if (err) throw err;
+      //   console.log("Done writing");
+      // });
+      return {
+        status: 200,
+        formattedDateStart,
+        formattedDateEnd,
+        mode: "question",
+        question: question.data.data[i],
+      };
+    }
+  }
+  return {
+    status: 204,
+    mode: "nouser",
+  };
+};
+
+app.post("/dailyQuiz", async (req, res) => {
+  try {
+    const { email } = req.body;
+    const data = await dailyQuizQuestions(email);
+    return res.status(200).send(data);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send(error);
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server Started 🎈 http://localhost:${PORT}`);
 });
