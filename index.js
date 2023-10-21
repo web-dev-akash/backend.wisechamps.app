@@ -503,10 +503,19 @@ const getZohoUserDetails = async (email) => {
     };
   }
 
+  contactName = contact.data.data[0].Full_Name;
+  contactEmail = contact.data.data[0].Email;
+  contactPhone = contact.data.data[0].Phone;
+
   return {
     status: 200,
     mode: "user",
     email,
+    user: {
+      name: contactName,
+      email: contactEmail,
+      phone: contactPhone,
+    },
   };
 };
 
