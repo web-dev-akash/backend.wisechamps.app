@@ -754,7 +754,7 @@ const dailyQuizQuestions = async (email) => {
       mode: "nouser",
     };
   }
-
+  const contactid = contact.data.data[0].id;
   const grade = contact.data.data[0].Student_Grade;
   const date = new Date();
   const year = date.getFullYear();
@@ -825,6 +825,7 @@ const dailyQuizQuestions = async (email) => {
       return {
         status: 200,
         mode: "question",
+        id: contactid,
         question: question.data.data[i],
       };
     }
@@ -839,6 +840,60 @@ app.post("/dailyQuiz", async (req, res) => {
   try {
     const { email } = req.body;
     const data = await dailyQuizQuestions(email);
+    return res.status(200).send(data);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send(error);
+  }
+});
+
+const createQuestionAttemptEntry = async ({
+  contactId,
+  questionId,
+  optionSelected,
+  correctAnswer,
+}) => {
+  const accessToken = await getZohoTokenOptimized();
+  const zohoConfig = {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  };
+  const body = {
+    data: [
+      {
+        Contact_Name: contactId,
+        Correct_Answer: correctAnswer,
+        Option_Selected: optionSelected,
+        Question: questionId,
+      },
+    ],
+    apply_feature_execution: [
+      {
+        name: "layout_rules",
+      },
+    ],
+    trigger: ["workflow"],
+  };
+  const result = await axios.post(
+    `https://www.zohoapis.com/crm/v2/Questions_Attempt`,
+    body,
+    zohoConfig
+  );
+  return result.data.data;
+};
+
+app.post("/question/attempt", async (req, res) => {
+  try {
+    const { contactId, questionId, optionSelected, correctAnswer } = req.body;
+    const data = await createQuestionAttemptEntry({
+      contactId,
+      questionId,
+      optionSelected,
+      correctAnswer,
+    });
     return res.status(200).send(data);
   } catch (error) {
     console.log(error);
