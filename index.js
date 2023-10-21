@@ -762,6 +762,23 @@ const dailyQuizQuestions = async (email) => {
   const day = date.getDate().toString().padStart(2, "0");
   const formattedDate = `${year}-${month}-${day}`;
   // console.log("Start", formattedDateStart);
+
+  const questionAttemptBody = {
+    select_query: `select Contact_Name from Questions_Attempt where Attempt_Date = '${formattedDate}' and Contact_Name = '${contactid}'`,
+  };
+
+  const questionAttempt = await axios.post(
+    `https://www.zohoapis.com/crm/v3/coql`,
+    questionAttemptBody,
+    zohoConfig
+  );
+
+  if (questionAttempt.status === 200) {
+    return {
+      mode: "alreadyAttempted",
+    };
+  }
+
   const questionBody = {
     select_query: `select Correct_Answer,Question,Question_Grade,Option_1,Option_2,Option_3,Option_4 from Questions where Question_Date = '${formattedDate}'`,
   };
@@ -861,9 +878,15 @@ const createQuestionAttemptEntry = async ({
       Authorization: `Bearer ${accessToken}`,
     },
   };
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  const formattedDate = `${year}-${month}-${day}`;
   const body = {
     data: [
       {
+        Attempt_Date: formattedDate,
         Contact_Name: contactId,
         Correct_Answer: correctAnswer,
         Option_Selected: optionSelected,
