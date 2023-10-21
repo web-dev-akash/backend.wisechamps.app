@@ -475,7 +475,7 @@ const getQuizLink = async (emailParam) => {
   };
 };
 
-const getZohoUserDetails = async (email) => {
+const getZohoUserDetailsWithEmail = async (email) => {
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -511,6 +511,50 @@ const getZohoUserDetails = async (email) => {
     status: 200,
     mode: "user",
     email,
+    user: {
+      name: contactName,
+      email: contactEmail,
+      phone: contactPhone,
+    },
+  };
+};
+
+const getZohoUserDetailsWithPhone = async (phone) => {
+  const accessToken = await getZohoTokenOptimized();
+  const zohoConfig = {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  };
+  const contact = await axios.get(
+    `https://www.zohoapis.com/crm/v2/Contacts/search?phone=${phone}`,
+    zohoConfig
+  );
+
+  if (contact.status >= 400) {
+    return {
+      status: contact.status,
+      mode: "internalservererrorinfindinguser",
+    };
+  }
+  // return { contact };
+  if (contact.status === 204) {
+    return {
+      status: contact.status,
+      mode: "nouser",
+    };
+  }
+
+  contactName = contact.data.data[0].Full_Name;
+  contactEmail = contact.data.data[0].Email;
+  contactPhone = contact.data.data[0].Phone;
+
+  return {
+    status: 200,
+    mode: "user",
+    phone,
     user: {
       name: contactName,
       email: contactEmail,
@@ -600,9 +644,15 @@ app.get("/referral", async (req, res) => {
 });
 
 app.post("/user", async (req, res) => {
-  const { email } = req.body;
-  const data = await getZohoUserDetails(email);
-  res.status(200).send({
+  const { email, phone } = req.body;
+  if (email) {
+    const data = await getZohoUserDetailsWithEmail(email);
+    return res.status(200).send({
+      ...data,
+    });
+  }
+  const data = await getZohoUserDetailsWithPhone(phone);
+  return res.status(200).send({
     ...data,
   });
 });
