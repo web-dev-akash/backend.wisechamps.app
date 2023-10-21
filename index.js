@@ -757,22 +757,13 @@ const dailyQuizQuestions = async (email) => {
 
   const grade = contact.data.data[0].Student_Grade;
   const date = new Date();
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const day = date.getDate().toString().padStart(2, "0");
-  const startHours = start.getHours().toString().padStart(2, "0");
-  const endHours = end.getHours().toString().padStart(2, "0");
-  const startMinutes = start.getMinutes().toString().padStart(2, "0");
-  const endMinutes = end.getMinutes().toString().padStart(2, "0");
-  const formattedDateStart = `${year}-${month}-${day}T${startHours}:${startMinutes}:00+05:30`;
-  const formattedDateEnd = `${year}-${month}-${day}T${endHours}:${endMinutes}:00+05:30`;
+  const formattedDate = `${year}-${month}-${day}`;
   // console.log("Start", formattedDateStart);
   const questionBody = {
-    select_query: `select Correct_Answer,Question,Question_Grade,Option_1,Option_2,Option_3,Option_4 from Questions where Question_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
+    select_query: `select Correct_Answer,Question,Question_Grade,Option_1,Option_2,Option_3,Option_4 from Questions where Question_Date = '${formattedDate}'`,
   };
 
   const question = await axios.post(
@@ -833,8 +824,6 @@ const dailyQuizQuestions = async (email) => {
       // });
       return {
         status: 200,
-        formattedDateStart,
-        formattedDateEnd,
         mode: "question",
         question: question.data.data[i],
       };
