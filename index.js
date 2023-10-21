@@ -925,6 +925,68 @@ app.post("/dailyQuiz", async (req, res) => {
   }
 });
 
+const dailyQuizQuestionsWithGrade = async (grade) => {
+  const accessToken = await getZohoTokenOptimized();
+  const zohoConfig = {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  };
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  const formattedDate = `${year}-${month}-${day}`;
+  // console.log("Start", formattedDateStart);
+  const questionBody = {
+    select_query: `select Correct_Answer,Question,Question_Grade,Option_1,Option_2,Option_3,Option_4 from Questions where Question_Date = '${formattedDate}'`,
+  };
+
+  const question = await axios.post(
+    `https://www.zohoapis.com/crm/v3/coql`,
+    questionBody,
+    zohoConfig
+  );
+
+  if (question.status >= 400) {
+    return {
+      status: question.status,
+      mode: "internalservererrorinfindingquestion",
+    };
+  }
+
+  if (question.status === 204) {
+    return {
+      status: question.status,
+      mode: "noquestion",
+    };
+  }
+  for (let i = 0; i < question.data.data.length; i++) {
+    const questionGrade = question.data.data[i].Question_Grade;
+    const correctQuestion = questionGrade.find((res) => res === grade);
+    if (correctQuestion) {
+      return {
+        status: 200,
+        mode: "question",
+        question: question.data.data[i],
+      };
+    }
+  }
+};
+
+app.post("/dailyQuiz/grade", async (req, res) => {
+  try {
+    const { grade } = req.body;
+    const data = await dailyQuizQuestionsWithGrade(grade);
+    return res.status(200).send(data);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send(error);
+  }
+});
+
 const createQuestionAttemptEntry = async ({
   contactId,
   questionId,
