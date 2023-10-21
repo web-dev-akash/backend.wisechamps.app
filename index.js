@@ -755,6 +755,7 @@ const dailyQuizQuestions = async (email) => {
     };
   }
   const contactid = contact.data.data[0].id;
+  const phone = contact.data.data[0].Phone;
   const grade = contact.data.data[0].Student_Grade;
   const date = new Date();
   const year = date.getFullYear();
@@ -844,6 +845,7 @@ const dailyQuizQuestions = async (email) => {
         mode: "question",
         id: contactid,
         question: question.data.data[i],
+        phone,
       };
     }
   }
