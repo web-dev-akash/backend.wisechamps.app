@@ -840,7 +840,7 @@ const dailyQuizQuestions = async (email) => {
   }
 
   const questionBody = {
-    select_query: `select Correct_Answer,Question,Question_Grade,Option_1,Option_2,Option_3,Option_4 from Questions where Question_Date = '${formattedDate}'`,
+    select_query: `select Correct_Answer,Question,Question_Image_URL,Question_Grade,Option_1,Option_2,Option_3,Option_4 from Questions where Question_Date = '${formattedDate}'`,
   };
 
   const question = await axios.post(
@@ -941,7 +941,7 @@ const dailyQuizQuestionsWithGrade = async (grade) => {
   const formattedDate = `${year}-${month}-${day}`;
   // console.log("Start", formattedDateStart);
   const questionBody = {
-    select_query: `select Correct_Answer,Question,Question_Grade,Option_1,Option_2,Option_3,Option_4 from Questions where Question_Date = '${formattedDate}'`,
+    select_query: `select Correct_Answer,Question,Question_Image_URL,Question_Grade,Option_1,Option_2,Option_3,Option_4 from Questions where Question_Date = '${formattedDate}'`,
   };
 
   const question = await axios.post(
