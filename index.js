@@ -703,7 +703,18 @@ const addUserToZoho = async ({
       body,
       zohoConfig
     );
-    return result.data.data;
+
+    if (result.status >= 400) {
+      return {
+        status: result.status,
+        mode: "internalservererrorinfindinguser",
+      };
+    }
+
+    return {
+      status: 200,
+      mode: "useradded",
+    };
   } catch (error) {
     console.log(error);
     return error;
