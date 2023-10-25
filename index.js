@@ -503,9 +503,10 @@ const getZohoUserDetailsWithEmail = async (email) => {
     };
   }
 
-  contactName = contact.data.data[0].Full_Name;
-  contactEmail = contact.data.data[0].Email;
-  contactPhone = contact.data.data[0].Phone;
+  const contactName = contact.data.data[0].Full_Name;
+  const contactEmail = contact.data.data[0].Email;
+  const contactPhone = contact.data.data[0].Phone;
+  const contactId = contact.data.data[0].id;
 
   return {
     status: 200,
@@ -515,6 +516,7 @@ const getZohoUserDetailsWithEmail = async (email) => {
       name: contactName,
       email: contactEmail,
       phone: contactPhone,
+      id: contactId,
     },
   };
 };
@@ -547,9 +549,10 @@ const getZohoUserDetailsWithPhone = async (phone) => {
     };
   }
 
-  contactName = contact.data.data[0].Full_Name;
-  contactEmail = contact.data.data[0].Email;
-  contactPhone = contact.data.data[0].Phone;
+  const contactName = contact.data.data[0].Full_Name;
+  const contactEmail = contact.data.data[0].Email;
+  const contactPhone = contact.data.data[0].Phone;
+  const contactId = contact.data.data[0].id;
 
   return {
     status: 200,
@@ -559,6 +562,7 @@ const getZohoUserDetailsWithPhone = async (phone) => {
       name: contactName,
       email: contactEmail,
       phone: contactPhone,
+      id: contactId,
     },
   };
 };
@@ -655,6 +659,69 @@ app.post("/user", async (req, res) => {
   return res.status(200).send({
     ...data,
   });
+});
+
+const addUserToZoho = async ({
+  email,
+  phone,
+  parent_name,
+  student_name,
+  student_grade,
+  referralId,
+}) => {
+  try {
+    const zohoToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${zohoToken}`,
+      },
+    };
+    const body = {
+      data: [
+        {
+          Email: email,
+          Phone: phone,
+          Last_Name: parent_name,
+          Student_Name: student_name,
+          Student_Grade: student_grade,
+          Lead_Source: "External Referral",
+          Source_Campaign: "Join Community",
+          Referral_Contact_Id: referralId,
+        },
+      ],
+      apply_feature_execution: [
+        {
+          name: "layout_rules",
+        },
+      ],
+      trigger: ["workflow"],
+    };
+    const result = await axios.post(
+      `https://www.zohoapis.com/crm/v2/Contacts`,
+      body,
+      zohoConfig
+    );
+    return result.data.data;
+  } catch (error) {
+    console.log(error);
+    return error;
+  }
+};
+
+app.post("/user/add", async (req, res) => {
+  try {
+    const contactData = req.body;
+    console.log(contactData);
+    const data = await addUserToZoho(contactData);
+    return res.status(200).send({
+      ...data,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send(error);
+  }
 });
 
 app.get("/", (req, res) => {
