@@ -976,6 +976,7 @@ const dailyQuizQuestions = async (email) => {
     };
   }
   const contactid = contact.data.data[0].id;
+  const name = contact.data.data[0].Full_Name;
   const phone = contact.data.data[0].Phone;
   const grade = contact.data.data[0].Student_Grade;
   const date = new Date();
@@ -1065,6 +1066,7 @@ const dailyQuizQuestions = async (email) => {
         status: 200,
         mode: "question",
         id: contactid,
+        name,
         question: question.data.data[i],
         phone,
       };
