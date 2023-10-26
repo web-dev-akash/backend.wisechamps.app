@@ -522,6 +522,17 @@ const getZohoUserDetailsWithEmail = async (email) => {
 };
 
 const getZohoUserDetailsWithPhone = async (phone) => {
+  let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+  logsData.dailyLogs.push({
+    email: "NA",
+    description: `Referee Captured ${phone}`,
+    date: new Date().toDateString(),
+    time: new Date(oldDate).toLocaleTimeString("en-US"),
+  });
+  fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+    if (err) throw err;
+    console.log("Done writing");
+  });
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -536,6 +547,17 @@ const getZohoUserDetailsWithPhone = async (phone) => {
   );
 
   if (contact.status >= 400) {
+    let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+    logsData.dailyLogs.push({
+      email: "NA",
+      description: `internalservererrorinfindinguser ${contact.status}`,
+      date: new Date().toDateString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
     return {
       status: contact.status,
       mode: "internalservererrorinfindinguser",
@@ -543,9 +565,20 @@ const getZohoUserDetailsWithPhone = async (phone) => {
   }
   // return { contact };
   if (contact.status === 204) {
+    let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+    logsData.dailyLogs.push({
+      email: "NA",
+      description: `No Referee Found ${contact.status}`,
+      date: new Date().toDateString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
     return {
       status: contact.status,
-      mode: "nouser",
+      mode: "user",
     };
   }
 
@@ -553,6 +586,18 @@ const getZohoUserDetailsWithPhone = async (phone) => {
   const contactEmail = contact.data.data[0].Email;
   const contactPhone = contact.data.data[0].Phone;
   const contactId = contact.data.data[0].id;
+
+  let oldDate1 = new Date().setMinutes(new Date().getMinutes() + 330);
+  logsData.dailyLogs.push({
+    email: "NA",
+    description: `Referee Found ${contact.status}`,
+    date: new Date().toDateString(),
+    time: new Date(oldDate1).toLocaleTimeString("en-US"),
+  });
+  fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+    if (err) throw err;
+    console.log("Done writing");
+  });
 
   return {
     status: 200,
@@ -670,6 +715,17 @@ const addUserToZoho = async ({
   referralId,
 }) => {
   try {
+    let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+    logsData.dailyLogs.push({
+      email: email,
+      description: `Filled Form ${referralId}`,
+      date: new Date().toDateString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
     const zohoToken = await getZohoTokenOptimized();
     const zohoConfig = {
       headers: {
@@ -705,11 +761,33 @@ const addUserToZoho = async ({
     );
 
     if (result.status >= 400) {
+      let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+      logsData.dailyLogs.push({
+        email: email,
+        description: `Interal Server Error ${result.status}`,
+        date: new Date().toDateString(),
+        time: new Date(oldDate).toLocaleTimeString("en-US"),
+      });
+      fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+        if (err) throw err;
+        console.log("Done writing");
+      });
       return {
         status: result.status,
         mode: "internalservererrorinfindinguser",
       };
     }
+    let oldDate1 = new Date().setMinutes(new Date().getMinutes() + 330);
+    logsData.dailyLogs.push({
+      email: email,
+      description: `Contact Added to Zoho ${referralId}`,
+      date: new Date().toDateString(),
+      time: new Date(oldDate1).toLocaleTimeString("en-US"),
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
 
     return {
       status: 200,
@@ -830,6 +908,7 @@ app.get("/updateLogs", (req, res) => {
       const zoomLogs = logsData.zoomLogs;
       const quizLogs = logsData.quizLogs;
       const paymentLogs = logsData.paymentLogs;
+      const dailyLogs = logsData.dailyLogs;
       const urlZoom =
         "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=zoom";
       const responseZoom = await axios.post(urlZoom, zoomLogs);
@@ -839,10 +918,14 @@ app.get("/updateLogs", (req, res) => {
       const urlPayment =
         "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=payment";
       const responsePayment = await axios.post(urlPayment, paymentLogs);
+      const urlDaily =
+        "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=daily";
+      const responseDaily = await axios.post(urlDaily, dailyLogs);
       const newLogsData = {
         zoomLogs: [],
         quizLogs: [],
         paymentLogs: [],
+        dailyLogs: [],
       };
       fs.writeFile(
         "./logs.json",
@@ -856,6 +939,7 @@ app.get("/updateLogs", (req, res) => {
         zoom: responseZoom.data,
         quiz: responseQuiz.data,
         payment: responsePayment.data,
+        daily: responseDaily.data,
       });
     });
   } catch (error) {
@@ -1003,7 +1087,18 @@ app.post("/dailyQuiz", async (req, res) => {
   }
 });
 
-const dailyQuizQuestionsWithGrade = async (grade) => {
+const dailyQuizQuestionsWithGrade = async (grade, phone) => {
+  let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+  logsData.dailyLogs.push({
+    email: "NA",
+    description: `Grade ${grade} ${phone}`,
+    date: new Date().toDateString(),
+    time: new Date(oldDate).toLocaleTimeString("en-US"),
+  });
+  fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+    if (err) throw err;
+    console.log("Done writing");
+  });
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -1029,6 +1124,17 @@ const dailyQuizQuestionsWithGrade = async (grade) => {
   );
 
   if (question.status >= 400) {
+    let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+    logsData.dailyLogs.push({
+      email: "NA",
+      description: `internalservererrorinfindingquestion`,
+      date: new Date().toDateString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
     return {
       status: question.status,
       mode: "internalservererrorinfindingquestion",
@@ -1036,6 +1142,17 @@ const dailyQuizQuestionsWithGrade = async (grade) => {
   }
 
   if (question.status === 204) {
+    let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+    logsData.dailyLogs.push({
+      email: "NA",
+      description: `No Question Found 204`,
+      date: new Date().toDateString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
+    });
+    fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+      if (err) throw err;
+      console.log("Done writing");
+    });
     return {
       status: question.status,
       mode: "noquestion",
@@ -1045,6 +1162,17 @@ const dailyQuizQuestionsWithGrade = async (grade) => {
     const questionGrade = question.data.data[i].Question_Grade;
     const correctQuestion = questionGrade.find((res) => res === grade);
     if (correctQuestion) {
+      let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+      logsData.dailyLogs.push({
+        email: "NA",
+        description: `Question Found - ${phone}`,
+        date: new Date().toDateString(),
+        time: new Date(oldDate).toLocaleTimeString("en-US"),
+      });
+      fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+        if (err) throw err;
+        console.log("Done writing");
+      });
       return {
         status: 200,
         mode: "question",
@@ -1056,8 +1184,8 @@ const dailyQuizQuestionsWithGrade = async (grade) => {
 
 app.post("/dailyQuiz/grade", async (req, res) => {
   try {
-    const { grade } = req.body;
-    const data = await dailyQuizQuestionsWithGrade(grade);
+    const { grade, phone } = req.body;
+    const data = await dailyQuizQuestionsWithGrade(grade, phone);
     return res.status(200).send(data);
   } catch (error) {
     console.log(error);
