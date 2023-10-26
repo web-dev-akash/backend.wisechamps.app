@@ -523,8 +523,6 @@ const getZohoUserDetailsWithEmail = async (email) => {
 
 const getZohoUserDetailsWithPhone = async (phone) => {
   let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-  console.log(logsData.dailyLogs);
-  return logsData.dailyLogs;
   logsData.dailyLogs.push({
     email: "NA",
     description: `Referee Captured ${phone}`,
@@ -703,7 +701,9 @@ app.post("/user", async (req, res) => {
     });
   }
   const data = await getZohoUserDetailsWithPhone(phone);
-  return res.status(200).send(data);
+  return res.status(200).send({
+    ...data,
+  });
 });
 
 const addUserToZoho = async ({
