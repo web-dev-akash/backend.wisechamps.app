@@ -904,11 +904,11 @@ app.get("/updateLogs", (req, res) => {
   try {
     fs.readFile("./logs.json", async (err, data) => {
       if (err) throw err;
-      const logsData = JSON.parse(data);
-      const zoomLogs = logsData.zoomLogs;
-      const quizLogs = logsData.quizLogs;
-      const paymentLogs = logsData.paymentLogs;
-      const dailyLogs = logsData.dailyLogs;
+      const logsDataFinal = JSON.parse(data);
+      const zoomLogs = logsDataFinal.zoomLogs;
+      const quizLogs = logsDataFinal.quizLogs;
+      const paymentLogs = logsDataFinal.paymentLogs;
+      const dailyLogs = logsDataFinal.dailyLogs;
       const urlZoom =
         "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=zoom";
       const responseZoom = await axios.post(urlZoom, zoomLogs);
@@ -935,6 +935,7 @@ app.get("/updateLogs", (req, res) => {
           console.log("Done writing");
         }
       );
+      logsData = {};
       return res.status(200).send({
         zoom: responseZoom.data,
         quiz: responseQuiz.data,
