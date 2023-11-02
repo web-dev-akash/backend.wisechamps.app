@@ -813,6 +813,21 @@ app.post("/user/add", async (req, res) => {
   }
 });
 
+app.post("/user/feedback", async (req, res) => {
+  try {
+    const { feedbackData } = req.body;
+    console.log(feedbackData);
+    const url =
+      "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=feedback";
+    const response = await axios.post(url, feedbackData);
+    console.log(response.data);
+    return res.status(200).send(response.data);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send(error);
+  }
+});
+
 app.get("/", (req, res) => {
   res.status(200).send({
     message: "Server Started 👌🤳 ",
