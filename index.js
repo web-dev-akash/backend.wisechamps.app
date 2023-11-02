@@ -1102,6 +1102,7 @@ const dailyQuizQuestionsWithGrade = async (grade, phone) => {
     if (err) throw err;
     console.log("Done writing");
   });
+
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
