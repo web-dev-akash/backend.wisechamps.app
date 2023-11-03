@@ -1084,12 +1084,13 @@ const dailyQuizQuestions = async (email) => {
         name,
         question: question.data.data[i],
         phone,
+        grade,
       };
     }
   }
   return {
     status: 204,
-    mode: "nouser",
+    mode: "noquestion",
   };
 };
 
