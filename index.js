@@ -950,7 +950,6 @@ app.get("/updateLogs", (req, res) => {
           console.log("Done writing");
         }
       );
-      logsData = {};
       return res.status(200).send({
         zoom: responseZoom.data,
         quiz: responseQuiz.data,
@@ -1105,11 +1104,11 @@ app.post("/dailyQuiz", async (req, res) => {
   }
 });
 
-const dailyQuizQuestionsWithGrade = async (grade, phone) => {
+const dailyQuizQuestionsWithGrade = async (grade) => {
   let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
   logsData.dailyLogs.push({
     email: "NA",
-    description: `Grade ${grade} ${phone}`,
+    description: `Grade ${grade}`,
     date: new Date().toDateString(),
     time: new Date(oldDate).toLocaleTimeString("en-US"),
   });
@@ -1185,7 +1184,7 @@ const dailyQuizQuestionsWithGrade = async (grade, phone) => {
       let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
       logsData.dailyLogs.push({
         email: "NA",
-        description: `Question Found - ${phone}`,
+        description: `Question Found 200`,
         date: new Date().toDateString(),
         time: new Date(oldDate).toLocaleTimeString("en-US"),
       });
@@ -1204,8 +1203,8 @@ const dailyQuizQuestionsWithGrade = async (grade, phone) => {
 
 app.post("/dailyQuiz/grade", async (req, res) => {
   try {
-    const { grade, phone } = req.body;
-    const data = await dailyQuizQuestionsWithGrade(grade, phone);
+    const { grade } = req.body;
+    const data = await dailyQuizQuestionsWithGrade(grade);
     return res.status(200).send(data);
   } catch (error) {
     console.log(error);
