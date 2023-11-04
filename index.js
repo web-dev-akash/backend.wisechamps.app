@@ -523,6 +523,45 @@ const getZohoUserDetailsWithEmail = async (email) => {
       new Date(b.Attempt_Date).getTime() - new Date(a.Attempt_Date).getTime()
   );
 
+  if (sortedAttemptData.length > 5) {
+    sortedAttemptData.slice(0, 5);
+  }
+
+  let currstreak = 1;
+  let finalstreak = 1;
+  for (let i = 1; i < sortedAttemptData.length; i++) {
+    let currDate = new Date(sortedAttemptData[i].Attempt_Date);
+    let prevDate = new Date(sortedAttemptData[i - 1].Attempt_Date);
+    const timeDiff = Math.abs(prevDate - currDate);
+    const diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    console.log(timeDiff, diffDays);
+    if (diffDays === 1) {
+      currstreak++;
+    } else {
+      finalstreak = Math.max(currstreak, finalstreak);
+      currstreak = 1;
+    }
+  }
+
+  finalstreak = Math.max(currstreak, finalstreak);
+
+  let minPercentage = 15;
+  let maxPercentage = 92;
+  let finalPercentage = minPercentage;
+  let totalcorrect = 0;
+  const totalAttempts = questionAttempt.data.data;
+  for (let i = 0; i < totalAttempts.length; i++) {
+    if (totalAttempts[i].Correct_Answer) {
+      totalcorrect++;
+    }
+  }
+  const currPercentage = Math.round(
+    (totalcorrect / totalAttempts.length) * 100
+  );
+
+  finalPercentage = Math.max(minPercentage, currPercentage);
+  finalPercentage = Math.min(maxPercentage, finalPercentage);
+
   return {
     status: 200,
     mode: "user",
@@ -534,6 +573,8 @@ const getZohoUserDetailsWithEmail = async (email) => {
       id: contactId,
     },
     attempts: sortedAttemptData,
+    streak: finalstreak,
+    percentage: finalPercentage,
   };
 };
 
