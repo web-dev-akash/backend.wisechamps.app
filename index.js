@@ -936,6 +936,7 @@ app.get("/updateLogs", (req, res) => {
       const urlDaily =
         "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=daily";
       const responseDaily = await axios.post(urlDaily, dailyLogs);
+      logsData = {};
       const newLogsData = {
         zoomLogs: [],
         quizLogs: [],
