@@ -1203,7 +1203,7 @@ const dailyQuizQuestionsWithGrade = async (grade) => {
   }
 };
 
-app.post("/dailyQuiz/grade", async (req, res) => {
+app.post("/quizgrade", async (req, res) => {
   try {
     const { grade } = req.body;
     const data = await dailyQuizQuestionsWithGrade(grade);
