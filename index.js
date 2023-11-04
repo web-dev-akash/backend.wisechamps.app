@@ -508,6 +508,21 @@ const getZohoUserDetailsWithEmail = async (email) => {
   const contactPhone = contact.data.data[0].Phone;
   const contactId = contact.data.data[0].id;
 
+  const questionAttemptBody = {
+    select_query: `select Correct_Answer, Attempt_Date from Questions_Attempt where Contact_Name = '${contactId}'`,
+  };
+
+  const questionAttempt = await axios.post(
+    `https://www.zohoapis.com/crm/v3/coql`,
+    questionAttemptBody,
+    zohoConfig
+  );
+
+  const sortedAttemptData = questionAttempt.data.data.sort(
+    (a, b) =>
+      new Date(b.Attempt_Date).getTime() - new Date(a.Attempt_Date).getTime()
+  );
+
   return {
     status: 200,
     mode: "user",
@@ -518,6 +533,7 @@ const getZohoUserDetailsWithEmail = async (email) => {
       phone: contactPhone,
       id: contactId,
     },
+    attempts: sortedAttemptData,
   };
 };
 
