@@ -915,7 +915,7 @@ app.post("/payment/capture", async (req, res) => {
   }
 });
 
-app.get("/uploadLogs", (req, res) => {
+app.get("/updateLogs", (req, res) => {
   try {
     fs.readFile("./logs.json", async (err, data) => {
       if (err) throw err;
