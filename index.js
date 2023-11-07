@@ -1043,44 +1043,46 @@ app.get("/updateLogs", (req, res) => {
   try {
     fs.readFile("./logs.json", async (err, data) => {
       if (err) throw err;
-      const logsDataFinal = JSON.parse(data);
-      const zoomLogs = logsDataFinal.zoomLogs;
-      const quizLogs = logsDataFinal.quizLogs;
-      const paymentLogs = logsDataFinal.paymentLogs;
-      const dailyLogs = logsDataFinal.dailyLogs;
-      const urlZoom =
-        "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=zoom";
-      const responseZoom = await axios.post(urlZoom, zoomLogs);
-      const urlQuiz =
-        "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=quiz";
-      const responseQuiz = await axios.post(urlQuiz, quizLogs);
-      const urlPayment =
-        "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=payment";
-      const responsePayment = await axios.post(urlPayment, paymentLogs);
-      const urlDaily =
-        "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=daily";
-      const responseDaily = await axios.post(urlDaily, dailyLogs);
-      logsData = {};
-      const newLogsData = {
-        zoomLogs: [],
-        quizLogs: [],
-        paymentLogs: [],
-        dailyLogs: [],
-      };
-      fs.writeFile(
-        "./logs.json",
-        JSON.stringify(newLogsData, null, 2),
-        (err) => {
-          if (err) throw err;
-          console.log("Done writing");
-        }
-      );
-      return res.status(200).send({
-        zoom: responseZoom.data,
-        quiz: responseQuiz.data,
-        payment: responsePayment.data,
-        daily: responseDaily.data,
-      });
+      if (data) {
+        const logsDataFinal = JSON.parse(data);
+        const zoomLogs = logsDataFinal.zoomLogs;
+        const quizLogs = logsDataFinal.quizLogs;
+        const paymentLogs = logsDataFinal.paymentLogs;
+        const dailyLogs = logsDataFinal.dailyLogs;
+        const urlZoom =
+          "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=zoom";
+        const responseZoom = await axios.post(urlZoom, zoomLogs);
+        const urlQuiz =
+          "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=quiz";
+        const responseQuiz = await axios.post(urlQuiz, quizLogs);
+        const urlPayment =
+          "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=payment";
+        const responsePayment = await axios.post(urlPayment, paymentLogs);
+        const urlDaily =
+          "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=daily";
+        const responseDaily = await axios.post(urlDaily, dailyLogs);
+        logsData = {};
+        const newLogsData = {
+          zoomLogs: [],
+          quizLogs: [],
+          paymentLogs: [],
+          dailyLogs: [],
+        };
+        fs.writeFile(
+          "./logs.json",
+          JSON.stringify(newLogsData, null, 2),
+          (err) => {
+            if (err) throw err;
+            console.log("Done writing");
+          }
+        );
+        return res.status(200).send({
+          zoom: responseZoom.data,
+          quiz: responseQuiz.data,
+          payment: responsePayment.data,
+          daily: responseDaily.data,
+        });
+      }
     });
   } catch (error) {
     console.log(error);
