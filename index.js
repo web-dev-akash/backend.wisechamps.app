@@ -508,60 +508,6 @@ const getZohoUserDetailsWithEmail = async (email) => {
   const contactPhone = contact.data.data[0].Phone;
   const contactId = contact.data.data[0].id;
 
-  const questionAttemptBody = {
-    select_query: `select Correct_Answer, Attempt_Date from Questions_Attempt where Contact_Name = '${contactId}'`,
-  };
-
-  const questionAttempt = await axios.post(
-    `https://www.zohoapis.com/crm/v3/coql`,
-    questionAttemptBody,
-    zohoConfig
-  );
-
-  const sortedAttemptData = questionAttempt.data.data.sort(
-    (a, b) =>
-      new Date(b.Attempt_Date).getTime() - new Date(a.Attempt_Date).getTime()
-  );
-
-  if (sortedAttemptData.length > 5) {
-    sortedAttemptData.slice(0, 5);
-  }
-
-  let currstreak = 1;
-  let finalstreak = 1;
-  for (let i = 1; i < sortedAttemptData.length; i++) {
-    let currDate = new Date(sortedAttemptData[i].Attempt_Date);
-    let prevDate = new Date(sortedAttemptData[i - 1].Attempt_Date);
-    const timeDiff = Math.abs(prevDate - currDate);
-    const diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    console.log(timeDiff, diffDays);
-    if (diffDays === 1) {
-      currstreak++;
-    } else {
-      finalstreak = Math.max(currstreak, finalstreak);
-      currstreak = 1;
-    }
-  }
-
-  finalstreak = Math.max(currstreak, finalstreak);
-
-  let minPercentage = 15;
-  let maxPercentage = 92;
-  let finalPercentage = minPercentage;
-  let totalcorrect = 0;
-  const totalAttempts = questionAttempt.data.data;
-  for (let i = 0; i < totalAttempts.length; i++) {
-    if (totalAttempts[i].Correct_Answer) {
-      totalcorrect++;
-    }
-  }
-  const currPercentage = Math.round(
-    (totalcorrect / totalAttempts.length) * 100
-  );
-
-  finalPercentage = Math.max(minPercentage, currPercentage);
-  finalPercentage = Math.min(maxPercentage, finalPercentage);
-
   return {
     status: 200,
     mode: "user",
@@ -572,9 +518,6 @@ const getZohoUserDetailsWithEmail = async (email) => {
       phone: contactPhone,
       id: contactId,
     },
-    attempts: sortedAttemptData,
-    streak: finalstreak,
-    percentage: finalPercentage,
   };
 };
 
@@ -1049,7 +992,7 @@ const dailyQuizQuestions = async (email) => {
     };
   }
   const contactid = contact.data.data[0].id;
-  const name = contact.data.data[0].Full_Name;
+  const name = contact.data.data[0].Student_Name;
   const phone = contact.data.data[0].Phone;
   const grade = contact.data.data[0].Student_Grade;
   const date = new Date();
@@ -1120,6 +1063,61 @@ const dailyQuizQuestions = async (email) => {
       mode: "noquestion",
     };
   }
+
+  const totalQuestionAttemptsBody = {
+    select_query: `select Correct_Answer, Attempt_Date from Questions_Attempt where Contact_Name = '${contactid}'`,
+  };
+
+  const totalQuestionAttempt = await axios.post(
+    `https://www.zohoapis.com/crm/v3/coql`,
+    totalQuestionAttemptsBody,
+    zohoConfig
+  );
+
+  const sortedAttemptData = totalQuestionAttempt.data.data.sort(
+    (a, b) =>
+      new Date(b.Attempt_Date).getTime() - new Date(a.Attempt_Date).getTime()
+  );
+
+  if (sortedAttemptData.length > 5) {
+    sortedAttemptData.slice(0, 5);
+  }
+
+  let currstreak = 1;
+  let finalstreak = 1;
+  for (let i = 1; i < sortedAttemptData.length; i++) {
+    let currDate = new Date(sortedAttemptData[i].Attempt_Date);
+    let prevDate = new Date(sortedAttemptData[i - 1].Attempt_Date);
+    const timeDiff = Math.abs(prevDate - currDate);
+    const diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    console.log(timeDiff, diffDays);
+    if (diffDays === 1) {
+      currstreak++;
+    } else {
+      finalstreak = Math.max(currstreak, finalstreak);
+      currstreak = 1;
+    }
+  }
+
+  finalstreak = Math.max(currstreak, finalstreak);
+
+  let minPercentage = 15;
+  let maxPercentage = 92;
+  let finalPercentage = minPercentage;
+  let totalcorrect = 0;
+  const totalAttempts = totalQuestionAttempt.data.data;
+  for (let i = 0; i < totalAttempts.length; i++) {
+    if (totalAttempts[i].Correct_Answer) {
+      totalcorrect++;
+    }
+  }
+  const currPercentage = Math.round(
+    (totalcorrect / totalAttempts.length) * 100
+  );
+
+  finalPercentage = Math.max(minPercentage, currPercentage);
+  finalPercentage = Math.min(maxPercentage, finalPercentage);
+
   for (let i = 0; i < question.data.data.length; i++) {
     const questionGrade = question.data.data[i].Question_Grade;
     const correctQuestion = questionGrade.find((res) => res === grade);
@@ -1138,11 +1136,16 @@ const dailyQuizQuestions = async (email) => {
       return {
         status: 200,
         mode: "question",
-        id: contactid,
-        name,
+        user: {
+          id: contactid,
+          name,
+          phone,
+          grade,
+          attempts: sortedAttemptData,
+          streak: finalstreak,
+          percentage: finalPercentage,
+        },
         question: question.data.data[i],
-        phone,
-        grade,
       };
     }
   }
