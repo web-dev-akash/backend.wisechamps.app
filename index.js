@@ -1262,15 +1262,15 @@ const dailyQuizQuestions = async (email) => {
       return {
         status: 200,
         mode: "question",
-        user: {
-          id: contactid,
-          name,
-          phone,
-          grade,
-          attempts: sortedAttemptData,
-          streak: finalstreak,
-          percentage: finalPercentage,
-        },
+        // user: {
+        id: contactid,
+        name,
+        phone,
+        grade,
+        attempts: sortedAttemptData,
+        streak: finalstreak,
+        percentage: finalPercentage,
+        // },
         question: question.data.data[i],
       };
     }
