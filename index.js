@@ -17,15 +17,19 @@ let logsData = {};
 
 fs.readFile("./token.json", function (err, data) {
   if (err) throw err;
-  const token = JSON.parse(data);
-  accessToken = token.token;
-  tokenTime = token.time;
+  if (data) {
+    const token = JSON.parse(data);
+    accessToken = token.token;
+    tokenTime = token.time;
+  }
 });
 
 fs.readFile("./logs.json", function (err, data) {
   if (err) throw err;
-  const logs = JSON.parse(data);
-  logsData = { ...logs };
+  if (data) {
+    const logs = JSON.parse(data);
+    logsData = { ...logs };
+  }
 });
 
 const freeMeetLink = `https://us06web.zoom.us/j/2616664243?pwd=TVVzblZXd1Nwb20wRi9zWVJURGJsQT09`;
