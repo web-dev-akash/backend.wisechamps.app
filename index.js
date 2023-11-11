@@ -1155,17 +1155,6 @@ const dailyQuizQuestions = async (email) => {
   );
 
   if (question.status >= 400) {
-    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-    // logsData.quizLogs?.push({
-    //   email: emailParam,
-    //   description: `internalservererrorinfindingquestion ${question.status}`,
-    //   date: new Date().toDateString(),
-    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-    // });
-    // logsData.quizLogs ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
-    //   if (err) throw err;
-    //   console.log("Done writing");
-    // }) : null
     return {
       status: question.status,
       mode: "internalservererrorinfindingquestion",
@@ -1173,17 +1162,6 @@ const dailyQuizQuestions = async (email) => {
   }
 
   if (question.status === 204) {
-    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-    // logsData.quizLogs?.push({
-    //   email: emailParam,
-    //   description: `noquestion ${question.status}`,
-    //   date: new Date().toDateString(),
-    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-    // });
-    // logsData.quizLogs ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
-    //   if (err) throw err;
-    //   console.log("Done writing");
-    // }) : null
     return {
       status: question.status,
       mode: "noquestion",
@@ -1205,9 +1183,10 @@ const dailyQuizQuestions = async (email) => {
       new Date(b.Attempt_Date).getTime() - new Date(a.Attempt_Date).getTime()
   );
 
-  if (sortedAttemptData.length > 5) {
-    sortedAttemptData.slice(0, 5);
-  }
+  const finalData =
+    sortedAttemptData.length > 5
+      ? sortedAttemptData.slice(0, 5)
+      : sortedAttemptData;
 
   let currstreak = 1;
   let finalstreak = 1;
@@ -1216,7 +1195,6 @@ const dailyQuizQuestions = async (email) => {
     let prevDate = new Date(sortedAttemptData[i - 1].Attempt_Date);
     const timeDiff = Math.abs(prevDate - currDate);
     const diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    console.log(timeDiff, diffDays);
     if (diffDays === 1) {
       currstreak++;
     } else {
@@ -1248,29 +1226,16 @@ const dailyQuizQuestions = async (email) => {
     const questionGrade = question.data.data[i].Question_Grade;
     const correctQuestion = questionGrade.find((res) => res === grade);
     if (correctQuestion) {
-      // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-      // logsData.quizLogs?.push({
-      //   email: emailParam,
-      //   description: `LinkGenerated 200`,
-      //   date: new Date().toDateString(),
-      //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-      // });
-      // logsData.quizLogs ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
-      //   if (err) throw err;
-      //   console.log("Done writing");
-      // }) : null
       return {
         status: 200,
         mode: "question",
-        // user: {
         id: contactid,
         name,
         phone,
         grade,
-        attempts: sortedAttemptData,
+        attempts: finalData,
         streak: finalstreak,
         percentage: finalPercentage,
-        // },
         question: question.data.data[i],
       };
     }
