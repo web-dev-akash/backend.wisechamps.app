@@ -493,6 +493,8 @@ const getQuizLink = async (emailParam) => {
     return {
       status: session.status,
       mode: "nosession",
+      name,
+      credits,
     };
   }
   // console.log(session.data.data);
