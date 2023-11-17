@@ -421,6 +421,7 @@ const getQuizLink = async (emailParam) => {
   const contactid = contact.data.data[0].id;
   const email = contact.data.data[0].Email;
   const grade = contact.data.data[0].Student_Grade;
+  const credits = contact.data.data[0].Credits;
   const date = new Date();
   const start = new Date();
   start.setMinutes(start.getMinutes() + 300);
@@ -522,6 +523,7 @@ const getQuizLink = async (emailParam) => {
         formattedDateEnd,
         mode: "quizlink",
         email,
+        credits,
         link: `https://wisechamps.app/mod/lti/view.php?id=${sessionid}`,
       };
     }
