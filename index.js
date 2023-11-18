@@ -266,7 +266,7 @@ const getMeetingLink = async (emailParam, payId) => {
       status: session.status,
       mode: "nosession",
       name,
-      credits,
+      credits: credits ? credits : 0,
     };
   }
 
@@ -302,7 +302,7 @@ const getMeetingLink = async (emailParam, payId) => {
         email,
         link,
         name,
-        credits,
+        credits: credits ? credits : 0,
       };
     }
   }
@@ -499,7 +499,7 @@ const getQuizLink = async (emailParam) => {
       status: session.status,
       mode: "nosession",
       name,
-      credits,
+      credits: credits ? credits : 0,
     };
   }
   // console.log(session.data.data);
@@ -531,7 +531,7 @@ const getQuizLink = async (emailParam) => {
         formattedDateEnd,
         mode: "quizlink",
         email,
-        credits,
+        credits: credits ? credits : 0,
         name,
         link: `https://wisechamps.app/mod/lti/view.php?id=${sessionid}`,
       };
