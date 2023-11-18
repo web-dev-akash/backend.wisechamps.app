@@ -195,6 +195,7 @@ const getMeetingLink = async (emailParam, payId) => {
   const email = contact.data.data[0].Email;
   const grade = contact.data.data[0].Student_Grade;
   const credits = contact.data.data[0].Credits;
+  const name = contact.data.data[0].Student_Name;
   const date = new Date();
   const start = new Date();
   start.setMinutes(start.getMinutes() + 270);
@@ -264,6 +265,8 @@ const getMeetingLink = async (emailParam, payId) => {
     return {
       status: session.status,
       mode: "nosession",
+      name,
+      credits,
     };
   }
 
@@ -298,6 +301,8 @@ const getMeetingLink = async (emailParam, payId) => {
         mode: "zoomlink",
         email,
         link,
+        name,
+        credits,
       };
     }
   }
