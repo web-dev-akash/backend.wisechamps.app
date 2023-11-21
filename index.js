@@ -945,12 +945,6 @@ app.post("/user/feedback", async (req, res) => {
   }
 });
 
-app.get("/", (req, res) => {
-  res.status(200).send({
-    message: "Server Started 👌🤳 ",
-  });
-});
-
 app.post("/payment_links", async (req, res) => {
   try {
     const { email, amount } = req.body;
@@ -1460,6 +1454,12 @@ app.post("/question/attempt", async (req, res) => {
   }
 });
 
+app.get("/", (req, res) => {
+  res.status(200).send({
+    message: "Server Started 🐱‍👤 ",
+  });
+});
+
 app.listen(PORT, () => {
-  console.log(`Server Started 🎈🐱‍👤 http://localhost:${PORT}`);
+  console.log(`Server Started 🎈 http://localhost:${PORT}`);
 });
