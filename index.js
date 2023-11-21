@@ -1461,5 +1461,5 @@ app.post("/question/attempt", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server Started 🎈 http://localhost:${PORT}`);
+  console.log(`Server Started 🎈🐱‍👤 http://localhost:${PORT}`);
 });
