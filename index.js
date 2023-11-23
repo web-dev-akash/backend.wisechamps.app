@@ -1,4 +1,5 @@
 const fs = require("fs");
+const moment = require("moment");
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
@@ -32,7 +33,7 @@ fs.readFile("./logs.json", function (err, data) {
   }
 });
 
-const freeMeetLink = `https://us06web.zoom.us/j/82390285099?pwd=vJQQ570Nzk3vCB2a6NrSOVAoVKedo0.1`;
+const freeMeetLink = `https://us06web.zoom.us/j/88576916260?pwd=8rmB9bab9SPTWam2wkOXmed6mDFava.1`;
 
 const getZohoToken = async () => {
   try {
@@ -363,7 +364,6 @@ const getQuizLink = async (emailParam) => {
       })
     : null;
   const accessToken = await getZohoTokenOptimized();
-  console.log("Token :", accessToken);
   const zohoConfig = {
     headers: {
       "Content-Type": "application/json",
@@ -1447,6 +1447,112 @@ app.post("/question/attempt", async (req, res) => {
       optionSelected,
       correctAnswer,
     });
+    return res.status(200).send(data);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send(error);
+  }
+});
+
+const getWeeklyUserAttempts = async (email) => {
+  const accessToken = await getZohoTokenOptimized();
+  const zohoConfig = {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  };
+  const contact = await axios.get(
+    `https://www.zohoapis.com/crm/v2/Contacts/search?email=${email}`,
+    zohoConfig
+  );
+
+  if (contact.status >= 400) {
+    return {
+      status: contact.status,
+      mode: "internalservererrorinfindinguser",
+    };
+  }
+  // return { contact };
+  if (contact.status === 204) {
+    return {
+      status: contact.status,
+      mode: "nouser",
+    };
+  }
+
+  const contactid = contact.data.data[0].id;
+  const grade = contact.data.data[0].Student_Grade;
+  const name = contact.data.data[0].Student_Name;
+  const credits = contact.data.data[0].Credits;
+  const today = new Date();
+  const currDay = today.getDay();
+  const diff = today.getDate() - currDay + (currDay == 0 ? -6 : 1);
+  const monday = moment(new Date(today.setDate(diff)));
+  const previousMonday = monday.clone().subtract(monday.day() + 6, "days");
+  const previousSunday = previousMonday.clone().add(6, "days");
+  const formattedDateStart = `${previousMonday.format(
+    "YYYY-MM-DD"
+  )}T00:00:00+05:30`;
+  const formattedDateEnd = `${previousSunday.format(
+    "YYYY-MM-DD"
+  )}T23:59:59+05:30`;
+
+  const attemptBody = {
+    select_query: `select Session.Name as Session_Name, Session.Number_of_Questions	as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
+  };
+
+  const attempt = await axios.post(
+    `https://www.zohoapis.com/crm/v3/coql`,
+    attemptBody,
+    zohoConfig
+  );
+
+  if (attempt.status >= 400) {
+    return {
+      status: attempt.status,
+      mode: "internalservererrorinfindingattempt",
+    };
+  }
+
+  if (attempt.status === 204) {
+    return {
+      status: attempt.status,
+      mode: "noattempt",
+      name,
+      credits: credits ? credits : 0,
+    };
+  }
+
+  let minPercentage = 15;
+  let maxPercentage = 92;
+  let finalPercentage = minPercentage;
+  let totalAnswer = 0;
+  let totalQuestion = 0;
+
+  const totalAttempts = attempt.data.data;
+  for (let i = 0; i < totalAttempts.length; i++) {
+    totalAnswer += Number(totalAttempts[i].Quiz_Score);
+    totalQuestion += Number(totalAttempts[i].Total_Questions);
+  }
+  const currPercentage = Math.round((totalAnswer / totalQuestion) * 100);
+
+  finalPercentage = Math.max(minPercentage, currPercentage);
+  finalPercentage = Math.min(maxPercentage, finalPercentage);
+  return {
+    name,
+    grade,
+    credits,
+    percentage: finalPercentage,
+    attempts: totalAttempts,
+  };
+};
+
+app.post("/quiz/report", async (req, res) => {
+  try {
+    const { email } = req.body;
+    const data = await getWeeklyUserAttempts(email);
     return res.status(200).send(data);
   } catch (error) {
     console.log(error);
