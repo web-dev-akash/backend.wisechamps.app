@@ -1486,12 +1486,23 @@ const getWeeklyUserAttempts = async (email) => {
   const grade = contact.data.data[0].Student_Grade;
   const name = contact.data.data[0].Student_Name;
   const credits = contact.data.data[0].Credits;
-  const today = new Date();
-  const currDay = today.getDay();
-  const diff = today.getDate() - currDay + (currDay == 0 ? -6 : 1);
-  const monday = moment(new Date(today.setDate(diff)));
-  const previousMonday = monday.clone().subtract(monday.day() + 6, "days");
-  const previousSunday = previousMonday.clone().add(6, "days");
+  const today = moment();
+  const currDay = today.day();
+  let previousMonday, previousSunday;
+  if (currDay !== 0) {
+    const diff = today.date() - currDay + (currDay === 0 ? -6 : 1);
+    const monday = moment(new Date(today.date(diff)));
+    previousMonday = monday.clone().subtract(monday.day() + 6, "days");
+    previousSunday = previousMonday.clone().add(6, "days");
+  } else {
+    previousMonday = today.clone().subtract(today.day() + 6, "days");
+    previousSunday = today.clone();
+  }
+
+  // return {
+  //   previousMonday: previousMonday.format("YYYY-MM-DD"),
+  //   previousSunday: previousSunday.format("YYYY-MM-DD"),
+  // };
   const formattedDateStart = `${previousMonday.format(
     "YYYY-MM-DD"
   )}T00:00:00+05:30`;
