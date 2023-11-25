@@ -1054,6 +1054,7 @@ app.get("/updateLogs", (req, res) => {
         const quizLogs = logsDataFinal.quizLogs;
         const paymentLogs = logsDataFinal.paymentLogs;
         const dailyLogs = logsDataFinal.dailyLogs;
+        const reportLogs = logsDataFinal.reportLogs;
         const urlZoom =
           "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=zoom";
         const responseZoom = await axios.post(urlZoom, zoomLogs);
@@ -1066,12 +1067,16 @@ app.get("/updateLogs", (req, res) => {
         const urlDaily =
           "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=daily";
         const responseDaily = await axios.post(urlDaily, dailyLogs);
+        const urlReport =
+          "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=report";
+        const responseReport = await axios.post(urlReport, reportLogs);
         logsData = {};
         const newLogsData = {
           zoomLogs: [],
           quizLogs: [],
           paymentLogs: [],
           dailyLogs: [],
+          reportLogs: [],
         };
         fs.writeFile(
           "./logs.json",
@@ -1086,6 +1091,7 @@ app.get("/updateLogs", (req, res) => {
           quiz: responseQuiz.data,
           payment: responsePayment.data,
           daily: responseDaily.data,
+          report: responseReport.data,
         });
       }
     });
@@ -1455,6 +1461,19 @@ app.post("/question/attempt", async (req, res) => {
 });
 
 const getWeeklyUserAttempts = async (email) => {
+  let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+  logsData.reportLogs?.push({
+    email: email,
+    description: `EnteredEmail 200`,
+    date: new Date().toDateString(),
+    time: new Date(oldDate).toLocaleTimeString("en-US"),
+  });
+  logsData.reportLogs
+    ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+        if (err) throw err;
+        console.log("Done writing");
+      })
+    : null;
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -1476,6 +1495,23 @@ const getWeeklyUserAttempts = async (email) => {
   }
   // return { contact };
   if (contact.status === 204) {
+    let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+    logsData.reportLogs?.push({
+      email: email,
+      description: `NoUser 204`,
+      date: new Date().toDateString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
+    });
+    logsData.reportLogs
+      ? fs.writeFile(
+          "./logs.json",
+          JSON.stringify(logsData, null, 2),
+          (err) => {
+            if (err) throw err;
+            console.log("Done writing");
+          }
+        )
+      : null;
     return {
       status: contact.status,
       mode: "nouser",
@@ -1499,10 +1535,6 @@ const getWeeklyUserAttempts = async (email) => {
     previousSunday = today.clone();
   }
 
-  // return {
-  //   previousMonday: previousMonday.format("YYYY-MM-DD"),
-  //   previousSunday: previousSunday.format("YYYY-MM-DD"),
-  // };
   const formattedDateStart = `${previousMonday.format(
     "YYYY-MM-DD"
   )}T00:00:00+05:30`;
@@ -1528,6 +1560,23 @@ const getWeeklyUserAttempts = async (email) => {
   }
 
   if (attempt.status === 204) {
+    let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+    logsData.reportLogs?.push({
+      email: email,
+      description: `NoAttempts 204`,
+      date: new Date().toDateString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
+    });
+    logsData.reportLogs
+      ? fs.writeFile(
+          "./logs.json",
+          JSON.stringify(logsData, null, 2),
+          (err) => {
+            if (err) throw err;
+            console.log("Done writing");
+          }
+        )
+      : null;
     return {
       status: attempt.status,
       mode: "noattempt",
@@ -1558,6 +1607,15 @@ const getWeeklyUserAttempts = async (email) => {
     "Nov",
     "Dec",
     "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
   ];
   for (let i = 0; i < totalAttempts.length; i++) {
     totalAnswer += Number(totalAttempts[i].Quiz_Score);
@@ -1574,6 +1632,7 @@ const getWeeklyUserAttempts = async (email) => {
 
   finalPercentage = Math.max(minPercentage, currPercentage);
   finalPercentage = Math.min(maxPercentage, finalPercentage);
+
   return {
     mode: "user",
     name,
