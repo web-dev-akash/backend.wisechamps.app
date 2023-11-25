@@ -1500,7 +1500,7 @@ const getWeeklyUserAttempts = async (email) => {
   )}T23:59:59+05:30`;
 
   const attemptBody = {
-    select_query: `select Session.Name as Session_Name, Session.Number_of_Questions	as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
+    select_query: `select Session.Name as Session_Name,Session.Subject as Subject, Session.Number_of_Questions	as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
   };
 
   const attempt = await axios.post(
@@ -1531,21 +1531,45 @@ const getWeeklyUserAttempts = async (email) => {
   let totalAnswer = 0;
   let totalQuestion = 0;
 
+  const finalAttempts = [];
   const totalAttempts = attempt.data.data;
+  let wordsToRemove = [
+    "Final",
+    "&",
+    "Math",
+    "Science",
+    "English",
+    "GK",
+    "Grade",
+    "Live",
+    "Quiz",
+    "for",
+    "Nov",
+    "Dec",
+    "Jan",
+  ];
   for (let i = 0; i < totalAttempts.length; i++) {
     totalAnswer += Number(totalAttempts[i].Quiz_Score);
     totalQuestion += Number(totalAttempts[i].Total_Questions);
+    const sessionName = totalAttempts[i].Session_Name;
+    let newString = sessionName;
+    let regexString = wordsToRemove.join("|");
+    let regex = new RegExp("\\b(" + regexString + ")\\b|\\d+|&", "gi");
+    newString = newString.replace(regex, "");
+    console.log(newString);
+    finalAttempts.push({ ...totalAttempts[i], Session_Name: newString.trim() });
   }
   const currPercentage = Math.round((totalAnswer / totalQuestion) * 100);
 
   finalPercentage = Math.max(minPercentage, currPercentage);
   finalPercentage = Math.min(maxPercentage, finalPercentage);
   return {
+    mode: "user",
     name,
     grade,
     credits,
     percentage: finalPercentage,
-    attempts: totalAttempts,
+    attempts: finalAttempts,
   };
 };
 
