@@ -1628,6 +1628,7 @@ const getWeeklyUserAttempts = async (email) => {
     console.log(newString);
     finalAttempts.push({ ...totalAttempts[i], Session_Name: newString.trim() });
   }
+
   const currPercentage = Math.round((totalAnswer / totalQuestion) * 100);
 
   finalPercentage = Math.max(minPercentage, currPercentage);
