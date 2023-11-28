@@ -1629,6 +1629,10 @@ const getWeeklyUserAttempts = async (email) => {
     finalAttempts.push({ ...totalAttempts[i], Session_Name: newString.trim() });
   }
 
+  const sortedAttempts = finalAttempts.sort(
+    (a, b) => new Date(a.Session_Date_Time) - new Date(b.Session_Date_Time)
+  );
+
   const currPercentage = Math.round((totalAnswer / totalQuestion) * 100);
 
   finalPercentage = Math.max(minPercentage, currPercentage);
@@ -1640,7 +1644,7 @@ const getWeeklyUserAttempts = async (email) => {
     grade,
     credits,
     percentage: finalPercentage,
-    attempts: finalAttempts,
+    attempts: sortedAttempts,
   };
 };
 
