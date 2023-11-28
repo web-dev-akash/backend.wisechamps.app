@@ -1057,19 +1057,28 @@ app.get("/updateLogs", (req, res) => {
         const reportLogs = logsDataFinal.reportLogs;
         const urlZoom =
           "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=zoom";
-        const responseZoom = await axios.post(urlZoom, zoomLogs);
+        const responseZoom =
+          zoomLogs?.length > 0 ? await axios.post(urlZoom, zoomLogs) : null;
         const urlQuiz =
           "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=quiz";
-        const responseQuiz = await axios.post(urlQuiz, quizLogs);
+        const responseQuiz =
+          quizLogs?.length > 0 ? await axios.post(urlQuiz, quizLogs) : null;
         const urlPayment =
           "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=payment";
-        const responsePayment = await axios.post(urlPayment, paymentLogs);
+        const responsePayment =
+          paymentLogs?.length > 0
+            ? await axios.post(urlPayment, paymentLogs)
+            : null;
         const urlDaily =
           "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=daily";
-        const responseDaily = await axios.post(urlDaily, dailyLogs);
+        const responseDaily =
+          dailyLogs?.length > 0 ? await axios.post(urlDaily, dailyLogs) : null;
         const urlReport =
           "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=report";
-        const responseReport = await axios.post(urlReport, reportLogs);
+        const responseReport =
+          reportLogs?.length > 0
+            ? await axios.post(urlReport, reportLogs)
+            : null;
         logsData = {};
         const newLogsData = {
           zoomLogs: [],
@@ -1087,11 +1096,11 @@ app.get("/updateLogs", (req, res) => {
           }
         );
         return res.status(200).send({
-          zoom: responseZoom.data,
-          quiz: responseQuiz.data,
-          payment: responsePayment.data,
-          daily: responseDaily.data,
-          report: responseReport.data,
+          zoom: responseZoom?.data,
+          quiz: responseQuiz?.data,
+          payment: responsePayment?.data,
+          daily: responseDaily?.data,
+          report: responseReport?.data,
         });
       }
     });
