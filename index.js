@@ -1520,8 +1520,16 @@ const getWeeklyUserAttempts = async (email) => {
 
   const contactid = contact.data.data[0].id;
   const grade = contact.data.data[0].Student_Grade;
+  let gradeGroup;
+  if (grade == 1 || grade == 2) {
+    gradeGroup = "1;2";
+  } else if (grade == 7 || grade == 8) {
+    gradeGroup = "7;8";
+  } else gradeGroup = grade;
   const name = contact.data.data[0].Student_Name;
-  const credits = contact.data.data[0].Credits;
+  const credits = contact.data.data[0].Credits
+    ? contact.data.data[0].Credits
+    : 0;
   const today = moment();
   const currDay = today.day();
   let previousMonday, previousSunday;
@@ -1542,8 +1550,20 @@ const getWeeklyUserAttempts = async (email) => {
     "YYYY-MM-DD"
   )}T23:59:59+05:30`;
 
+  const sessionBody = {
+    select_query: `select Name as Session_Name, Subject, Number_of_Questions as Total_Questions, Session_Date_Time from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
+  };
+
+  const session = await axios.post(
+    `https://www.zohoapis.com/crm/v3/coql`,
+    sessionBody,
+    zohoConfig
+  );
+
+  const sessionData = session.data.data;
+
   const attemptBody = {
-    select_query: `select Session.Name as Session_Name,Session.Subject as Subject, Session.Number_of_Questions	as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
+    select_query: `select Session.id as Session_id, Session.Name as Session_Name,Session.Subject as Subject, Session.Number_of_Questions	as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
   };
 
   const attempt = await axios.post(
@@ -1581,7 +1601,7 @@ const getWeeklyUserAttempts = async (email) => {
       status: attempt.status,
       mode: "noattempt",
       name,
-      credits: credits ? credits : 0,
+      credits: credits,
     };
   }
 
@@ -1617,21 +1637,48 @@ const getWeeklyUserAttempts = async (email) => {
     "Sep",
     "Oct",
   ];
+
   for (let i = 0; i < totalAttempts.length; i++) {
-    totalAnswer += Number(totalAttempts[i].Quiz_Score);
-    totalQuestion += Number(totalAttempts[i].Total_Questions);
-    const sessionName = totalAttempts[i].Session_Name;
+    finalAttempts.push({ ...totalAttempts[i] });
+  }
+
+  const sortedSessionData = sessionData.sort(
+    (a, b) => new Date(a.Session_Date_Time) - new Date(b.Session_Date_Time)
+  );
+
+  const sortedFinalData = [];
+
+  for (let i = 0; i < sortedSessionData.length; i++) {
+    const attemptFound = finalAttempts.filter(
+      (attempt) => attempt.Session_id == sortedSessionData[i].id
+    );
+    const sessionName = sortedSessionData[i].Session_Name;
     let newString = sessionName;
     let regexString = wordsToRemove.join("|");
     let regex = new RegExp("\\b(" + regexString + ")\\b|\\d+|&", "gi");
     newString = newString.replace(regex, "");
-    console.log(newString);
-    finalAttempts.push({ ...totalAttempts[i], Session_Name: newString.trim() });
+    if (attemptFound?.length > 0) {
+      sortedFinalData.push({
+        ...sortedSessionData[i],
+        Quiz_Score: attemptFound[0].Quiz_Score,
+        Session_Name: newString.trim(),
+        attempted: true,
+      });
+    } else {
+      sortedFinalData.push({
+        ...sortedSessionData[i],
+        Session_Name: newString.trim(),
+        attempted: false,
+      });
+    }
   }
 
-  const sortedAttempts = finalAttempts.sort(
-    (a, b) => new Date(a.Session_Date_Time) - new Date(b.Session_Date_Time)
-  );
+  for (let i = 0; i < sortedFinalData.length; i++) {
+    totalAnswer += sortedFinalData[i].Quiz_Score
+      ? Number(sortedFinalData[i].Quiz_Score)
+      : 0;
+    totalQuestion += Number(sortedFinalData[i].Total_Questions);
+  }
 
   const currPercentage = Math.round((totalAnswer / totalQuestion) * 100);
 
@@ -1644,7 +1691,7 @@ const getWeeklyUserAttempts = async (email) => {
     grade,
     credits,
     percentage: finalPercentage,
-    attempts: sortedAttempts,
+    sessions: sortedFinalData,
   };
 };
 
