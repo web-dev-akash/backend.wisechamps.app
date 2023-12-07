@@ -1721,6 +1721,54 @@ app.get("/", (req, res) => {
   });
 });
 
+app.post("/quiz/test", (req, res) => {
+  return res.send({
+    credits: 123,
+    grade: "2",
+    mode: "user",
+    name: "Akash",
+    percentage: 88,
+    sessions: [
+      {
+        Session_Date_Time: "2023-11-23T19:00:00+05:30",
+        Session_Name: "Logical Reasoning 1",
+        Subject: "Science",
+        Total_Questions: 10,
+        attempted: true,
+        id: "4878003000011641066",
+        Quiz_Score: 9,
+      },
+      {
+        Session_Date_Time: "2023-11-24T19:00:00+05:30",
+        Session_Name: "Logical Reasoning 2",
+        Subject: "Math",
+        Total_Questions: 10,
+        attempted: true,
+        id: "4878003000011641066",
+        Quiz_Score: 10,
+      },
+      {
+        Session_Date_Time: "2023-11-25T19:00:00+05:30",
+        Session_Name: "Logical Reasoning 3",
+        Subject: "Math",
+        Total_Questions: 10,
+        attempted: true,
+        id: "4878003000011641066",
+        Quiz_Score: 7,
+      },
+      {
+        Session_Date_Time: "2023-11-26T19:00:00+05:30",
+        Session_Name: "Logical Reasoning 4",
+        Subject: "Math",
+        Total_Questions: 10,
+        attempted: true,
+        id: "4878003000011641066",
+        Quiz_Score: 9,
+      },
+    ],
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Server Started 🎈 http://localhost:${PORT}`);
 });
