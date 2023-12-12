@@ -1,6 +1,7 @@
 const fs = require("fs");
 const moment = require("moment");
 const express = require("express");
+const exec = require("child_process").exec;
 const cors = require("cors");
 const axios = require("axios");
 const Razorpay = require("razorpay");
@@ -1095,6 +1096,15 @@ app.get("/updateLogs", (req, res) => {
             console.log("Done writing");
           }
         );
+
+        exec("sh /home/ubuntu/deploy.sh", function (error, stdOut, stdErr) {
+          if (error) {
+            console.log(error);
+          }
+          console.log(stdOut);
+          console.log(stdErr);
+        });
+
         return res.status(200).send({
           zoom: responseZoom?.data,
           quiz: responseQuiz?.data,
