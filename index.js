@@ -1589,11 +1589,11 @@ const getWeeklyUserAttempts = async (email) => {
     };
   }
 
-  if (attempt.status === 204) {
+  if (session.status === 204) {
     let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
     logsData.reportLogs?.push({
       email: email,
-      description: `NoAttempts 204`,
+      description: `NoSessions 204`,
       date: new Date().toDateString(),
       time: new Date(oldDate).toLocaleTimeString("en-US"),
     });
@@ -1608,8 +1608,8 @@ const getWeeklyUserAttempts = async (email) => {
         )
       : null;
     return {
-      status: attempt.status,
-      mode: "noattempt",
+      status: session.status,
+      mode: "nosession",
       name,
       credits: credits,
     };
@@ -1622,7 +1622,7 @@ const getWeeklyUserAttempts = async (email) => {
   let totalQuestion = 0;
 
   const finalAttempts = [];
-  const totalAttempts = attempt.data.data;
+  const totalAttempts = attempt?.data.data;
   let wordsToRemove = [
     "Final",
     "&",
@@ -1648,8 +1648,10 @@ const getWeeklyUserAttempts = async (email) => {
     "Oct",
   ];
 
-  for (let i = 0; i < totalAttempts.length; i++) {
-    finalAttempts.push({ ...totalAttempts[i] });
+  if (totalAttempts) {
+    for (let i = 0; i < totalAttempts.length; i++) {
+      finalAttempts.push({ ...totalAttempts[i] });
+    }
   }
 
   const sortedSessionData = sessionData.sort(
@@ -1659,7 +1661,7 @@ const getWeeklyUserAttempts = async (email) => {
   const sortedFinalData = [];
 
   for (let i = 0; i < sortedSessionData.length; i++) {
-    const attemptFound = finalAttempts.filter(
+    const attemptFound = finalAttempts?.filter(
       (attempt) => attempt.Session_id == sortedSessionData[i].id
     );
     const sessionName = sortedSessionData[i].Session_Name;
