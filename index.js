@@ -1733,7 +1733,7 @@ app.post("/quiz/test", (req, res) => {
     percentage: 88,
     sessions: [
       {
-        Session_Date_Time: "2023-11-23T19:00:00+05:30",
+        Session_Date_Time: "2023-11-23T19:00:00+05:30 ",
         Session_Name: "Logical Reasoning 1",
         Subject: "Science",
         Total_Questions: 10,
