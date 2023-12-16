@@ -1062,8 +1062,8 @@ app.post("/payment_links", async (req, res) => {
         )
       : null;
     const credits = {
-      39: 1,
       119: 4,
+      499: 33,
       999: 52,
       1999: 200,
     };
