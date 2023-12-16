@@ -559,6 +559,19 @@ const getQuizLink = async (emailParam) => {
 };
 
 const getZohoUserDetailsWithEmail = async (email) => {
+  let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+  logsData.referralLogs?.push({
+    email: email,
+    description: `Email Entered 200`,
+    date: new Date().toDateString(),
+    time: new Date(oldDate).toLocaleTimeString("en-US"),
+  });
+  logsData.referralLogs
+    ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
+        if (err) throw err;
+        console.log("Done writing");
+      })
+    : null;
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -580,6 +593,23 @@ const getZohoUserDetailsWithEmail = async (email) => {
   }
   // return { contact };
   if (contact.status === 204) {
+    let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+    logsData.referralLogs?.push({
+      email: email,
+      description: `No User Found 204`,
+      date: new Date().toDateString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
+    });
+    logsData.referralLogs
+      ? fs.writeFile(
+          "./logs.json",
+          JSON.stringify(logsData, null, 2),
+          (err) => {
+            if (err) throw err;
+            console.log("Done writing");
+          }
+        )
+      : null;
     return {
       status: contact.status,
       mode: "nouser",
@@ -604,20 +634,43 @@ const getZohoUserDetailsWithEmail = async (email) => {
   };
 };
 
-const getZohoUserDetailsWithPhone = async (phone) => {
+const getZohoUserDetailsWithPhone = async (phone, referral) => {
   let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-  logsData.dailyLogs?.push({
-    email: "NA",
-    description: `Referee Captured ${phone}`,
-    date: new Date().toDateString(),
-    time: new Date(oldDate).toLocaleTimeString("en-US"),
-  });
-  logsData.dailyLogs
-    ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
-        if (err) throw err;
-        console.log("Done writing");
-      })
-    : null;
+  if (referral) {
+    logsData.referralLogs?.push({
+      email: "NA",
+      description: `Referee Captured ${phone}`,
+      date: new Date().toDateString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
+    });
+    logsData.referralLogs
+      ? fs.writeFile(
+          "./logs.json",
+          JSON.stringify(logsData, null, 2),
+          (err) => {
+            if (err) throw err;
+            console.log("Done writing");
+          }
+        )
+      : null;
+  } else {
+    logsData.dailyLogs?.push({
+      email: "NA",
+      description: `Referee Captured ${phone}`,
+      date: new Date().toDateString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
+    });
+    logsData.dailyLogs
+      ? fs.writeFile(
+          "./logs.json",
+          JSON.stringify(logsData, null, 2),
+          (err) => {
+            if (err) throw err;
+            console.log("Done writing");
+          }
+        )
+      : null;
+  }
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -657,9 +710,75 @@ const getZohoUserDetailsWithPhone = async (phone) => {
   // return { contact };
   if (contact.status === 204) {
     let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+    if (referral) {
+      logsData.referralLogs?.push({
+        email: "NA",
+        description: `No Referee Found ${phone}`,
+        date: new Date().toDateString(),
+        time: new Date(oldDate).toLocaleTimeString("en-US"),
+      });
+      logsData.referralLogs
+        ? fs.writeFile(
+            "./logs.json",
+            JSON.stringify(logsData, null, 2),
+            (err) => {
+              if (err) throw err;
+              console.log("Done writing");
+            }
+          )
+        : null;
+    } else {
+      logsData.dailyLogs?.push({
+        email: "NA",
+        description: `No Referee Found ${phone}`,
+        date: new Date().toDateString(),
+        time: new Date(oldDate).toLocaleTimeString("en-US"),
+      });
+      logsData.dailyLogs
+        ? fs.writeFile(
+            "./logs.json",
+            JSON.stringify(logsData, null, 2),
+            (err) => {
+              if (err) throw err;
+              console.log("Done writing");
+            }
+          )
+        : null;
+    }
+    return {
+      status: contact.status,
+      mode: "user",
+    };
+  }
+
+  const contactName = contact.data.data[0].Full_Name;
+  const contactEmail = contact.data.data[0].Email;
+  const contactPhone = contact.data.data[0].Phone;
+  const contactId = contact.data.data[0].id;
+
+  if (referral) {
+    let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+    logsData.referralLogs?.push({
+      email: "NA",
+      description: `Referee Found ${phone}`,
+      date: new Date().toDateString(),
+      time: new Date(oldDate).toLocaleTimeString("en-US"),
+    });
+    logsData.referralLogs
+      ? fs.writeFile(
+          "./logs.json",
+          JSON.stringify(logsData, null, 2),
+          (err) => {
+            if (err) throw err;
+            console.log("Done writing");
+          }
+        )
+      : null;
+  } else {
+    let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
     logsData.dailyLogs?.push({
       email: "NA",
-      description: `No Referee Found ${contact.status}`,
+      description: `Referee Found ${phone}`,
       date: new Date().toDateString(),
       time: new Date(oldDate).toLocaleTimeString("en-US"),
     });
@@ -673,30 +792,7 @@ const getZohoUserDetailsWithPhone = async (phone) => {
           }
         )
       : null;
-    return {
-      status: contact.status,
-      mode: "user",
-    };
   }
-
-  const contactName = contact.data.data[0].Full_Name;
-  const contactEmail = contact.data.data[0].Email;
-  const contactPhone = contact.data.data[0].Phone;
-  const contactId = contact.data.data[0].id;
-
-  let oldDate1 = new Date().setMinutes(new Date().getMinutes() + 330);
-  logsData.dailyLogs?.push({
-    email: "NA",
-    description: `Referee Found ${contact.status}`,
-    date: new Date().toDateString(),
-    time: new Date(oldDate1).toLocaleTimeString("en-US"),
-  });
-  logsData.dailyLogs
-    ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
-        if (err) throw err;
-        console.log("Done writing");
-      })
-    : null;
 
   return {
     status: 200,
@@ -792,14 +888,14 @@ app.get("/referral", async (req, res) => {
 });
 
 app.post("/user", async (req, res) => {
-  const { email, phone } = req.body;
+  const { email, phone, referral } = req.body;
   if (email) {
     const data = await getZohoUserDetailsWithEmail(email);
     return res.status(200).send({
       ...data,
     });
   }
-  const data = await getZohoUserDetailsWithPhone(phone);
+  const data = await getZohoUserDetailsWithPhone(phone, referral);
   return res.status(200).send({
     ...data,
   });
@@ -1055,6 +1151,7 @@ app.get("/updateLogs", (req, res) => {
         const paymentLogs = logsDataFinal.paymentLogs;
         const dailyLogs = logsDataFinal.dailyLogs;
         const reportLogs = logsDataFinal.reportLogs;
+        const referralLogs = logsDataFinal.referralLogs;
         const urlZoom =
           "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=zoom";
         const responseZoom =
@@ -1079,6 +1176,12 @@ app.get("/updateLogs", (req, res) => {
           reportLogs?.length > 0
             ? await axios.post(urlReport, reportLogs)
             : null;
+        const urlReferral =
+          "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=referral";
+        const responseReferral =
+          referralLogs?.length > 0
+            ? await axios.post(urlReferral, referralLogs)
+            : null;
         logsData = {};
         const newLogsData = {
           zoomLogs: [],
@@ -1086,7 +1189,9 @@ app.get("/updateLogs", (req, res) => {
           paymentLogs: [],
           dailyLogs: [],
           reportLogs: [],
+          referralLogs: [],
         };
+
         fs.writeFile(
           "./logs.json",
           JSON.stringify(newLogsData, null, 2),
