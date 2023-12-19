@@ -908,6 +908,7 @@ const addUserToZoho = async ({
   student_name,
   student_grade,
   referralId,
+  source_campaign,
 }) => {
   try {
     let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
@@ -944,7 +945,7 @@ const addUserToZoho = async ({
           Student_Name: student_name,
           Student_Grade: student_grade,
           Lead_Source: "External Referral",
-          Source_Campaign: "Join Community",
+          Source_Campaign: source_campaign ? source_campaign : "Join Community",
           Referral_Contact_Id: referralId,
         },
       ],
