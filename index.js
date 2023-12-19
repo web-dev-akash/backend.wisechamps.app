@@ -984,6 +984,12 @@ const addUserToZoho = async ({
         mode: "internalservererrorinfindinguser",
       };
     }
+    if (result.data.data[0].code === "DUPLICATE_DATA") {
+      return {
+        status: result.status,
+        mode: "duplicateuser",
+      };
+    }
     let oldDate1 = new Date().setMinutes(new Date().getMinutes() + 330);
     logsData.dailyLogs?.push({
       email: email,
