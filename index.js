@@ -1070,8 +1070,7 @@ app.post("/payment_links", async (req, res) => {
       : null;
     const credits = {
       119: 4,
-      499: 33,
-      999: 52,
+      499: 20,
       1999: 200,
     };
     const instance = new Razorpay({
