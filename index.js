@@ -534,6 +534,7 @@ const getQuizLink = async (emailParam) => {
         credits: credits ? credits : 0,
         name,
         link: `https://wisechamps.app/mod/lti/view.php?id=${sessionid}`,
+        grade,
       };
     }
   }
