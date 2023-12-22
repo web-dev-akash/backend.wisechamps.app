@@ -1884,6 +1884,48 @@ app.post("/quiz/test", (req, res) => {
   });
 });
 
+app.post("/quiz/team", async (req, res) => {
+  try {
+    const { email, team } = req.body;
+    const accessToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+
+    const body = {
+      data: [
+        {
+          Email: email,
+          Student_School: team,
+          $append_values: {
+            Student_School: true,
+          },
+        },
+      ],
+      duplicate_check_fields: ["Email"],
+      apply_feature_execution: [
+        {
+          name: "layout_rules",
+        },
+      ],
+      trigger: ["workflow"],
+    };
+    const data = await axios.post(
+      `https://www.zohoapis.com/crm/v3/Contacts/upsert`,
+      body,
+      zohoConfig
+    );
+    return res.status(200).send(data);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send(error);
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server Started 🎈 http://localhost:${PORT}`);
 });
