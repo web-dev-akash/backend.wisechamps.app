@@ -430,7 +430,7 @@ const getQuizLink = async (emailParam) => {
   const credits = contact.data.data[0].Credits;
   const date = new Date();
   const start = new Date();
-  start.setMinutes(start.getMinutes() + 300);
+  start.setMinutes(start.getMinutes() + 285);
   const end = new Date();
   end.setHours(23, 59, 59, 999);
   const year = date.getFullYear();
