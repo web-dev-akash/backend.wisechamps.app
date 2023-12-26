@@ -58,7 +58,6 @@ const getZohoTokenOptimized = async () => {
     };
     fs.writeFile("./token.json", JSON.stringify(tokenData, null, 2), (err) => {
       if (err) throw err;
-      console.log("Done writing");
     });
   } else {
     if (Math.floor(new Date() / 1000) - tokenTime > 2400) {
@@ -73,7 +72,6 @@ const getZohoTokenOptimized = async () => {
         JSON.stringify(tokenData, null, 2),
         (err) => {
           if (err) throw err;
-          console.log("Done writing");
         }
       );
     }
@@ -126,12 +124,10 @@ const getMeetingLink = async (emailParam, payId) => {
   logsData.zoomLogs
     ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
         if (err) throw err;
-        console.log("Done writing");
       })
     : null;
   // return "success";
   const accessToken = await getZohoTokenOptimized();
-  console.log("Token :", accessToken);
   const zohoConfig = {
     headers: {
       "Content-Type": "application/json",
@@ -159,7 +155,6 @@ const getMeetingLink = async (emailParam, payId) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -183,7 +178,6 @@ const getMeetingLink = async (emailParam, payId) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -235,7 +229,6 @@ const getMeetingLink = async (emailParam, payId) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -259,7 +252,6 @@ const getMeetingLink = async (emailParam, payId) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -291,7 +283,6 @@ const getMeetingLink = async (emailParam, payId) => {
             JSON.stringify(logsData, null, 2),
             (err) => {
               if (err) throw err;
-              console.log("Done writing");
             }
           )
         : null;
@@ -318,7 +309,6 @@ const getMeetingLink = async (emailParam, payId) => {
   logsData.zoomLogs
     ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
         if (err) throw err;
-        console.log("Done writing");
       })
     : null;
   return {
@@ -360,7 +350,6 @@ const getQuizLink = async (emailParam) => {
   logsData.quizLogs
     ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
         if (err) throw err;
-        console.log("Done writing");
       })
     : null;
   const accessToken = await getZohoTokenOptimized();
@@ -390,7 +379,6 @@ const getQuizLink = async (emailParam) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -414,7 +402,6 @@ const getQuizLink = async (emailParam) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -467,7 +454,6 @@ const getQuizLink = async (emailParam) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -491,7 +477,6 @@ const getQuizLink = async (emailParam) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -521,7 +506,6 @@ const getQuizLink = async (emailParam) => {
             JSON.stringify(logsData, null, 2),
             (err) => {
               if (err) throw err;
-              console.log("Done writing");
             }
           )
         : null;
@@ -549,7 +533,6 @@ const getQuizLink = async (emailParam) => {
   logsData.quizLogs
     ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
         if (err) throw err;
-        console.log("Done writing");
       })
     : null;
 
@@ -570,7 +553,6 @@ const getZohoUserDetailsWithEmail = async (email) => {
   logsData.referralLogs
     ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
         if (err) throw err;
-        console.log("Done writing");
       })
     : null;
   const accessToken = await getZohoTokenOptimized();
@@ -607,7 +589,6 @@ const getZohoUserDetailsWithEmail = async (email) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -650,7 +631,6 @@ const getZohoUserDetailsWithPhone = async (phone, referral) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -667,7 +647,6 @@ const getZohoUserDetailsWithPhone = async (phone, referral) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -699,7 +678,6 @@ const getZohoUserDetailsWithPhone = async (phone, referral) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -724,7 +702,6 @@ const getZohoUserDetailsWithPhone = async (phone, referral) => {
             JSON.stringify(logsData, null, 2),
             (err) => {
               if (err) throw err;
-              console.log("Done writing");
             }
           )
         : null;
@@ -741,7 +718,6 @@ const getZohoUserDetailsWithPhone = async (phone, referral) => {
             JSON.stringify(logsData, null, 2),
             (err) => {
               if (err) throw err;
-              console.log("Done writing");
             }
           )
         : null;
@@ -771,7 +747,6 @@ const getZohoUserDetailsWithPhone = async (phone, referral) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -789,7 +764,6 @@ const getZohoUserDetailsWithPhone = async (phone, referral) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -828,7 +802,6 @@ const createPaymentEntry = async ({ amount, id, email, credits, payId }) => {
     zohoConfig
   );
   if (!contact || !contact.data || !contact.data.data) {
-    console.log("no contacts");
     return;
   }
   const contactid = contact.data.data[0].id;
@@ -925,7 +898,6 @@ const addUserToZoho = async ({
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -977,7 +949,6 @@ const addUserToZoho = async ({
             JSON.stringify(logsData, null, 2),
             (err) => {
               if (err) throw err;
-              console.log("Done writing");
             }
           )
         : null;
@@ -1005,7 +976,6 @@ const addUserToZoho = async ({
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -1023,7 +993,6 @@ const addUserToZoho = async ({
 app.post("/user/add", async (req, res) => {
   try {
     const contactData = req.body;
-    console.log(contactData);
     const data = await addUserToZoho(contactData);
     return res.status(200).send({
       ...data,
@@ -1037,11 +1006,9 @@ app.post("/user/add", async (req, res) => {
 app.post("/user/feedback", async (req, res) => {
   try {
     const { feedbackData } = req.body;
-    console.log(feedbackData);
     const url =
       "https://script.google.com/macros/s/AKfycbzfelbwgNpG1v4zY8t-avVggcgH3K_7yE-r7B7eTWF45lt1q_guT4qaQTaEiYccHy-b/exec?type=feedback";
     const response = await axios.post(url, feedbackData);
-    console.log(response.data);
     return res.status(200).send(response.data);
   } catch (error) {
     console.log(error);
@@ -1065,7 +1032,6 @@ app.post("/payment_links", async (req, res) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -1103,7 +1069,6 @@ app.post("/payment_links", async (req, res) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -1136,7 +1101,6 @@ app.post("/payment/capture", async (req, res) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -1204,7 +1168,6 @@ app.get("/updateLogs", (req, res) => {
           JSON.stringify(newLogsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         );
 
@@ -1405,7 +1368,6 @@ const dailyQuizQuestionsWithGrade = async (grade) => {
   logsData.dailyLogs
     ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
         if (err) throw err;
-        console.log("Done writing");
       })
     : null;
 
@@ -1447,7 +1409,6 @@ const dailyQuizQuestionsWithGrade = async (grade) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -1472,7 +1433,6 @@ const dailyQuizQuestionsWithGrade = async (grade) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -1498,7 +1458,6 @@ const dailyQuizQuestionsWithGrade = async (grade) => {
             JSON.stringify(logsData, null, 2),
             (err) => {
               if (err) throw err;
-              console.log("Done writing");
             }
           )
         : null;
@@ -1593,7 +1552,6 @@ const getWeeklyUserAttempts = async (email) => {
   logsData.reportLogs
     ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
         if (err) throw err;
-        console.log("Done writing");
       })
     : null;
   const accessToken = await getZohoTokenOptimized();
@@ -1630,7 +1588,6 @@ const getWeeklyUserAttempts = async (email) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
@@ -1715,7 +1672,6 @@ const getWeeklyUserAttempts = async (email) => {
           JSON.stringify(logsData, null, 2),
           (err) => {
             if (err) throw err;
-            console.log("Done writing");
           }
         )
       : null;
