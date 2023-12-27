@@ -1852,13 +1852,31 @@ app.post("/quiz/team", async (req, res) => {
       },
     };
 
+    const contact = await axios.get(
+      `https://www.zohoapis.com/crm/v2/Contacts/search?email=${email}`,
+      zohoConfig
+    );
+
+    if (contact.status >= 400) {
+      return {
+        status: contact.status,
+        mode: "internalservererrorinfindinguser",
+      };
+    }
+    const alreadyInTeam = contact.data.data[0].Team;
+    if (alreadyInTeam) {
+      return res.status(200).send({
+        team: alreadyInTeam,
+        mode: "alreadyInTeam",
+      });
+    }
     const body = {
       data: [
         {
           Email: email,
-          Student_School: team,
+          Team: team,
           $append_values: {
-            Student_School: true,
+            Team: true,
           },
         },
       ],
@@ -1875,7 +1893,9 @@ app.post("/quiz/team", async (req, res) => {
       body,
       zohoConfig
     );
-    return res.status(200).send(data);
+    return res
+      .status(200)
+      .send({ status: data.data.data[0].code, mode: "teamAdded" });
   } catch (error) {
     console.log(error);
     return res.status(500).send(error);
