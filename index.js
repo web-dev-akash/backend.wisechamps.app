@@ -1844,7 +1844,7 @@ app.post("/quiz/test", (req, res) => {
 
 app.post("/quiz/team", async (req, res) => {
   try {
-    const { email, team } = req.body;
+    const { email, team, grade } = req.body;
     const accessToken = await getZohoTokenOptimized();
     const zohoConfig = {
       headers: {
@@ -1866,38 +1866,67 @@ app.post("/quiz/team", async (req, res) => {
       };
     }
     const alreadyInTeam = contact.data.data[0].Team;
-    if (alreadyInTeam) {
+    const phone = contact.data.data[0].Phone;
+    const student_name = contact.data.data[0].Student_Name;
+
+    if (alreadyInTeam && !grade) {
       return res.status(200).send({
         team: alreadyInTeam,
         mode: "alreadyInTeam",
       });
     }
-    const body = {
-      data: [
-        {
-          Email: email,
-          Team: team,
-          $append_values: {
-            Team: true,
+    let body;
+    if (grade) {
+      body = {
+        data: [
+          {
+            Email: email,
+            Student_Grade: grade,
+            $append_values: {
+              Student_Grade: true,
+            },
           },
-        },
-      ],
-      duplicate_check_fields: ["Email"],
-      apply_feature_execution: [
-        {
-          name: "layout_rules",
-        },
-      ],
-      trigger: ["workflow"],
-    };
+        ],
+        duplicate_check_fields: ["Email"],
+        apply_feature_execution: [
+          {
+            name: "layout_rules",
+          },
+        ],
+        trigger: ["workflow"],
+      };
+    } else {
+      body = {
+        data: [
+          {
+            Email: email,
+            Team: team,
+            $append_values: {
+              Team: true,
+            },
+          },
+        ],
+        duplicate_check_fields: ["Email"],
+        apply_feature_execution: [
+          {
+            name: "layout_rules",
+          },
+        ],
+        trigger: ["workflow"],
+      };
+    }
     const data = await axios.post(
       `https://www.zohoapis.com/crm/v3/Contacts/upsert`,
       body,
       zohoConfig
     );
-    return res
-      .status(200)
-      .send({ status: data.data.data[0].code, mode: "teamAdded" });
+    return res.status(200).send({
+      status: data.data.data[0].code,
+      mode: grade ? "gradeUpdated" : "teamAdded",
+      team: alreadyInTeam,
+      phone: phone,
+      student_name: student_name,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).send(error);
