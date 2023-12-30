@@ -191,6 +191,7 @@ const getMeetingLink = async (emailParam, payId) => {
   const grade = contact.data.data[0].Student_Grade;
   const credits = contact.data.data[0].Credits;
   const name = contact.data.data[0].Student_Name;
+  const team = contact.data.data[0].Team;
   const source_campaign = contact.data.data[0].Source_Campaign;
   const date = new Date();
   const start = new Date();
@@ -265,7 +266,7 @@ const getMeetingLink = async (emailParam, payId) => {
     };
   }
 
-  if (source_campaign === "old olympiad data") {
+  if (source_campaign === "old olympiad data" && !team) {
     return {
       status: 200,
       mode: "oldData",
