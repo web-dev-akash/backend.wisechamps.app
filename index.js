@@ -191,6 +191,7 @@ const getMeetingLink = async (emailParam, payId) => {
   const grade = contact.data.data[0].Student_Grade;
   const credits = contact.data.data[0].Credits;
   const name = contact.data.data[0].Student_Name;
+  const source_campaign = contact.data.data[0].Source_Campaign;
   const date = new Date();
   const start = new Date();
   start.setMinutes(start.getMinutes() + 270);
@@ -264,6 +265,17 @@ const getMeetingLink = async (emailParam, payId) => {
     };
   }
 
+  if (source_campaign === "old olympiad data") {
+    return {
+      status: 200,
+      mode: "oldData",
+      email,
+      link: freeMeetLink,
+      name,
+      credits: credits ? credits : 0,
+    };
+  }
+
   for (let i = 0; i < session.data.data.length; i++) {
     const sessionGrade = session.data.data[i].Session_Grade;
     const paidMeetLink = session.data.data[i].Explanation_Meeting_Link;
@@ -294,16 +306,6 @@ const getMeetingLink = async (emailParam, payId) => {
         mode: "zoomlink",
         email,
         link,
-        name,
-        credits: credits ? credits : 0,
-        grade: grade,
-      };
-    } else if (Number(grade) === 0) {
-      return {
-        status: 200,
-        mode: "zoomlink",
-        email,
-        link: freeMeetLink,
         name,
         credits: credits ? credits : 0,
         grade: grade,
