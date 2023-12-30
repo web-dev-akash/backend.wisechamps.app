@@ -260,6 +260,7 @@ const getMeetingLink = async (emailParam, payId) => {
       mode: "nosession",
       name,
       credits: credits ? credits : 0,
+      grade: grade,
     };
   }
 
@@ -295,6 +296,17 @@ const getMeetingLink = async (emailParam, payId) => {
         link,
         name,
         credits: credits ? credits : 0,
+        grade: grade,
+      };
+    } else if (Number(grade) === 0) {
+      return {
+        status: 200,
+        mode: "zoomlink",
+        email,
+        link: freeMeetLink,
+        name,
+        credits: credits ? credits : 0,
+        grade: grade,
       };
     }
   }
