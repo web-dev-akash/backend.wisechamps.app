@@ -936,7 +936,7 @@ const addUserToZoho = async ({
           Student_Grade: student_grade,
           Lead_Source: "External Referral",
           Source_Campaign: source_campaign ? source_campaign : "Join Community",
-          Referral_Contact_Id: referralId,
+          Referral_Contact_Id: referralId ? referralId : "",
         },
       ],
       apply_feature_execution: [
