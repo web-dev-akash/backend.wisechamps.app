@@ -1948,6 +1948,60 @@ app.post("/quiz/team", async (req, res) => {
   }
 });
 
+const getTeacherDetailsWithEmail = async (email) => {
+  const accessToken = await getZohoTokenOptimized();
+  const zohoConfig = {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  };
+  const contact = await axios.get(
+    `https://www.zohoapis.com/crm/v2/Teachers/search?email=${email}`,
+    zohoConfig
+  );
+
+  if (contact.status >= 400) {
+    return {
+      status: contact.status,
+      mode: "internalservererrorinfindinguser",
+    };
+  }
+
+  if (contact.status === 204) {
+    return {
+      status: contact.status,
+      mode: "nouser",
+    };
+  }
+
+  const name = contact.data.data[0].Name;
+  const grade = contact.data.data[0].Teacher_Grade;
+  const phone = contact.data.data[0].Phone;
+  const id = contact.data.data[0].id;
+
+  return {
+    status: 200,
+    mode: "user",
+    email,
+    user: {
+      name: name,
+      grade: grade,
+      phone: phone,
+      id: id,
+    },
+  };
+};
+
+app.post("/teachers", async (req, res) => {
+  const { email } = req.body;
+  const data = await getTeacherDetailsWithEmail(email);
+  return res.status(200).send({
+    ...data,
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Server Started 🎈 http://localhost:${PORT}`);
 });
