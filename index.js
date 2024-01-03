@@ -79,40 +79,6 @@ const getZohoTokenOptimized = async () => {
   return accessToken;
 };
 
-const updateStatus = async (contactid, key, value) => {
-  const zohoToken = await getZohoTokenOptimized();
-  const zohoConfig = {
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-      Authorization: `Bearer ${zohoToken}`,
-    },
-  };
-  const body = {
-    data: [
-      {
-        id: contactid,
-        [key]: value,
-        $append_values: {
-          [key]: true,
-        },
-      },
-    ],
-    duplicate_check_fields: ["id"],
-    apply_feature_execution: [
-      {
-        name: "layout_rules",
-      },
-    ],
-    trigger: ["workflow"],
-  };
-  await axios.post(
-    `https://www.zohoapis.com/crm/v3/Contacts/upsert`,
-    body,
-    zohoConfig
-  );
-};
-
 const getMeetingLink = async (emailParam, payId) => {
   let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
   logsData.zoomLogs?.push({
@@ -431,6 +397,8 @@ const getQuizLink = async (emailParam) => {
   const name = contact.data.data[0].Student_Name;
   const credits = contact.data.data[0].Credits;
   const team = contact.data.data[0].Team;
+  const address = contact.data.data[0].Address;
+  const pincode = contact.data.data[0].Pincode;
   const date = new Date();
   const start = new Date();
   start.setMinutes(start.getMinutes() + 285);
@@ -536,6 +504,8 @@ const getQuizLink = async (emailParam) => {
         link: `https://wisechamps.app/mod/lti/view.php?id=${sessionid}`,
         grade,
         team,
+        address,
+        pincode,
       };
     }
   }
@@ -2000,6 +1970,54 @@ app.post("/teachers", async (req, res) => {
   return res.status(200).send({
     ...data,
   });
+});
+
+const updateAddress = async (email, address, pincode) => {
+  const zohoToken = await getZohoTokenOptimized();
+  const zohoConfig = {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${zohoToken}`,
+    },
+  };
+  const body = {
+    data: [
+      {
+        Email: email,
+        Address: address,
+        Pincode: pincode,
+        $append_values: {
+          Address: true,
+          Pincode: true,
+        },
+      },
+    ],
+    duplicate_check_fields: ["Email"],
+    apply_feature_execution: [
+      {
+        name: "layout_rules",
+      },
+    ],
+    trigger: ["workflow"],
+  };
+  const data = await axios.post(
+    `https://www.zohoapis.com/crm/v3/Contacts/upsert`,
+    body,
+    zohoConfig
+  );
+  return data.data;
+};
+
+app.post("/quiz/address", async (req, res) => {
+  try {
+    const { email, address, pincode } = req.body;
+    const data = await updateAddress(email, address, pincode);
+    res.status(200).send(data);
+  } catch (error) {
+    console.log("error---", error);
+    return res.status(500).send(error);
+  }
 });
 
 app.listen(PORT, () => {
