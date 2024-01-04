@@ -33,7 +33,7 @@ fs.readFile("./logs.json", function (err, data) {
   }
 });
 
-const freeMeetLink = `https://us06web.zoom.us/j/88576916260?pwd=8rmB9bab9SPTWam2wkOXmed6mDFava.1`;
+const freeMeetLink = `https://us06web.zoom.us/j/83566084106?pwd=MlITQRGjCzxCM2G9tbJwilTJpnCSPc.1`;
 
 const getZohoToken = async () => {
   try {
