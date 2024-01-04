@@ -232,7 +232,7 @@ const getMeetingLink = async (emailParam, payId) => {
     };
   }
 
-  if (source_campaign === "old olympiad data" && !team) {
+  if (source_campaign === "old olympiad data" && !team && !credits) {
     return {
       status: 200,
       mode: "oldData",
@@ -1867,8 +1867,10 @@ app.post("/quiz/team", async (req, res) => {
           {
             Email: email,
             Student_Grade: grade,
+            Grade_Updated: true,
             $append_values: {
               Student_Grade: true,
+              Grade_Updated: true,
             },
           },
         ],
