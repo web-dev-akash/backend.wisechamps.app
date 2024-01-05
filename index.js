@@ -233,17 +233,6 @@ const getMeetingLink = async (emailParam, payId) => {
     };
   }
 
-  if (source_campaign === "old olympiad data" && !gradeUpdated) {
-    return {
-      status: 200,
-      mode: "oldData",
-      email,
-      link: freeMeetLink,
-      name,
-      credits: credits ? credits : 0,
-    };
-  }
-
   for (let i = 0; i < session.data.data.length; i++) {
     const sessionGrade = session.data.data[i].Session_Grade;
     const paidMeetLink = session.data.data[i].Explanation_Meeting_Link;
@@ -271,7 +260,10 @@ const getMeetingLink = async (emailParam, payId) => {
         status: 200,
         formattedDateStart,
         formattedDateEnd,
-        mode: "zoomlink",
+        mode:
+          source_campaign === "old olympiad data" && !gradeUpdated
+            ? "oldData"
+            : "zoomlink",
         email,
         link,
         name,
@@ -472,6 +464,17 @@ const getQuizLink = async (emailParam) => {
       credits: credits ? credits : 0,
     };
   }
+
+  const attemptBody = {
+    select_query: `select Session.id as Session_id, Session.Name as Session_Name,Session.Subject as Subject, Session.Number_of_Questions	as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}'`,
+  };
+
+  const attempt = await axios.post(
+    `https://www.zohoapis.com/crm/v3/coql`,
+    attemptBody,
+    zohoConfig
+  );
+
   // console.log(session.data.data);
   for (let i = 0; i < session.data.data.length; i++) {
     const sessionGrade = session.data.data[i].Session_Grade;
@@ -505,7 +508,11 @@ const getQuizLink = async (emailParam) => {
         link: `https://wisechamps.app/mod/lti/view.php?id=${sessionid}`,
         grade,
         team,
-        address,
+        address: address
+          ? address
+          : attempt?.data.info.count <= 3
+          ? "Temp address"
+          : null,
         pincode,
       };
     }
