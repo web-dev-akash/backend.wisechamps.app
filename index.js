@@ -1915,12 +1915,15 @@ app.post("/quiz/team", async (req, res) => {
       body,
       zohoConfig
     );
+    const updatedZoomData = await getMeetingLink(email);
+    const newLink = updatedZoomData.link;
     return res.status(200).send({
       status: data.data.data[0].code,
       mode: grade ? "gradeUpdated" : "teamAdded",
       team: alreadyInTeam,
       phone: phone,
       student_name: student_name,
+      newLink: newLink,
     });
   } catch (error) {
     console.log(error);
