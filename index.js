@@ -384,6 +384,8 @@ const getQuizLink = async (emailParam) => {
       mode: "nouser",
     };
   }
+  // return contact.data.data[0];
+
   const contactid = contact.data.data[0].id;
   const email = contact.data.data[0].Email;
   const grade = contact.data.data[0].Student_Grade;
@@ -476,6 +478,14 @@ const getQuizLink = async (emailParam) => {
   );
 
   // console.log(session.data.data);
+  let finalAddress = "";
+  if (address) {
+    finalAddress = address;
+  } else if (attempt.data && attempt.data.info) {
+    finalAddress = Number(attempt.data.info.count) <= 3 ? "Temp address" : null;
+  } else {
+    finalAddress = "Temp address";
+  }
   for (let i = 0; i < session.data.data.length; i++) {
     const sessionGrade = session.data.data[i].Session_Grade;
     const sessionid = session.data.data[i].LMS_Activity_ID.toString();
@@ -508,11 +518,7 @@ const getQuizLink = async (emailParam) => {
         link: `https://wisechamps.app/mod/lti/view.php?id=${sessionid}`,
         grade,
         team,
-        address: address
-          ? address
-          : attempt?.data.info.count <= 3
-          ? "Temp address"
-          : null,
+        address: finalAddress,
         pincode,
       };
     }
