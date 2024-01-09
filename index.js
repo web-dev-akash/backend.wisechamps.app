@@ -2080,9 +2080,11 @@ const getDailyReports = async (grade, team) => {
 
   const reports = report.data.data;
   let totalScore = 0;
+
   for (let i = 0; i < reports.length; i++) {
     totalScore += Number(reports[i].Quiz_Score);
   }
+
   return {
     mode: "successReport",
     totalScore: totalScore,
