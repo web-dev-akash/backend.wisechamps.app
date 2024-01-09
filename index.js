@@ -2039,6 +2039,68 @@ app.post("/quiz/address", async (req, res) => {
   }
 });
 
+const getDailyReports = async (grade, team) => {
+  const zohoToken = await getZohoTokenOptimized();
+  const zohoConfig = {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${zohoToken}`,
+    },
+  };
+  const date = new Date("2024-01-06");
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  const formattedDateStart = `${year}-${month}-${day}T00:00:00+05:30`;
+  const formattedDateEnd = `${year}-${month}-${day}T23:59:59+05:30`;
+  const reportBody = {
+    select_query: `select Session.Session_Grade as Grade, Contact_Name.Email as Email, Contact_Name.Student_Name as Student_Name, Contact_Name.Team as Team, Session_Date_Time, Quiz_Score from Attempts where (Session.Session_Grade = '${grade}' and Contact_Name.Team = ${team}) and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
+  };
+
+  const report = await axios.post(
+    `https://www.zohoapis.com/crm/v3/coql`,
+    reportBody,
+    zohoConfig
+  );
+
+  if (report.status >= 400) {
+    return {
+      status: attempt.status,
+      mode: "internalservererrorinfindingattempt",
+    };
+  }
+
+  if (report.status == 204) {
+    return {
+      status: report.status,
+      mode: "noreport",
+    };
+  }
+
+  const reports = report.data.data;
+  let totalScore = 0;
+  for (let i = 0; i < reports.length; i++) {
+    totalScore += Number(reports[i].Quiz_Score);
+  }
+  return {
+    mode: "successReport",
+    totalScore: totalScore,
+    reports: reports.reverse(),
+  };
+};
+
+app.post("/teachers/report", async (req, res) => {
+  try {
+    const { grade, team } = req.body;
+    const data = await getDailyReports(grade, team);
+    res.status(200).send(data);
+  } catch (error) {
+    console.log("error---", error);
+    return res.status(500).send(error);
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server Started 🎈 http://localhost:${PORT}`);
 });
