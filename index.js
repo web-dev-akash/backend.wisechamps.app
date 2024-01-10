@@ -261,7 +261,8 @@ const getMeetingLink = async (emailParam, payId) => {
         formattedDateStart,
         formattedDateEnd,
         mode:
-          source_campaign === "old olympiad data" && !gradeUpdated
+          (source_campaign === "old olympiad data" && !gradeUpdated) ||
+          (source_campaign === "old abacus data" && !gradeUpdated)
             ? "oldData"
             : "zoomlink",
         email,
