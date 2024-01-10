@@ -2085,10 +2085,15 @@ const getDailyReports = async (grade, team) => {
     totalScore += Number(reports[i].Quiz_Score);
   }
 
+  const finalReports = [];
+  for (let i = reports.length - 1; i >= 0; i--) {
+    finalReports.push(reports[i]);
+  }
+
   return {
     mode: "successReport",
     totalScore: totalScore,
-    reports: reports.reverse(),
+    reports: finalReports,
   };
 };
 
