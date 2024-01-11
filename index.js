@@ -2109,6 +2109,84 @@ app.post("/teachers/report", async (req, res) => {
   }
 });
 
+const updateTeachersAttendance = async (requestBody) => {
+  const { vevoxId, zoom, vevox, explanation, contactId } = requestBody;
+  const zohoToken = await getZohoTokenOptimized();
+  const zohoConfig = {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${zohoToken}`,
+    },
+  };
+
+  const sessionBody = {
+    select_query: `select id as Session_ID, Session_Date_Time from Sessions where Vevox_Session_ID = ${vevoxId}`,
+  };
+
+  const session = await axios.post(
+    `https://www.zohoapis.com/crm/v3/coql`,
+    sessionBody,
+    zohoConfig
+  );
+
+  if (session.status >= 400) {
+    return {
+      status: attempt.status,
+      mode: "internalservererrorinfindingattempt",
+    };
+  }
+
+  if (session.status == 204) {
+    return {
+      status: session.status,
+      mode: "nosession",
+    };
+  }
+
+  const sessionId = session.data.data[0].Session_ID;
+  const sessionDateTime = session.data.data[0].Session_Date_Time;
+
+  const body = {
+    data: [
+      {
+        Session: sessionId,
+        Teacher: contactId,
+        Session_Date_Time: sessionDateTime,
+        Zoom_Meeting_Strength: zoom,
+        Vevox_Strength: vevox,
+        Explanation_Meeting_Strength: explanation,
+      },
+    ],
+    apply_feature_execution: [
+      {
+        name: "layout_rules",
+      },
+    ],
+    trigger: ["workflow"],
+  };
+  const attendance = await axios.post(
+    `https://www.zohoapis.com/crm/v2/Teachers_Attendance`,
+    body,
+    zohoConfig
+  );
+  return {
+    mode: attendance.data.data[0].status,
+    attendance: attendance.data,
+  };
+};
+
+app.post("/teachers/attendance", async (req, res) => {
+  try {
+    const body = req.body;
+    const data = await updateTeachersAttendance(body);
+    res.status(200).send(data);
+  } catch (error) {
+    console.log("error---", error);
+    return res.status(500).send(error);
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server Started 🎈 http://localhost:${PORT}`);
 });
