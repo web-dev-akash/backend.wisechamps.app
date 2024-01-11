@@ -2110,7 +2110,7 @@ app.post("/teachers/report", async (req, res) => {
 });
 
 const updateTeachersAttendance = async (requestBody) => {
-  const { vevoxId, zoom, vevox, explanation, contactId } = requestBody;
+  const { sessionDate, zoom, grade, explanation, contactId } = requestBody;
   const zohoToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -2120,8 +2120,16 @@ const updateTeachersAttendance = async (requestBody) => {
     },
   };
 
+  const date = moment(sessionDate);
+  if (date.day() === 0) {
+    date.add(11, "hours");
+  } else {
+    date.add(19, "hours");
+  }
+
+  const sessionDateTime = date.format("YYYY-MM-DDTHH:mm:ss+05:30");
   const sessionBody = {
-    select_query: `select id as Session_ID, Session_Date_Time from Sessions where Vevox_Session_ID = ${vevoxId}`,
+    select_query: `select id as Session_ID, Session_Date_Time from Sessions where Session_Grade = '${grade}' and Session_Date_Time = '${sessionDateTime}'`,
   };
 
   const session = await axios.post(
@@ -2145,7 +2153,6 @@ const updateTeachersAttendance = async (requestBody) => {
   }
 
   const sessionId = session.data.data[0].Session_ID;
-  const sessionDateTime = session.data.data[0].Session_Date_Time;
 
   const body = {
     data: [
@@ -2154,7 +2161,6 @@ const updateTeachersAttendance = async (requestBody) => {
         Teacher: contactId,
         Session_Date_Time: sessionDateTime,
         Zoom_Meeting_Strength: zoom,
-        Vevox_Strength: vevox,
         Explanation_Meeting_Strength: explanation,
       },
     ],
