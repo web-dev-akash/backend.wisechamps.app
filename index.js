@@ -2049,14 +2049,14 @@ const getDailyReports = async (grade, team) => {
       Authorization: `Bearer ${zohoToken}`,
     },
   };
-  const date = new Date();
+  const date = new Date("2024-01-06");
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const day = date.getDate().toString().padStart(2, "0");
   const formattedDateStart = `${year}-${month}-${day}T00:00:00+05:30`;
   const formattedDateEnd = `${year}-${month}-${day}T23:59:59+05:30`;
   const reportBody = {
-    select_query: `select Session.Session_Grade as Grade, Contact_Name.Email as Email, Contact_Name.Student_Name as Student_Name, Contact_Name.Team as Team, Session_Date_Time, Quiz_Score from Attempts where (Session.Session_Grade = '${grade}' and Contact_Name.Team = ${team}) and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
+    select_query: `select Session.Session_Grade as Grade, Contact_Name.Email as Email, Contact_Name.Student_Name as Student_Name, Contact_Name.Team as Team,Contact_Name.id as Student_ID, Session_Date_Time, Quiz_Score from Attempts where (Session.Session_Grade = '${grade}' and Contact_Name.Team = ${team}) and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
   };
 
   const report = await axios.post(
