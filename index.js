@@ -172,8 +172,8 @@ const getMeetingLink = async (emailParam, payId) => {
   const endHours = end.getHours().toString().padStart(2, "0");
   const startMinutes = start.getMinutes().toString().padStart(2, "0");
   const endMinutes = end.getMinutes().toString().padStart(2, "0");
-  const formattedDateStart = `${year}-${month}-${day}T${startHours}:${startMinutes}:00+05:30`;
-  const formattedDateEnd = `${year}-${month}-${day}T${endHours}:${endMinutes}:00+05:30`;
+  const formattedDateStart = `${year}-${month}-${day}T00:00:00+05:30`;
+  const formattedDateEnd = `${year}-${month}-${day}T23:59:00+05:30`;
   const sessionBody = {
     select_query: `select Session_Grade, LMS_Activity_ID, Explanation_Meeting_Link from Sessions where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
   };
@@ -239,7 +239,7 @@ const getMeetingLink = async (emailParam, payId) => {
     let link = !credits || credits == 0 ? freeMeetLink : paidMeetLink;
     link = payId ? paidMeetLink : link;
     const correctSession = sessionGrade.find((res) => res === grade);
-    if (correctSession) {
+    if (correctSession || Number(grade) === 0) {
       let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
       logsData.zoomLogs?.push({
         email: emailParam,
