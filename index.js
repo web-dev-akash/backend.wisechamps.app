@@ -2049,12 +2049,14 @@ const getDailyReports = async (grade, team) => {
       Authorization: `Bearer ${zohoToken}`,
     },
   };
+
   const date = new Date();
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const day = date.getDate().toString().padStart(2, "0");
   const formattedDateStart = `${year}-${month}-${day}T00:00:00+05:30`;
   const formattedDateEnd = `${year}-${month}-${day}T23:59:59+05:30`;
+
   const reportBody = {
     select_query: `select Session.Session_Grade as Grade, Contact_Name.Email as Email, Contact_Name.Student_Name as Student_Name, Contact_Name.Team as Team,Contact_Name.id as Student_ID, Session_Date_Time, Quiz_Score from Attempts where (Session.Session_Grade = '${grade}' and Contact_Name.Team = ${team}) and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
   };
@@ -2064,14 +2066,12 @@ const getDailyReports = async (grade, team) => {
     reportBody,
     zohoConfig
   );
-
   if (report.status >= 400) {
     return {
       status: attempt.status,
       mode: "internalservererrorinfindingattempt",
     };
   }
-
   if (report.status == 204) {
     return {
       status: report.status,
@@ -2079,6 +2079,17 @@ const getDailyReports = async (grade, team) => {
     };
   }
 
+  const winnerBody = {
+    select_query: `select Contact_Name.Student_Name as Student_Name, Contact_Name.Team as Team,Contact_Name.id as Student_ID, Session_Date_Time, Quiz_Score, Quiz_Winner from Attempts where (Session.Session_Grade = '${grade}' and Contact_Name.Team = ${team}) and Quiz_Winner is not null`,
+  };
+
+  const winner = await axios.post(
+    `https://www.zohoapis.com/crm/v3/coql`,
+    winnerBody,
+    zohoConfig
+  );
+
+  const previousWinners = winner?.data?.data;
   const reports = report.data.data;
   let totalScore = 0;
 
@@ -2095,6 +2106,7 @@ const getDailyReports = async (grade, team) => {
     mode: "successReport",
     totalScore: totalScore,
     reports: finalReports,
+    previousWinners: previousWinners,
   };
 };
 
@@ -2110,7 +2122,8 @@ app.post("/teachers/report", async (req, res) => {
 });
 
 const updateTeachersAttendance = async (requestBody) => {
-  const { sessionDate, zoom, grade, explanation, contactId } = requestBody;
+  const { sessionDate, zoom, grade, explanation, contactId, winner } =
+    requestBody;
   const zohoToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -2126,8 +2139,8 @@ const updateTeachersAttendance = async (requestBody) => {
   } else {
     date.add(19, "hours");
   }
-
   const sessionDateTime = date.format("YYYY-MM-DDTHH:mm:ss+05:30");
+
   const sessionBody = {
     select_query: `select id as Session_ID, Session_Date_Time from Sessions where Session_Grade = '${grade}' and Session_Date_Time = '${sessionDateTime}'`,
   };
@@ -2152,8 +2165,64 @@ const updateTeachersAttendance = async (requestBody) => {
     };
   }
 
-  const sessionId = session.data.data[0].Session_ID;
+  const attemptBody = {
+    select_query: `select id as Attempt_id, Session_Date_Time from Attempts where Contact_Name = '${winner}' and Session_Date_Time = '${sessionDateTime}'`,
+  };
 
+  const attempt = await axios.post(
+    `https://www.zohoapis.com/crm/v3/coql`,
+    attemptBody,
+    zohoConfig
+  );
+
+  if (attempt.status >= 400) {
+    return {
+      status: attempt.status,
+      mode: "internalservererrorinfindingattempt",
+    };
+  }
+
+  if (attempt.status == 204) {
+    return {
+      status: attempt.status,
+      mode: "noattempt",
+    };
+  }
+
+  const attemptId = attempt.data.data[0].Attempt_id;
+  const updateAttemptBody = {
+    data: [
+      {
+        id: attemptId,
+        Quiz_Winner: sessionDate,
+        $append_values: {
+          Quiz_Winner: true,
+        },
+      },
+    ],
+    duplicate_check_fields: ["id"],
+    apply_feature_execution: [
+      {
+        name: "layout_rules",
+      },
+    ],
+    trigger: ["workflow"],
+  };
+
+  const updateAttempt = await axios.post(
+    `https://www.zohoapis.com/crm/v3/Attempts/upsert`,
+    updateAttemptBody,
+    zohoConfig
+  );
+
+  if (updateAttempt.data.data[0].status !== "success") {
+    return {
+      mode: "errorInUpdating",
+      attempt: updateAttempt.data.data[0],
+    };
+  }
+
+  const sessionId = session.data.data[0].Session_ID;
   const body = {
     data: [
       {
