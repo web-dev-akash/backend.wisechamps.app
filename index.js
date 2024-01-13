@@ -392,6 +392,13 @@ const getQuizLink = async (emailParam) => {
   const grade = contact.data.data[0].Student_Grade;
   const name = contact.data.data[0].Student_Name;
   const credits = contact.data.data[0].Credits;
+
+  if (!credits || Number(credits) === 0) {
+    return {
+      mode: "nocredits",
+    };
+  }
+
   const team = contact.data.data[0].Team;
   const address = contact.data.data[0].Address;
   const pincode = contact.data.data[0].Pincode;
