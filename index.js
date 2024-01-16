@@ -2087,7 +2087,7 @@ const getDailyReports = async (grade, team) => {
   }
 
   const winnerBody = {
-    select_query: `select Contact_Name.Student_Name as Student_Name, Contact_Name.Team as Team,Contact_Name.id as Student_ID, Session_Date_Time, Quiz_Score, Quiz_Winner from Attempts where (Session.Session_Grade = '${grade}' and Contact_Name.Team = ${team}) and Quiz_Winner is not null`,
+    select_query: `select Contact_Name.Student_Name as Student_Name, Contact_Name.Team as Team, Contact_Name.id as Student_ID, Session_Date_Time, Quiz_Score, Quiz_Winner from Attempts where (Session.Session_Grade = '${grade}' and Contact_Name.Team = ${team}) and Quiz_Winner is not null`,
   };
 
   const winner = await axios.post(
@@ -2262,6 +2262,70 @@ app.post("/teachers/attendance", async (req, res) => {
   try {
     const body = req.body;
     const data = await updateTeachersAttendance(body);
+    res.status(200).send(data);
+  } catch (error) {
+    console.log("error---", error);
+    return res.status(500).send(error);
+  }
+});
+
+const getWinnersByDate = async (startDate, endDate, grade) => {
+  const zohoToken = await getZohoTokenOptimized();
+  const zohoConfig = {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${zohoToken}`,
+    },
+  };
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const startYear = start.getFullYear();
+  const startMonth = (start.getMonth() + 1).toString().padStart(2, "0");
+  const startDay = start.getDate().toString().padStart(2, "0");
+  const endYear = end.getFullYear();
+  const endMonth = (end.getMonth() + 1).toString().padStart(2, "0");
+  const endDay = end.getDate().toString().padStart(2, "0");
+  const formattedDateStart = `${startYear}-${startMonth}-${startDay}T00:00:00+05:30`;
+  const formattedDateEnd = `${endYear}-${endMonth}-${endDay}T23:59:59+05:30`;
+
+  const winnerBody = {
+    select_query: `select Contact_Name.Student_Name as Student_Name, Contact_Name.Team as Team, Contact_Name.id as Student_ID, Session_Date_Time, Quiz_Score, Quiz_Winner from Attempts where Session.Session_Grade = '${grade}' and Session_Date_Time is between '${formattedDateStart}' and '${formattedDateEnd}'`,
+  };
+
+  const winner = await axios.post(
+    `https://www.zohoapis.com/crm/v3/coql`,
+    winnerBody,
+    zohoConfig
+  );
+
+  if (winner.status >= 400) {
+    return {
+      status: winner.status,
+      mode: "internalservererrorinfindingwinner",
+    };
+  }
+
+  if (winner.status == 204) {
+    return {
+      status: winner.status,
+      mode: "nowinner",
+    };
+  }
+
+  const allWinners = winner.data.data;
+
+  return {
+    mode: "winners",
+    winners: allWinners,
+  };
+};
+
+app.post("/teachers/winners", async (req, res) => {
+  try {
+    const { startDate, endDate, grade } = req.body;
+    const data = await getWinnersByDate(startDate, endDate, grade);
     res.status(200).send(data);
   } catch (error) {
     console.log("error---", error);
