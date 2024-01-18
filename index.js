@@ -2057,7 +2057,7 @@ const getDailyReports = async (grade, team) => {
     },
   };
 
-  const date = new Date();
+  const date = new Date("2024-01-14");
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const day = date.getDate().toString().padStart(2, "0");
