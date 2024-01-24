@@ -1727,7 +1727,6 @@ const getWeeklyUserAttempts = async (email) => {
     "Aug",
     "Sep",
     "Oct",
-    "\\(.*?\\)",
   ];
 
   if (totalAttempts) {
@@ -1748,9 +1747,12 @@ const getWeeklyUserAttempts = async (email) => {
     );
     const sessionName = sortedSessionData[i].Session_Name;
     let newString = sessionName;
-    let regexString = wordsToRemove.join("|");
-    let regex = new RegExp("\\b(" + regexString + ")\\b|\\d+|&", "gi");
-    newString = newString.replace(regex, "");
+    newString = newString.replace(
+      new RegExp(wordsToRemove.join("|"), "g"),
+      function (match) {
+        return match === "(" || match === ")" ? "" : match;
+      }
+    );
     if (attemptFound?.length > 0) {
       sortedFinalData.push({
         ...sortedSessionData[i],
