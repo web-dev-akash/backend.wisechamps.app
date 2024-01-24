@@ -1727,8 +1727,7 @@ const getWeeklyUserAttempts = async (email) => {
     "Aug",
     "Sep",
     "Oct",
-    "\\(",
-    "\\)",
+    "\\(.*?\\)",
   ];
 
   if (totalAttempts) {
