@@ -1046,10 +1046,13 @@ app.post("/payment_links", async (req, res) => {
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_SECRET,
     });
+    const expiryDate = Math.floor(
+      new Date().setMinutes(new Date().getMinutes() + 60) / 1000
+    );
     const data = await instance.paymentLink.create({
       amount: amount * 100,
       currency: "INR",
-      description: `Live Quiz Payment for ${credits[amount]} Credits`,
+      description: `Live Quiz Payment for ${credits[amount]} Quiz Balance`,
       customer: {
         email,
       },
@@ -1057,6 +1060,7 @@ app.post("/payment_links", async (req, res) => {
         credits[amount]
       }&amount=${amount * 100}`,
       callback_method: "get",
+      expire_by: expiryDate,
     });
     let oldDate1 = new Date().setMinutes(new Date().getMinutes() + 330);
     logsData.paymentLogs?.push({
@@ -1083,6 +1087,8 @@ app.post("/payment_links", async (req, res) => {
 app.post("/payment/capture", async (req, res) => {
   try {
     const { linkId, payId, email, credits, amount } = req.body;
+    // console.log(req.body);
+    // return res.send({ body: res.body });
     const createdPayment = await createPaymentEntry({
       amount: amount,
       id: linkId,
