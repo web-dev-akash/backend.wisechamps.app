@@ -604,6 +604,8 @@ const getZohoUserDetailsWithEmail = async (email) => {
   const contactEmail = contact.data.data[0].Email;
   const contactPhone = contact.data.data[0].Phone;
   const contactId = contact.data.data[0].id;
+  const credits = contact.data.data[0].Credits;
+  const student_name = contact.data.data[0].Student_Name;
 
   return {
     status: 200,
@@ -614,6 +616,8 @@ const getZohoUserDetailsWithEmail = async (email) => {
       email: contactEmail,
       phone: contactPhone,
       id: contactId,
+      credits,
+      student_name,
     },
   };
 };
