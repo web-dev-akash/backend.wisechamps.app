@@ -617,7 +617,7 @@ const getZohoUserDetailsWithEmail = async (email) => {
       phone: contactPhone,
       id: contactId,
       credits,
-      student_name,
+      Student_Name: student_name,
     },
   };
 };
