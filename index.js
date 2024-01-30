@@ -153,11 +153,14 @@ const getMeetingLink = async (emailParam, payId) => {
     };
   }
 
+  const contactid = contact.data.data[0].id;
   const email = contact.data.data[0].Email;
   const grade = contact.data.data[0].Student_Grade;
-  const credits = contact.data.data[0].Credits;
   const name = contact.data.data[0].Student_Name;
+  const credits = contact.data.data[0].Credits;
   const team = contact.data.data[0].Team;
+  const address = contact.data.data[0].Address;
+  const pincode = contact.data.data[0].Pincode;
   const gradeUpdated = contact.data.data[0].Grade_Updated;
   const source_campaign = contact.data.data[0].Source_Campaign;
   const date = new Date();
@@ -168,10 +171,6 @@ const getMeetingLink = async (emailParam, payId) => {
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const day = date.getDate().toString().padStart(2, "0");
-  const startHours = start.getHours().toString().padStart(2, "0");
-  const endHours = end.getHours().toString().padStart(2, "0");
-  const startMinutes = start.getMinutes().toString().padStart(2, "0");
-  const endMinutes = end.getMinutes().toString().padStart(2, "0");
   const formattedDateStart = `${year}-${month}-${day}T00:00:00+05:30`;
   const formattedDateEnd = `${year}-${month}-${day}T23:59:00+05:30`;
   const sessionBody = {
@@ -233,6 +232,26 @@ const getMeetingLink = async (emailParam, payId) => {
     };
   }
 
+  const attemptBody = {
+    select_query: `select Session.id as Session_id, Session.Name as Session_Name,Session.Subject as Subject, Session.Number_of_Questions	as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}'`,
+  };
+
+  const attempt = await axios.post(
+    `https://www.zohoapis.com/crm/v3/coql`,
+    attemptBody,
+    zohoConfig
+  );
+
+  // console.log(session.data.data);
+  let finalAddress = "";
+  if (address) {
+    finalAddress = address;
+  } else if (attempt.data && attempt.data.info) {
+    finalAddress = Number(attempt.data.info.count) <= 3 ? "Temp address" : null;
+  } else {
+    finalAddress = "Temp address";
+  }
+
   for (let i = 0; i < session.data.data.length; i++) {
     const sessionGrade = session.data.data[i].Session_Grade;
     const paidMeetLink = session.data.data[i].Explanation_Meeting_Link;
@@ -258,8 +277,6 @@ const getMeetingLink = async (emailParam, payId) => {
         : null;
       return {
         status: 200,
-        formattedDateStart,
-        formattedDateEnd,
         mode:
           (source_campaign === "old olympiad data" && !gradeUpdated) ||
           (source_campaign === "old abacus data" && !gradeUpdated)
@@ -270,6 +287,9 @@ const getMeetingLink = async (emailParam, payId) => {
         name,
         credits: credits ? credits : 0,
         grade: grade,
+        team,
+        address: finalAddress,
+        pincode,
       };
     }
   }
@@ -468,25 +488,6 @@ const getQuizLink = async (emailParam) => {
     };
   }
 
-  const attemptBody = {
-    select_query: `select Session.id as Session_id, Session.Name as Session_Name,Session.Subject as Subject, Session.Number_of_Questions	as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}'`,
-  };
-
-  const attempt = await axios.post(
-    `https://www.zohoapis.com/crm/v3/coql`,
-    attemptBody,
-    zohoConfig
-  );
-
-  // console.log(session.data.data);
-  let finalAddress = "";
-  if (address) {
-    finalAddress = address;
-  } else if (attempt.data && attempt.data.info) {
-    finalAddress = Number(attempt.data.info.count) <= 3 ? "Temp address" : null;
-  } else {
-    finalAddress = "Temp address";
-  }
   for (let i = 0; i < session.data.data.length; i++) {
     const sessionGrade = session.data.data[i].Session_Grade;
     const sessionid = session.data.data[i].LMS_Activity_ID.toString();
@@ -510,8 +511,6 @@ const getQuizLink = async (emailParam) => {
         : null;
       return {
         status: 200,
-        formattedDateStart,
-        formattedDateEnd,
         mode: "quizlink",
         email,
         credits: credits ? credits : 0,
@@ -519,7 +518,7 @@ const getQuizLink = async (emailParam) => {
         link: `https://wisechamps.app/mod/lti/view.php?id=${sessionid}`,
         grade,
         team,
-        address: finalAddress,
+        address,
         pincode,
       };
     }
@@ -1804,52 +1803,82 @@ app.get("/", (req, res) => {
   });
 });
 
-app.post("/quiz/test", (req, res) => {
-  return res.send({
-    credits: 123,
-    grade: "2",
-    mode: "user",
-    name: "Akash",
-    percentage: 88,
-    sessions: [
-      {
-        Session_Date_Time: "2023-11-23T19:00:00+05:30 ",
-        Session_Name: "Logical Reasoning 1",
-        Subject: "Science",
-        Total_Questions: 10,
-        attempted: true,
-        id: "4878003000011641066",
-        Quiz_Score: 9,
-      },
-      {
-        Session_Date_Time: "2023-11-24T19:00:00+05:30",
-        Session_Name: "Logical Reasoning 2",
-        Subject: "Math",
-        Total_Questions: 10,
-        attempted: true,
-        id: "4878003000011641066",
-        Quiz_Score: 10,
-      },
-      {
-        Session_Date_Time: "2023-11-25T19:00:00+05:30",
-        Session_Name: "Logical Reasoning 3",
-        Subject: "Math",
-        Total_Questions: 10,
-        attempted: true,
-        id: "4878003000011641066",
-        Quiz_Score: 7,
-      },
-      {
-        Session_Date_Time: "2023-11-26T19:00:00+05:30",
-        Session_Name: "Logical Reasoning 4",
-        Subject: "Math",
-        Total_Questions: 10,
-        attempted: true,
-        id: "4878003000011641066",
-        Quiz_Score: 9,
-      },
-    ],
-  });
+app.post("/quiz/test", async (req, res) => {
+  const { word } = req.body;
+  const accessToken = await getZohoTokenOptimized();
+  const zohoConfig = {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  };
+
+  const contact = await axios.get(
+    `https://www.zohoapis.com/crm/v6/Contacts/search?word=${word}`,
+    zohoConfig
+  );
+
+  if (contact.status >= 400) {
+    return {
+      status: contact.status,
+      mode: "internalservererrorinfindinguser",
+    };
+  }
+
+  if (contact.status === 204) {
+    return {
+      status: contact.status,
+      mode: "nouser",
+    };
+  }
+
+  return res.status(200).send({ contact: contact.data.data });
+  // return res.send({
+  //   credits: 123,
+  //   grade: "2",
+  //   mode: "user",
+  //   name: "Akash",
+  //   percentage: 88,
+  //   sessions: [
+  //     {
+  //       Session_Date_Time: "2023-11-23T19:00:00+05:30 ",
+  //       Session_Name: "Logical Reasoning 1",
+  //       Subject: "Science",
+  //       Total_Questions: 10,
+  //       attempted: true,
+  //       id: "4878003000011641066",
+  //       Quiz_Score: 9,
+  //     },
+  //     {
+  //       Session_Date_Time: "2023-11-24T19:00:00+05:30",
+  //       Session_Name: "Logical Reasoning 2",
+  //       Subject: "Math",
+  //       Total_Questions: 10,
+  //       attempted: true,
+  //       id: "4878003000011641066",
+  //       Quiz_Score: 10,
+  //     },
+  //     {
+  //       Session_Date_Time: "2023-11-25T19:00:00+05:30",
+  //       Session_Name: "Logical Reasoning 3",
+  //       Subject: "Math",
+  //       Total_Questions: 10,
+  //       attempted: true,
+  //       id: "4878003000011641066",
+  //       Quiz_Score: 7,
+  //     },
+  //     {
+  //       Session_Date_Time: "2023-11-26T19:00:00+05:30",
+  //       Session_Name: "Logical Reasoning 4",
+  //       Subject: "Math",
+  //       Total_Questions: 10,
+  //       attempted: true,
+  //       id: "4878003000011641066",
+  //       Quiz_Score: 9,
+  //     },
+  //   ],
+  // });
 });
 
 app.post("/quiz/team", async (req, res) => {
@@ -1878,6 +1907,7 @@ app.post("/quiz/team", async (req, res) => {
     const alreadyInTeam = contact.data.data[0].Team;
     const phone = contact.data.data[0].Phone;
     const student_name = contact.data.data[0].Student_Name;
+    const address = contact.data.data[0].Address;
 
     if (alreadyInTeam && !grade) {
       return res.status(200).send({
@@ -1941,6 +1971,7 @@ app.post("/quiz/team", async (req, res) => {
       phone: phone,
       student_name: student_name,
       newLink: newLink,
+      address,
     });
   } catch (error) {
     console.log(error);
