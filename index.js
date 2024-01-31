@@ -488,6 +488,19 @@ const getQuizLink = async (emailParam) => {
     };
   }
 
+  if (!credits || credits === 0) {
+    return {
+      mode: "nocredits",
+      email,
+      credits: credits ? credits : 0,
+      name,
+      grade,
+      team,
+      address,
+      pincode,
+    };
+  }
+
   for (let i = 0; i < session.data.data.length; i++) {
     const sessionGrade = session.data.data[i].Session_Grade;
     const sessionid = session.data.data[i].LMS_Activity_ID.toString();
