@@ -801,7 +801,6 @@ const getZohoUserDetailsWithPhone = async (phone, referral) => {
 };
 
 const createPaymentEntry = async ({ amount, id, email, credits, payId }) => {
-  amount = amount / 100;
   const zohoToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -1102,12 +1101,20 @@ app.post("/payment_links", async (req, res) => {
 
 app.post("/payment/capture", async (req, res) => {
   try {
-    const { linkId, payId, email, credits, amount } = req.body;
-    // console.log(req.body);
-    // return res.send({ body: res.body });
+    const plans = {
+      1: 1,
+      119: 4,
+      499: 20,
+      1999: 200,
+    };
+    const id = req.body.payload.payment_link.entity.id;
+    const amount = Number(req.body.payload.payment_link.entity.amount) / 100;
+    const email = req.body.payload.payment_link.entity.customer.email;
+    const payId = req.body.payload.payment.entity.id;
+    const credits = plans[amount];
     const createdPayment = await createPaymentEntry({
       amount: amount,
-      id: linkId,
+      id: id,
       email: email,
       credits: credits,
       payId: payId,
