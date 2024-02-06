@@ -2452,7 +2452,7 @@ app.post("/tution/create/student", async (req, res) => {
   }
 });
 
-app.post("/analysis/firstTimeQuizTakers", async (req, res) => {
+app.post("/quiz/analysis/weekly", async (req, res) => {
   try {
     let { startDate, endDate } = req.body;
     const zohoToken = await getZohoTokenOptimized();
@@ -2529,8 +2529,57 @@ app.post("/analysis/firstTimeQuizTakers", async (req, res) => {
       }
     }
 
+    const currentDate = new Date();
+    const lastThreeWeeksDate = new Date(
+      currentDate.getTime() - 21 * 24 * 60 * 60 * 1000
+    );
+    const currStartYear = currentDate.getFullYear();
+    const currStartMonth = (currentDate.getMonth() + 1)
+      .toString()
+      .padStart(2, "0");
+    const currStartDay = currentDate.getDate().toString().padStart(2, "0");
+    const lastThreeWeekYear = lastThreeWeeksDate.getFullYear();
+    const lastThreeWeekMonth = (lastThreeWeeksDate.getMonth() + 1)
+      .toString()
+      .padStart(2, "0");
+    const lastThreeWeekDay = lastThreeWeeksDate
+      .getDate()
+      .toString()
+      .padStart(2, "0");
+    const currDateStart = `${lastThreeWeekYear}-${lastThreeWeekMonth}-${lastThreeWeekDay}T00:00:00+05:30`;
+    const currDateEnd = `${currStartYear}-${currStartMonth}-${currStartDay}T23:59:59+05:30`;
+
+    const activeUsers = [];
+    const inactiveUsers = [];
+
+    for (let i = 0; i < finalUsers.length; i++) {
+      const attemptBody = {
+        select_query: `select Contact_Name.Email as Email from Attempts where (Session_Date_Time between '${currDateStart}' and '${currDateEnd}') and Contact_Name.Email = '${finalUsers[i].email}'`,
+      };
+
+      const attempt = await axios.post(
+        `https://www.zohoapis.com/crm/v3/coql`,
+        attemptBody,
+        zohoConfig
+      );
+      if (attempt.status >= 400) {
+        return res.status(attempt.status).send({
+          status: attempt.status,
+          mode: "internalservererrorinfindingattempt",
+        });
+      }
+      if (attempt.status == 204) {
+        inactiveUsers.push(finalUsers[i]);
+        continue;
+      }
+      console.log(attempt.data);
+      activeUsers.push(finalUsers[i]);
+    }
+
     return res.status(200).send({
-      finalUsers,
+      firstTimer: finalUsers.length,
+      activeUsers: activeUsers.length,
+      inactiveUsers: inactiveUsers.length,
     });
   } catch (error) {
     console.log(error);
