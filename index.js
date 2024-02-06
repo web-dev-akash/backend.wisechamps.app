@@ -2551,6 +2551,7 @@ app.post("/quiz/analysis/weekly", async (req, res) => {
 
     const activeUsers = [];
     const inactiveUsers = [];
+    const regularUsers = [];
 
     for (let i = 0; i < finalUsers.length; i++) {
       const attemptBody = {
@@ -2572,7 +2573,6 @@ app.post("/quiz/analysis/weekly", async (req, res) => {
         inactiveUsers.push(finalUsers[i]);
         continue;
       }
-      console.log(attempt.data);
       activeUsers.push(finalUsers[i]);
     }
 
