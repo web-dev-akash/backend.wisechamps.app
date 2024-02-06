@@ -809,18 +809,42 @@ const createPaymentEntry = async ({ amount, id, email, credits, payId }) => {
       Authorization: `Bearer ${zohoToken}`,
     },
   };
+
+  const paymentData = await axios.get(
+    `https://www.zohoapis.com/crm/v2/Payments/search?criteria=Payment_Link_ID:equals:${id}`,
+    zohoConfig
+  );
+
+  const paymentAlreadyDone = paymentData.data?.data?.length >= 1 ? true : false;
+  if (paymentAlreadyDone) {
+    return { status: "Already Done" };
+  }
+
   const attemptsCount = await axios.get(
     `https://www.zohoapis.com/crm/v2.1/Payments/actions/count`,
     zohoConfig
   );
+
   let attemptNumber = attemptsCount.data.count + 1;
   const contact = await axios.get(
     `https://www.zohoapis.com/crm/v2/Contacts/search?email=${email}`,
     zohoConfig
   );
-  if (!contact || !contact.data || !contact.data.data) {
-    return;
+
+  if (contact.status >= 400) {
+    return {
+      status: contact.status,
+      mode: "internalservererrorinfindinguser",
+    };
   }
+  // return { contact };
+  if (contact.status === 204) {
+    return {
+      status: contact.status,
+      mode: "nouser",
+    };
+  }
+
   const contactid = contact.data.data[0].id;
   const date = new Date();
   const year = date.getFullYear();
@@ -851,7 +875,7 @@ const createPaymentEntry = async ({ amount, id, email, credits, payId }) => {
     body,
     zohoConfig
   );
-  return result;
+  return result?.data?.data;
 };
 
 app.post("/meeting", async (req, res) => {
@@ -1071,9 +1095,7 @@ app.post("/payment_links", async (req, res) => {
       customer: {
         email,
       },
-      callback_url: `https://zoom.wisechamps.com?email=${email}&credits=${
-        credits[amount]
-      }&amount=${amount * 100}`,
+      callback_url: `https://zoom.wisechamps.com?email=${email}`,
       callback_method: "get",
       expire_by: expiryDate,
     });
@@ -1135,7 +1157,7 @@ app.post("/payment/capture", async (req, res) => {
           }
         )
       : null;
-    return res.status(200).send(createdPayment.data.data);
+    return res.status(200).send({ status: "success", data: createdPayment });
   } catch (error) {
     console.log(error);
     return res.status(500).send(error);
@@ -2322,6 +2344,111 @@ app.post("/teachers/attendance", async (req, res) => {
   } catch (error) {
     console.log("error---", error);
     return res.status(500).send(error);
+  }
+});
+
+app.post("/tution/create/student", async (req, res) => {
+  try {
+    const { teacherEmail, students } = req.body;
+    const zohoToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${zohoToken}`,
+      },
+    };
+
+    const teacher = await axios.get(
+      `https://www.zohoapis.com/crm/v2/Contacts/search?email=${teacherEmail}`,
+      zohoConfig
+    );
+
+    if (teacher.status >= 400) {
+      return {
+        status: teacher.status,
+        mode: "internalservererrorinfindinguser",
+      };
+    }
+
+    if (teacher.status === 204) {
+      return {
+        status: teacher.status,
+        mode: "nouser",
+      };
+    }
+
+    const teacherId = teacher.data.data[0].id;
+    const teacherFullName = teacher.data.data[0].Full_Name;
+    const teacherName =
+      teacher.data.data[0].Full_Name.split(" ")[0].toLowerCase();
+
+    const result = [];
+    for (let i = 0; i < students.length; i++) {
+      const studentFullName = students[i].name;
+      const studentName = students[i].name.split(" ")[0].toLowerCase();
+      const studentGrade = students[i].grade;
+      const randomNumber = (1000 + Math.random() * 9000).toFixed(0);
+      const studentEmail = `${teacherName}${studentName}${randomNumber}@wisechamps.com`;
+      const studentPhone = `${teacherName}${studentName}`;
+
+      const body = {
+        data: [
+          {
+            Email: studentEmail,
+            Phone: studentPhone,
+            Last_Name: "Parent",
+            Student_Name: studentFullName,
+            Student_Grade: studentGrade,
+            Source_Campaign: "Tution Community",
+            Contact_Teacher: teacherId,
+          },
+        ],
+        apply_feature_execution: [
+          {
+            name: "layout_rules",
+          },
+        ],
+        trigger: ["workflow"],
+      };
+      const student = await axios.post(
+        `https://www.zohoapis.com/crm/v2/Contacts`,
+        body,
+        zohoConfig
+      );
+
+      if (student.status >= 400) {
+        result.push({
+          status: student.status,
+          mode: "internalservererrorinfindinguser",
+          email: studentEmail,
+        });
+        continue;
+      }
+      if (student.data.data[0].code === "DUPLICATE_DATA") {
+        result.push({
+          status: student.status,
+          mode: "duplicateuser",
+          email: studentEmail,
+        });
+        continue;
+      }
+      result.push({
+        status: student.status,
+        mode: "userAdded",
+        email: studentEmail,
+      });
+    }
+    res.status(200).send({
+      status: 200,
+      mode: "useradded",
+      result: result,
+      teacher: teacherFullName,
+      teacherEmail: teacherEmail,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send(error);
   }
 });
 
