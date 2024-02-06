@@ -2452,6 +2452,91 @@ app.post("/tution/create/student", async (req, res) => {
   }
 });
 
+app.post("/analysis/firstTimeQuizTakers", async (req, res) => {
+  try {
+    let { startDate, endDate } = req.body;
+    const zohoToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${zohoToken}`,
+      },
+    };
+    startDate = new Date(startDate);
+    endDate = new Date(endDate);
+    const startYear = startDate.getFullYear();
+    const startMonth = (startDate.getMonth() + 1).toString().padStart(2, "0");
+    const startDay = startDate.getDate().toString().padStart(2, "0");
+    const endYear = endDate.getFullYear();
+    const endMonth = (endDate.getMonth() + 1).toString().padStart(2, "0");
+    const endDay = endDate.getDate().toString().padStart(2, "0");
+    const formattedDateStart = `${startYear}-${startMonth}-${startDay}T00:00:00+05:30`;
+    const formattedDateEnd = `${endYear}-${endMonth}-${endDay}T23:59:59+05:30`;
+
+    const attemptBody = {
+      select_query: `select Contact_Name.Email as Email from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' group by Contact_Name.Email`,
+    };
+
+    const attempt = await axios.post(
+      `https://www.zohoapis.com/crm/v3/coql`,
+      attemptBody,
+      zohoConfig
+    );
+    if (attempt.status >= 400) {
+      return res.status(attempt.status).send({
+        status: attempt.status,
+        mode: "internalservererrorinfindingattempt",
+      });
+    }
+    if (attempt.status == 204) {
+      return res.status(attempt.status).send({
+        status: attempt.status,
+        mode: "noattempts",
+      });
+    }
+
+    const attemptBeforeBody = {
+      select_query: `select Contact_Name.Email as Email from Attempts where Session_Date_Time < '${formattedDateStart}' group by Contact_Name.Email`,
+    };
+
+    const attemptBefore = await axios.post(
+      `https://www.zohoapis.com/crm/v3/coql`,
+      attemptBeforeBody,
+      zohoConfig
+    );
+    if (attemptBefore.status >= 400) {
+      return res.status(attemptBefore.status).send({
+        status: attemptBefore.status,
+        mode: "internalservererrorinfindingattemptBefore",
+      });
+    }
+    if (attemptBefore.status == 204) {
+      return res.status(attemptBefore.status).send({
+        status: attemptBefore.status,
+        mode: "noattemptsbeforestart",
+      });
+    }
+
+    const finalUsers = [];
+    for (let i = 0; i < attempt.data.data.length; i++) {
+      const email = attempt.data.data[i].Email;
+      const oldAttempt = attemptBefore.data.data.find(
+        (res) => res.Email === email
+      );
+      if (!oldAttempt) {
+        finalUsers.push({ email: email });
+      }
+    }
+
+    return res.status(200).send({
+      finalUsers,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server Started 🎈 http://localhost:${PORT}`);
 });
