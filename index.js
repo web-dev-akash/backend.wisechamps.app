@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const Razorpay = require("razorpay");
+const pLimit = require("p-limit");
 require("dotenv").config();
 const app = express();
 app.use(express.json());
@@ -617,7 +618,7 @@ const getZohoUserDetailsWithEmail = async (email) => {
   const contactPhone = contact.data.data[0].Phone;
   const contactId = contact.data.data[0].id;
   const credits = contact.data.data[0].Credits;
-  const student_name = contact.data.data[0].Student_Name;
+  const studentName = contact.data.data[0].Student_Name;
 
   return {
     status: 200,
@@ -629,7 +630,7 @@ const getZohoUserDetailsWithEmail = async (email) => {
       phone: contactPhone,
       id: contactId,
       credits,
-      Student_Name: student_name,
+      studentName: studentName,
     },
   };
 };
@@ -750,6 +751,7 @@ const getZohoUserDetailsWithPhone = async (phone, referral) => {
   const contactEmail = contact.data.data[0].Email;
   const contactPhone = contact.data.data[0].Phone;
   const contactId = contact.data.data[0].id;
+  const studentName = contact.data.data[0].Student_Name;
 
   if (referral) {
     let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
@@ -796,6 +798,7 @@ const getZohoUserDetailsWithPhone = async (phone, referral) => {
       email: contactEmail,
       phone: contactPhone,
       id: contactId,
+      studentName: studentName,
     },
   };
 };
@@ -2452,9 +2455,46 @@ app.post("/tution/create/student", async (req, res) => {
   }
 });
 
-app.post("/quiz/analysis/weekly", async (req, res) => {
+const formatDateWithTimezone = (date, time) => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  return `${year}-${month}-${day}${time}`;
+};
+
+const getAnalysisData = async (query, zohoConfig) => {
   try {
-    let { startDate, endDate } = req.body;
+    const response = await axios.post(
+      `https://www.zohoapis.com/crm/v3/coql`,
+      { select_query: query },
+      zohoConfig
+    );
+    if (response.status >= 400) {
+      throw new Error("Internal Server Error");
+    }
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+function getNumberOfDays(start) {
+  const date1 = new Date(start);
+  const date2 = new Date();
+  const oneDay = 1000 * 60 * 60 * 24;
+  const differenceMs = Math.abs(date2 - date1);
+  const daysBetween = Math.round(differenceMs / oneDay);
+  return daysBetween;
+}
+
+const limit = pLimit(20);
+
+const getWeeklyQuizAnalysis = async (startDate, endDate) => {
+  try {
+    const timezoneOffset = "T00:00:00+05:30";
+    const oneDayMS = 24 * 60 * 60 * 1000;
+    const threeWeeksMS = 21 * oneDayMS;
+    const sixWeeksMS = 42 * oneDayMS;
     const zohoToken = await getZohoTokenOptimized();
     const zohoConfig = {
       headers: {
@@ -2463,126 +2503,132 @@ app.post("/quiz/analysis/weekly", async (req, res) => {
         Authorization: `Bearer ${zohoToken}`,
       },
     };
-    startDate = new Date(startDate);
-    endDate = new Date(endDate);
-    const startYear = startDate.getFullYear();
-    const startMonth = (startDate.getMonth() + 1).toString().padStart(2, "0");
-    const startDay = startDate.getDate().toString().padStart(2, "0");
-    const endYear = endDate.getFullYear();
-    const endMonth = (endDate.getMonth() + 1).toString().padStart(2, "0");
-    const endDay = endDate.getDate().toString().padStart(2, "0");
-    const formattedDateStart = `${startYear}-${startMonth}-${startDay}T00:00:00+05:30`;
-    const formattedDateEnd = `${endYear}-${endMonth}-${endDay}T23:59:59+05:30`;
 
-    const attemptBody = {
-      select_query: `select Contact_Name.Email as Email from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' group by Contact_Name.Email`,
-    };
-
-    const attempt = await axios.post(
-      `https://www.zohoapis.com/crm/v3/coql`,
-      attemptBody,
-      zohoConfig
+    const formattedDateStart = formatDateWithTimezone(
+      new Date(startDate),
+      "T00:00:00+05:30"
     );
-    if (attempt.status >= 400) {
-      return res.status(attempt.status).send({
-        status: attempt.status,
-        mode: "internalservererrorinfindingattempt",
-      });
-    }
-    if (attempt.status == 204) {
-      return res.status(attempt.status).send({
-        status: attempt.status,
-        mode: "noattempts",
-      });
-    }
-
-    const attemptBeforeBody = {
-      select_query: `select Contact_Name.Email as Email from Attempts where Session_Date_Time < '${formattedDateStart}' group by Contact_Name.Email`,
-    };
-
-    const attemptBefore = await axios.post(
-      `https://www.zohoapis.com/crm/v3/coql`,
-      attemptBeforeBody,
-      zohoConfig
+    const formattedDateEnd = formatDateWithTimezone(
+      new Date(endDate),
+      "T23:59:59+05:30"
     );
-    if (attemptBefore.status >= 400) {
-      return res.status(attemptBefore.status).send({
-        status: attemptBefore.status,
-        mode: "internalservererrorinfindingattemptBefore",
-      });
-    }
-    if (attemptBefore.status == 204) {
-      return res.status(attemptBefore.status).send({
-        status: attemptBefore.status,
-        mode: "noattemptsbeforestart",
-      });
+
+    const attemptsQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' group by Contact_Name.Email,Contact_Name.Credits`;
+    const attemptBeforeQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits from Attempts where Session_Date_Time < '${formattedDateStart}' group by Contact_Name.Email,Contact_Name.Credits`;
+
+    const [attempts, attemptsBefore] = await Promise.all([
+      getAnalysisData(attemptsQuery, zohoConfig),
+      getAnalysisData(attemptBeforeQuery, zohoConfig),
+    ]);
+
+    if (attempts.status === 204 || attemptsBefore.status === 204) {
+      return { status: "noattempts" };
     }
 
-    const finalUsers = [];
-    for (let i = 0; i < attempt.data.data.length; i++) {
-      const email = attempt.data.data[i].Email;
-      const oldAttempt = attemptBefore.data.data.find(
-        (res) => res.Email === email
-      );
-      if (!oldAttempt) {
-        finalUsers.push({ email: email });
-      }
-    }
+    const finalUsers = attempts.data.data.filter(
+      (attempt) =>
+        !attemptsBefore.data.data.find(
+          (before) => before.Email === attempt.Email
+        )
+    );
 
     const currentDate = new Date();
-    const lastThreeWeeksDate = new Date(
-      currentDate.getTime() - 21 * 24 * 60 * 60 * 1000
+    const lastThreeWeeksDate = new Date(currentDate.getTime() - threeWeeksMS);
+    const lastSixWeeksDate = new Date(currentDate.getTime() - sixWeeksMS);
+    const currDateStart = formatDateWithTimezone(
+      lastThreeWeeksDate,
+      timezoneOffset
     );
-    const currStartYear = currentDate.getFullYear();
-    const currStartMonth = (currentDate.getMonth() + 1)
-      .toString()
-      .padStart(2, "0");
-    const currStartDay = currentDate.getDate().toString().padStart(2, "0");
-    const lastThreeWeekYear = lastThreeWeeksDate.getFullYear();
-    const lastThreeWeekMonth = (lastThreeWeeksDate.getMonth() + 1)
-      .toString()
-      .padStart(2, "0");
-    const lastThreeWeekDay = lastThreeWeeksDate
-      .getDate()
-      .toString()
-      .padStart(2, "0");
-    const currDateStart = `${lastThreeWeekYear}-${lastThreeWeekMonth}-${lastThreeWeekDay}T00:00:00+05:30`;
-    const currDateEnd = `${currStartYear}-${currStartMonth}-${currStartDay}T23:59:59+05:30`;
+    const prevThreeWeekDateEnd = formatDateWithTimezone(
+      currentDate,
+      "T23:59:59+05:30"
+    );
+    const prevSixWeekDateEnd = formatDateWithTimezone(
+      lastSixWeeksDate,
+      "T23:59:59+05:30"
+    );
 
-    const activeUsers = [];
-    const inactiveUsers = [];
-    const regularUsers = [];
+    const userStatuses = {
+      activeUsers: [],
+      inactiveUsers: [],
+      regularUsers: [],
+      atRiskUsers: [],
+      dropoutUsers: [],
+    };
 
-    for (let i = 0; i < finalUsers.length; i++) {
-      const attemptBody = {
-        select_query: `select Contact_Name.Email as Email from Attempts where (Session_Date_Time between '${currDateStart}' and '${currDateEnd}') and Contact_Name.Email = '${finalUsers[i].email}'`,
-      };
+    const numberOfDays = getNumberOfDays(endDate);
+    const userStatusPromises = finalUsers.map(async (user) => {
+      const lastThreeWeeksQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits from Attempts where (Session_Date_Time between '${currDateStart}' and '${prevThreeWeekDateEnd}') and Contact_Name.Email = '${user.Email}'`;
+      const lastSixWeeksQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits from Attempts where (Session_Date_Time between '${prevSixWeekDateEnd}' and '${prevThreeWeekDateEnd}') and Contact_Name.Email = '${user.Email}'`;
 
-      const attempt = await axios.post(
-        `https://www.zohoapis.com/crm/v3/coql`,
-        attemptBody,
-        zohoConfig
-      );
-      if (attempt.status >= 400) {
-        return res.status(attempt.status).send({
-          status: attempt.status,
-          mode: "internalservererrorinfindingattempt",
-        });
+      if (numberOfDays < 42) {
+        const [lastThreeAttempt] = await Promise.all([
+          limit(() => getAnalysisData(lastThreeWeeksQuery, zohoConfig)),
+        ]);
+
+        if (lastThreeAttempt.status === 204 && user.Credits == 0) {
+          userStatuses.dropoutUsers.push(user);
+        }
+        if (lastThreeAttempt.status === 204) {
+          userStatuses.inactiveUsers.push(user);
+        } else {
+          userStatuses.activeUsers.push(user);
+        }
+      } else {
+        const [lastThreeAttempt, lastSixAttempt] = await Promise.all([
+          limit(() => getAnalysisData(lastThreeWeeksQuery, zohoConfig)),
+          limit(() => getAnalysisData(lastSixWeeksQuery, zohoConfig)),
+        ]);
+
+        if (lastThreeAttempt.status === 204) {
+          userStatuses.inactiveUsers.push(user);
+        } else {
+          userStatuses.activeUsers.push(user);
+        }
+
+        if (
+          lastSixAttempt.status === 200 &&
+          Number(lastSixAttempt.data.info.count) >= 6
+        ) {
+          if (lastThreeAttempt.status === 204 && user.Credits != 0) {
+            userStatuses.atRiskUsers.push(user);
+          } else if (lastThreeAttempt.status === 204 && user.Credits == 0) {
+            userStatuses.dropoutUsers.push(user);
+          } else {
+            userStatuses.regularUsers.push(user);
+          }
+        } else if (lastThreeAttempt.status === 204 && user.Credits == 0) {
+          userStatuses.dropoutUsers.push(user);
+        }
       }
-      if (attempt.status == 204) {
-        inactiveUsers.push(finalUsers[i]);
-        continue;
-      }
-      activeUsers.push(finalUsers[i]);
-    }
-
-    return res.status(200).send({
-      firstTimer: finalUsers.length,
-      activeUsers: activeUsers.length,
-      inactiveUsers: inactiveUsers.length,
     });
+    await Promise.all(userStatusPromises);
+    return {
+      status: "success",
+      firstTimer: finalUsers.length,
+      activeUsers: userStatuses.activeUsers.length,
+      inactiveUsers: userStatuses.inactiveUsers.length,
+      regularUsers: userStatuses.regularUsers.length,
+      atRiskUsers: userStatuses.atRiskUsers.length,
+      dropoutUsers: userStatuses.dropoutUsers.length,
+    };
   } catch (error) {
-    console.log(error);
+    return {
+      status: "error",
+      message: error.message,
+      code: error.status || 500,
+    };
+  }
+};
+
+app.post("/quiz/analysis/weekly", async (req, res) => {
+  try {
+    let { startDate, endDate } = req.body;
+    const data = await getWeeklyQuizAnalysis(startDate, endDate);
+    return res.status(200).send(data);
+  } catch (error) {
+    console.log("error---", error);
+    return res.status(500).send(error);
   }
 });
 
