@@ -234,7 +234,7 @@ const getMeetingLink = async (emailParam, payId) => {
   }
 
   const attemptBody = {
-    select_query: `select Session.id as Session_id, Session.Name as Session_Name,Session.Subject as Subject, Session.Number_of_Questions	as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}'`,
+    select_query: `select Session.id as Session_id, Session.Name as Session_Name,Session.Subject as Subject, Session.Number_of_Questions as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}'`,
   };
 
   const attempt = await axios.post(
@@ -288,7 +288,7 @@ const getMeetingLink = async (emailParam, payId) => {
         name,
         credits: credits ? credits : 0,
         grade: grade,
-        team,
+        team: team === "Boys" || team === "Girls" ? null : team,
         address: finalAddress,
         pincode,
       };
@@ -1956,7 +1956,7 @@ app.post("/quiz/team", async (req, res) => {
     const student_name = contact.data.data[0].Student_Name;
     const address = contact.data.data[0].Address;
 
-    if (alreadyInTeam && !grade) {
+    if ((alreadyInTeam === "North" || alreadyInTeam === "South") && !grade) {
       return res.status(200).send({
         team: alreadyInTeam,
         mode: "alreadyInTeam",
@@ -2480,14 +2480,30 @@ const getAnalysisData = async (query, zohoConfig) => {
   }
 };
 
-function getNumberOfDays(start) {
+const getNumberOfDays = (start) => {
   const date1 = new Date(start);
   const date2 = new Date();
   const oneDay = 1000 * 60 * 60 * 24;
   const differenceMs = Math.abs(date2 - date1);
   const daysBetween = Math.round(differenceMs / oneDay);
   return daysBetween;
-}
+};
+
+const getWeeklyDates = (start, end) => {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const weeklyDates = [];
+  let current = new Date(startDate);
+  current.setDate(current.getDate() + ((4 + 7 - current.getDay()) % 7));
+  while (current < endDate) {
+    const weekStart = new Date(current);
+    const weekEnd = new Date(current);
+    weekEnd.setDate(weekEnd.getDate() + 3);
+    weeklyDates.push({ start: weekStart, end: weekEnd });
+    current.setDate(current.getDate() + 7);
+  }
+  return weeklyDates;
+};
 
 const limit = pLimit(20);
 
@@ -2505,181 +2521,199 @@ const getWeeklyQuizAnalysis = async (startDate, endDate) => {
         Authorization: `Bearer ${zohoToken}`,
       },
     };
-
-    const formattedDateStart = formatDateWithTimezone(
-      new Date(startDate),
-      "T00:00:00+05:30"
-    );
-    const formattedDateEnd = formatDateWithTimezone(
-      new Date(endDate),
-      "T23:59:59+05:30"
-    );
-
-    let currentPage = 0;
-    const attempts = [];
-    const attemptsBefore = [];
-    while (true) {
-      const attemptsQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits, Contact_Name.Phone as Phone from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' group by Contact_Name.Email,Contact_Name.Credits,Contact_Name.Phone limit ${
-        currentPage * 200
-      }, 200`;
-      const attemptsResponse = await getAnalysisData(attemptsQuery, zohoConfig);
-      if (attemptsResponse.status === 204) {
-        return { status: "noattempts" };
-      }
-      attempts.push(...attemptsResponse.data.data);
-      if (!attemptsResponse.data.info.more_records) {
-        break;
-      }
-      currentPage++;
-    }
-
-    currentPage = 0;
-    while (true) {
-      const attemptBeforeQuery = `select Contact_Name.Email as Email from Attempts where Session_Date_Time < '${formattedDateStart}' group by Contact_Name.Email limit ${
-        currentPage * 200
-      }, 200`;
-      const attemptsBeforeResponse = await getAnalysisData(
-        attemptBeforeQuery,
-        zohoConfig
+    const totalWeeks = getWeeklyDates(startDate, endDate);
+    const totalData = [];
+    for (let i = 0; i < totalWeeks.length; i++) {
+      const formattedDateStart = formatDateWithTimezone(
+        new Date(totalWeeks[i].start),
+        "T00:00:00+05:30"
       );
-      if (attemptsBeforeResponse.status === 204) {
-        return { status: "noattempts" };
+      const formattedDateEnd = formatDateWithTimezone(
+        new Date(totalWeeks[i].end),
+        "T23:59:59+05:30"
+      );
+
+      console.log(formattedDateStart, formattedDateEnd);
+
+      let currentPage = 0;
+      const attempts = [];
+      const attemptsBefore = [];
+      while (true) {
+        const attemptsQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits, Contact_Name.Phone as Phone from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' group by Contact_Name.Email,Contact_Name.Credits,Contact_Name.Phone limit ${
+          currentPage * 200
+        }, 200`;
+        const attemptsResponse = await getAnalysisData(
+          attemptsQuery,
+          zohoConfig
+        );
+        if (attemptsResponse.status === 204) {
+          return { status: "noattempts" };
+        }
+        attempts.push(...attemptsResponse.data.data);
+        if (!attemptsResponse.data.info.more_records) {
+          break;
+        }
+        currentPage++;
       }
-      attemptsBefore.push(...attemptsBeforeResponse.data.data);
-      if (!attemptsBeforeResponse.data.info.more_records) {
-        break;
+
+      currentPage = 0;
+      while (true) {
+        const attemptBeforeQuery = `select Contact_Name.Email as Email from Attempts where Session_Date_Time < '${formattedDateStart}' group by Contact_Name.Email limit ${
+          currentPage * 200
+        }, 200`;
+        const attemptsBeforeResponse = await getAnalysisData(
+          attemptBeforeQuery,
+          zohoConfig
+        );
+        if (attemptsBeforeResponse.status === 204) {
+          return { status: "noattempts" };
+        }
+        attemptsBefore.push(...attemptsBeforeResponse.data.data);
+        if (!attemptsBeforeResponse.data.info.more_records) {
+          break;
+        }
+        currentPage++;
       }
-      currentPage++;
-    }
 
-    const finalUsers = attempts.filter(
-      (attempt) =>
-        !attemptsBefore.find((before) => before.Email === attempt.Email)
-    );
+      const finalUsers = attempts.filter(
+        (attempt) =>
+          !attemptsBefore.find((before) => before.Email === attempt.Email)
+      );
 
-    const currentDate = new Date();
-    const lastThreeWeeksDate = new Date(currentDate.getTime() - threeWeeksMS);
-    const lastSixWeeksDate = new Date(currentDate.getTime() - sixWeeksMS);
-    const currDateStart = formatDateWithTimezone(
-      lastThreeWeeksDate,
-      timezoneOffset
-    );
-    const prevThreeWeekDateEnd = formatDateWithTimezone(
-      currentDate,
-      "T23:59:59+05:30"
-    );
-    const prevSixWeekDateEnd = formatDateWithTimezone(
-      lastSixWeeksDate,
-      "T23:59:59+05:30"
-    );
+      const currentDate = new Date();
+      const lastThreeWeeksDate = new Date(currentDate.getTime() - threeWeeksMS);
+      const lastSixWeeksDate = new Date(currentDate.getTime() - sixWeeksMS);
+      const currDateStart = formatDateWithTimezone(
+        lastThreeWeeksDate,
+        timezoneOffset
+      );
+      const prevThreeWeekDateEnd = formatDateWithTimezone(
+        currentDate,
+        "T23:59:59+05:30"
+      );
+      const prevSixWeekDateEnd = formatDateWithTimezone(
+        lastSixWeeksDate,
+        "T23:59:59+05:30"
+      );
 
-    const userStatuses = {
-      activeUsers: [],
-      inactiveUsers: [],
-      regularUsers: [],
-      atRiskUsers: [],
-      dropoutUsers: [],
-      revivalUsers: [],
-      totalCreditExostedUsers: [],
-    };
+      const userStatuses = {
+        activeUsers: [],
+        inactiveUsers: [],
+        regularUsers: [],
+        atRiskUsers: [],
+        dropoutUsers: [],
+        revivalUsers: [],
+        totalCreditExostedUsers: [],
+      };
 
-    const numberOfDays = getNumberOfDays(endDate);
-    const userStatusPromises = finalUsers.map(async (user) => {
-      const lastThreeWeeksQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits from Attempts where (Session_Date_Time between '${currDateStart}' and '${prevThreeWeekDateEnd}') and Contact_Name.Email = '${user.Email}'`;
-      const lastSixWeeksQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits from Attempts where (Session_Date_Time between '${prevSixWeekDateEnd}' and '${prevThreeWeekDateEnd}') and Contact_Name.Email = '${user.Email}'`;
-      const lastThreeWeeksWithExostedCreditsQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits, Session_Date_Time from Attempts where (Session_Date_Time between '${currDateStart}' and '${prevThreeWeekDateEnd}') and (Contact_Name.Email = '${user.Email}' and Remaining_Credits = 0)`;
+      const numberOfDays = getNumberOfDays(endDate);
+      const userStatusPromises = finalUsers.map(async (user) => {
+        const lastThreeWeeksQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits from Attempts where (Session_Date_Time between '${currDateStart}' and '${prevThreeWeekDateEnd}') and Contact_Name.Email = '${user.Email}'`;
+        const lastSixWeeksQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits from Attempts where (Session_Date_Time between '${prevSixWeekDateEnd}' and '${prevThreeWeekDateEnd}') and Contact_Name.Email = '${user.Email}'`;
+        const lastThreeWeeksWithExostedCreditsQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits, Session_Date_Time from Attempts where (Session_Date_Time between '${currDateStart}' and '${prevThreeWeekDateEnd}') and (Contact_Name.Email = '${user.Email}' and Remaining_Credits = 0)`;
 
-      if (numberOfDays < 42) {
-        const [lastThreeAttempt, lastThreeWithExotedCredits] =
-          await Promise.all([
-            limit(() => getAnalysisData(lastThreeWeeksQuery, zohoConfig)),
-            limit(() =>
-              getAnalysisData(lastThreeWeeksWithExostedCreditsQuery, zohoConfig)
-            ),
-          ]);
+        if (numberOfDays < 42) {
+          const [lastThreeAttempt, lastThreeWithExotedCredits] =
+            await Promise.all([
+              limit(() => getAnalysisData(lastThreeWeeksQuery, zohoConfig)),
+              limit(() =>
+                getAnalysisData(
+                  lastThreeWeeksWithExostedCreditsQuery,
+                  zohoConfig
+                )
+              ),
+            ]);
 
-        if (lastThreeWithExotedCredits.status === 200) {
-          const session_date_time =
-            lastThreeWithExotedCredits.data.data[0].Session_Date_Time;
-          const attemptAfterExostedCreditsQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits from Attempts where Session_Date_Time > '${session_date_time}' and Contact_Name.Email = '${user.Email}'`;
-          const [attemptAfterExostedCredits] = await Promise.all([
-            limit(() =>
-              getAnalysisData(attemptAfterExostedCreditsQuery, zohoConfig)
-            ),
-          ]);
-          if (attemptAfterExostedCredits.status === 200) {
-            userStatuses.revivalUsers.push(user);
+          if (lastThreeWithExotedCredits.status === 200) {
+            const session_date_time =
+              lastThreeWithExotedCredits.data.data[0].Session_Date_Time;
+            const attemptAfterExostedCreditsQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits from Attempts where Session_Date_Time > '${session_date_time}' and Contact_Name.Email = '${user.Email}'`;
+            const [attemptAfterExostedCredits] = await Promise.all([
+              limit(() =>
+                getAnalysisData(attemptAfterExostedCreditsQuery, zohoConfig)
+              ),
+            ]);
+            if (attemptAfterExostedCredits.status === 200) {
+              userStatuses.revivalUsers.push(user);
+            }
           }
-        }
 
-        if (lastThreeAttempt.status === 204 && user.Credits == 0) {
-          userStatuses.dropoutUsers.push(user);
-        }
-
-        if (lastThreeAttempt.status === 204) {
-          userStatuses.inactiveUsers.push(user);
-        } else {
-          userStatuses.activeUsers.push(user);
-        }
-      } else {
-        const [lastThreeAttempt, lastSixAttempt, lastThreeWithExotedCredits] =
-          await Promise.all([
-            limit(() => getAnalysisData(lastThreeWeeksQuery, zohoConfig)),
-            limit(() => getAnalysisData(lastSixWeeksQuery, zohoConfig)),
-            limit(() =>
-              getAnalysisData(lastThreeWeeksWithExostedCreditsQuery, zohoConfig)
-            ),
-          ]);
-
-        if (lastThreeAttempt.status === 204) {
-          userStatuses.inactiveUsers.push(user);
-        } else {
-          userStatuses.activeUsers.push(user);
-        }
-
-        if (lastThreeWithExotedCredits.status === 200) {
-          const session_date_time =
-            lastThreeWithExotedCredits.data.data[0].Session_Date_Time;
-          const attemptAfterExostedCreditsQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits from Attempts where Session_Date_Time > '${session_date_time}' and Contact_Name.Email = '${user.Email}'`;
-          const [attemptAfterExostedCredits] = await Promise.all([
-            limit(() =>
-              getAnalysisData(attemptAfterExostedCreditsQuery, zohoConfig)
-            ),
-          ]);
-          if (attemptAfterExostedCredits.status === 200) {
-            userStatuses.revivalUsers.push(user);
+          if (lastThreeAttempt.status === 204 && user.Credits === 0) {
+            userStatuses.dropoutUsers.push(user);
           }
-        }
 
-        if (
-          lastSixAttempt.status === 200 &&
-          Number(lastSixAttempt.data.info.count) >= 6
-        ) {
-          if (lastThreeAttempt.status === 204 && user.Credits != 0) {
-            userStatuses.atRiskUsers.push(user);
+          if (lastThreeAttempt.status === 204) {
+            userStatuses.inactiveUsers.push(user);
+          } else {
+            userStatuses.activeUsers.push(user);
+          }
+        } else {
+          const [lastThreeAttempt, lastSixAttempt, lastThreeWithExotedCredits] =
+            await Promise.all([
+              limit(() => getAnalysisData(lastThreeWeeksQuery, zohoConfig)),
+              limit(() => getAnalysisData(lastSixWeeksQuery, zohoConfig)),
+              limit(() =>
+                getAnalysisData(
+                  lastThreeWeeksWithExostedCreditsQuery,
+                  zohoConfig
+                )
+              ),
+            ]);
+
+          if (lastThreeAttempt.status === 204) {
+            userStatuses.inactiveUsers.push(user);
+          } else {
+            userStatuses.activeUsers.push(user);
+          }
+
+          if (lastThreeWithExotedCredits.status === 200) {
+            const session_date_time =
+              lastThreeWithExotedCredits.data.data[0].Session_Date_Time;
+            const attemptAfterExostedCreditsQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits from Attempts where Session_Date_Time > '${session_date_time}' and Contact_Name.Email = '${user.Email}'`;
+            const [attemptAfterExostedCredits] = await Promise.all([
+              limit(() =>
+                getAnalysisData(attemptAfterExostedCreditsQuery, zohoConfig)
+              ),
+            ]);
+            if (attemptAfterExostedCredits.status === 200) {
+              userStatuses.revivalUsers.push(user);
+            }
+          }
+
+          if (
+            lastSixAttempt.status === 200 &&
+            Number(lastSixAttempt.data.info.count) >= 6
+          ) {
+            if (lastThreeAttempt.status === 204 && user.Credits != 0) {
+              userStatuses.atRiskUsers.push(user);
+            } else if (lastThreeAttempt.status === 204 && user.Credits == 0) {
+              userStatuses.dropoutUsers.push(user);
+            } else {
+              userStatuses.regularUsers.push(user);
+            }
           } else if (lastThreeAttempt.status === 204 && user.Credits == 0) {
             userStatuses.dropoutUsers.push(user);
-          } else {
-            userStatuses.regularUsers.push(user);
           }
-        } else if (lastThreeAttempt.status === 204 && user.Credits == 0) {
-          userStatuses.dropoutUsers.push(user);
         }
-      }
-    });
-    await Promise.all(userStatusPromises);
+      });
+      await Promise.all(userStatusPromises);
+      totalData.push({
+        startDate: new Date(formattedDateStart).toDateString(),
+        startEnd: new Date(formattedDateEnd).toDateString(),
+        firstTimer: finalUsers.length,
+        activeUsers: userStatuses.activeUsers.length,
+        inactiveUsers: userStatuses.inactiveUsers.length,
+        regularUsers: userStatuses.regularUsers.length,
+        atRiskUsers: userStatuses.atRiskUsers.length,
+        dropoutUsers: userStatuses.dropoutUsers.length,
+        revivalUsers: userStatuses.revivalUsers.length,
+        totalCreditExostedUsers:
+          userStatuses.dropoutUsers.length + userStatuses.revivalUsers.length,
+      });
+    }
     return {
       status: "success",
-      firstTimer: finalUsers.length,
-      activeUsers: userStatuses.activeUsers.length,
-      inactiveUsers: userStatuses.inactiveUsers.length,
-      regularUsers: userStatuses.regularUsers.length,
-      atRiskUsers: userStatuses.atRiskUsers.length,
-      dropoutUsers: userStatuses.dropoutUsers.length,
-      revivalUsers: userStatuses.revivalUsers.length,
-      totalCreditExostedUsers:
-        userStatuses.dropoutUsers.length + userStatuses.revivalUsers.length,
-      finalData: { ...userStatuses },
+      totalData: totalData,
     };
   } catch (error) {
     return {
