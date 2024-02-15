@@ -288,7 +288,7 @@ const getMeetingLink = async (emailParam, payId) => {
         name,
         credits: credits ? credits : 0,
         grade: grade,
-        team: team === "Boys" || team === "Girls" ? null : team,
+        team: team,
         address: finalAddress,
         pincode,
       };
