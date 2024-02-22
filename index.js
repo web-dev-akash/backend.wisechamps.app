@@ -3,6 +3,7 @@ const moment = require("moment");
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
+const crypto = require("crypto");
 const Razorpay = require("razorpay");
 const pLimit = require("p-limit");
 require("dotenv").config();
@@ -41,7 +42,6 @@ const getZohoToken = async () => {
     const res = await axios.post(
       `https://accounts.zoho.com/oauth/v2/token?client_id=${clientId}&grant_type=refresh_token&client_secret=${clientSecret}&refresh_token=${refreshToken}`
     );
-    // console.log(res.data);
     const token = res.data.access_token;
     return token;
   } catch (error) {
@@ -558,18 +558,6 @@ const getQuizLink = async (emailParam) => {
 };
 
 const getZohoUserDetailsWithEmail = async (email) => {
-  let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-  logsData.referralLogs?.push({
-    email: email,
-    description: `Email Entered 200`,
-    date: new Date().toDateString(),
-    time: new Date(oldDate).toLocaleTimeString("en-US"),
-  });
-  logsData.referralLogs
-    ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
-        if (err) throw err;
-      })
-    : null;
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -582,31 +570,13 @@ const getZohoUserDetailsWithEmail = async (email) => {
     `https://www.zohoapis.com/crm/v2/Contacts/search?email=${email}`,
     zohoConfig
   );
-
   if (contact.status >= 400) {
     return {
       status: contact.status,
       mode: "internalservererrorinfindinguser",
     };
   }
-  // return { contact };
   if (contact.status === 204) {
-    let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-    logsData.referralLogs?.push({
-      email: email,
-      description: `No User Found 204`,
-      date: new Date().toDateString(),
-      time: new Date(oldDate).toLocaleTimeString("en-US"),
-    });
-    logsData.referralLogs
-      ? fs.writeFile(
-          "./logs.json",
-          JSON.stringify(logsData, null, 2),
-          (err) => {
-            if (err) throw err;
-          }
-        )
-      : null;
     return {
       status: contact.status,
       mode: "nouser",
@@ -2523,6 +2493,7 @@ const getWeeklyQuizAnalysis = async (startDate, endDate) => {
     };
     const totalWeeks = getWeeklyDates(startDate, endDate);
     const totalData = [];
+    const totalTags = [];
     for (let i = 0; i < totalWeeks.length; i++) {
       const formattedDateStart = formatDateWithTimezone(
         new Date(totalWeeks[i].start),
@@ -2539,7 +2510,7 @@ const getWeeklyQuizAnalysis = async (startDate, endDate) => {
       const attempts = [];
       const attemptsBefore = [];
       while (true) {
-        const attemptsQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits, Contact_Name.Phone as Phone from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' group by Contact_Name.Email,Contact_Name.Credits,Contact_Name.Phone limit ${
+        const attemptsQuery = `select Contact_Name.id as contactId, Contact_Name.Email as Email, Contact_Name.Credits as Credits, Contact_Name.Phone as Phone from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' group by Contact_Name.Email,Contact_Name.Credits,Contact_Name.Phone,Contact_Name.id limit ${
           currentPage * 200
         }, 200`;
         const attemptsResponse = await getAnalysisData(
@@ -2606,7 +2577,48 @@ const getWeeklyQuizAnalysis = async (startDate, endDate) => {
         totalCreditExostedUsers: [],
       };
 
-      const numberOfDays = getNumberOfDays(endDate);
+      const addtags = {
+        activeUsers: [],
+        inactiveUsers: [],
+        regularUsers: [],
+        atRiskUsers: [],
+        dropoutUsers: [],
+        revivalUsers: [],
+      };
+      const removeTagsBody = {
+        tags: [
+          {
+            name: "Dropouts",
+          },
+          {
+            name: "AtRisk",
+          },
+          {
+            name: "Revival",
+          },
+          {
+            name: "Regular",
+          },
+          {
+            name: "Active",
+          },
+          {
+            name: "Inactive",
+          },
+        ],
+        ids: [],
+      };
+
+      for (let i = 0; i < finalUsers.length; i++) {
+        removeTagsBody.ids.push(finalUsers[i].contactId);
+      }
+      const removeTags = await axios.post(
+        `https://www.zohoapis.com/crm/v3/Contacts/actions/remove_tags`,
+        removeTagsBody,
+        zohoConfig
+      );
+
+      const numberOfDays = getNumberOfDays(totalWeeks[i].end);
       const userStatusPromises = finalUsers.map(async (user) => {
         const lastThreeWeeksQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits from Attempts where (Session_Date_Time between '${currDateStart}' and '${prevThreeWeekDateEnd}') and Contact_Name.Email = '${user.Email}'`;
         const lastSixWeeksQuery = `select Contact_Name.Email as Email, Contact_Name.Credits as Credits from Attempts where (Session_Date_Time between '${prevSixWeekDateEnd}' and '${prevThreeWeekDateEnd}') and Contact_Name.Email = '${user.Email}'`;
@@ -2623,7 +2635,7 @@ const getWeeklyQuizAnalysis = async (startDate, endDate) => {
                 )
               ),
             ]);
-
+          let flag = false;
           if (lastThreeWithExotedCredits.status === 200) {
             const session_date_time =
               lastThreeWithExotedCredits.data.data[0].Session_Date_Time;
@@ -2635,6 +2647,8 @@ const getWeeklyQuizAnalysis = async (startDate, endDate) => {
             ]);
             if (attemptAfterExostedCredits.status === 200) {
               userStatuses.revivalUsers.push(user);
+              addtags.revivalUsers.push(user);
+              flag = true;
             }
           }
 
@@ -2646,6 +2660,14 @@ const getWeeklyQuizAnalysis = async (startDate, endDate) => {
             userStatuses.inactiveUsers.push(user);
           } else {
             userStatuses.activeUsers.push(user);
+          }
+
+          if (lastThreeAttempt.status === 204 && user.Credits === 0) {
+            addtags.dropoutUsers.push(user);
+          } else if (lastThreeAttempt.status === 204 && !flag) {
+            addtags.inactiveUsers.push(user);
+          } else if (lastThreeAttempt.status === 200 && !flag) {
+            addtags.activeUsers.push(user);
           }
         } else {
           const [lastThreeAttempt, lastSixAttempt, lastThreeWithExotedCredits] =
@@ -2665,7 +2687,7 @@ const getWeeklyQuizAnalysis = async (startDate, endDate) => {
           } else {
             userStatuses.activeUsers.push(user);
           }
-
+          let flag = false;
           if (lastThreeWithExotedCredits.status === 200) {
             const session_date_time =
               lastThreeWithExotedCredits.data.data[0].Session_Date_Time;
@@ -2677,6 +2699,8 @@ const getWeeklyQuizAnalysis = async (startDate, endDate) => {
             ]);
             if (attemptAfterExostedCredits.status === 200) {
               userStatuses.revivalUsers.push(user);
+              addtags.revivalUsers.push(user);
+              flag = true;
             }
           }
 
@@ -2686,13 +2710,21 @@ const getWeeklyQuizAnalysis = async (startDate, endDate) => {
           ) {
             if (lastThreeAttempt.status === 204 && user.Credits != 0) {
               userStatuses.atRiskUsers.push(user);
+              addtags.atRiskUsers.push(user);
             } else if (lastThreeAttempt.status === 204 && user.Credits == 0) {
               userStatuses.dropoutUsers.push(user);
+              addtags.dropoutUsers.push(user);
             } else {
               userStatuses.regularUsers.push(user);
+              addtags.regularUsers.push(user);
             }
           } else if (lastThreeAttempt.status === 204 && user.Credits == 0) {
             userStatuses.dropoutUsers.push(user);
+            addtags.dropoutUsers.push(user);
+          } else if (lastThreeAttempt.status === 204 && !flag) {
+            addtags.inactiveUsers.push(user);
+          } else if (lastThreeAttempt.status === 200 && !flag) {
+            addtags.activeUsers.push(user);
           }
         }
       });
@@ -2710,10 +2742,146 @@ const getWeeklyQuizAnalysis = async (startDate, endDate) => {
         totalCreditExostedUsers:
           userStatuses.dropoutUsers.length + userStatuses.revivalUsers.length,
       });
+
+      totalTags.push({
+        startDate: new Date(formattedDateStart).toDateString(),
+        startEnd: new Date(formattedDateEnd).toDateString(),
+        activeUsers: addtags.activeUsers,
+        inactiveUsers: addtags.inactiveUsers,
+        regularUsers: addtags.regularUsers,
+        atRiskUsers: addtags.atRiskUsers,
+        dropoutUsers: addtags.dropoutUsers,
+        revivalUsers: addtags.revivalUsers,
+      });
+
+      if (addtags.dropoutUsers.length > 0) {
+        const body = {
+          tags: [
+            {
+              name: "Dropouts",
+              id: "4878003000016184001",
+              color_code: "#F17574",
+            },
+          ],
+          ids: [],
+        };
+        for (let i = 0; i < addtags.dropoutUsers.length; i++) {
+          body.ids.push(addtags.dropoutUsers[i].contactId);
+        }
+        const updateTag = await axios.post(
+          `https://www.zohoapis.com/crm/v3/Contacts/actions/add_tags`,
+          body,
+          zohoConfig
+        );
+      }
+      if (addtags.atRiskUsers.length > 0) {
+        const body = {
+          tags: [
+            {
+              name: "AtRisk",
+              id: "4878003000016184002",
+              color_code: "#E7A826",
+            },
+          ],
+          ids: [],
+        };
+        for (let i = 0; i < addtags.atRiskUsers.length; i++) {
+          body.ids.push(addtags.atRiskUsers[i].contactId);
+        }
+        const updateTag = await axios.post(
+          `https://www.zohoapis.com/crm/v3/Contacts/actions/add_tags`,
+          body,
+          zohoConfig
+        );
+      }
+      if (addtags.revivalUsers.length > 0) {
+        const body = {
+          tags: [
+            {
+              name: "Revival",
+              id: "4878003000016184003",
+              color_code: "#63C57E",
+            },
+          ],
+          ids: [],
+        };
+        for (let i = 0; i < addtags.revivalUsers.length; i++) {
+          body.ids.push(addtags.revivalUsers[i].contactId);
+        }
+        const updateTag = await axios.post(
+          `https://www.zohoapis.com/crm/v3/Contacts/actions/add_tags`,
+          body,
+          zohoConfig
+        );
+      }
+
+      if (addtags.regularUsers.length > 0) {
+        const body = {
+          tags: [
+            {
+              name: "Regular",
+              id: "4878003000016184013",
+              color_code: "#63C57E",
+            },
+          ],
+          ids: [],
+        };
+        for (let i = 0; i < addtags.regularUsers.length; i++) {
+          body.ids.push(addtags.regularUsers[i].contactId);
+        }
+        const updateTag = await axios.post(
+          `https://www.zohoapis.com/crm/v3/Contacts/actions/add_tags`,
+          body,
+          zohoConfig
+        );
+      }
+
+      if (addtags.activeUsers.length > 0) {
+        const body = {
+          tags: [
+            {
+              name: "Active",
+              id: "4878003000016184004",
+              color_code: "#57B1FD",
+            },
+          ],
+          ids: [],
+        };
+        for (let i = 0; i < addtags.activeUsers.length; i++) {
+          body.ids.push(addtags.activeUsers[i].contactId);
+        }
+        const updateTag = await axios.post(
+          `https://www.zohoapis.com/crm/v3/Contacts/actions/add_tags`,
+          body,
+          zohoConfig
+        );
+      }
+
+      if (addtags.inactiveUsers.length > 0) {
+        const body = {
+          tags: [
+            {
+              name: "Inactive",
+              id: "4878003000016184005",
+              color_code: "#969696",
+            },
+          ],
+          ids: [],
+        };
+        for (let i = 0; i < addtags.inactiveUsers.length; i++) {
+          body.ids.push(addtags.inactiveUsers[i].contactId);
+        }
+        const updateTag = await axios.post(
+          `https://www.zohoapis.com/crm/v3/Contacts/actions/add_tags`,
+          body,
+          zohoConfig
+        );
+      }
     }
     return {
       status: "success",
       totalData: totalData,
+      totalTags: totalTags,
     };
   } catch (error) {
     return {
@@ -2730,8 +2898,164 @@ app.post("/quiz/analysis/weekly", async (req, res) => {
     const data = await getWeeklyQuizAnalysis(startDate, endDate);
     return res.status(200).send(data);
   } catch (error) {
-    console.log("error---", error);
-    return res.status(500).send(error);
+    return res.status(error.status || 500).send({
+      status: "error",
+      message: error.message,
+      code: error.status || 500,
+    });
+  }
+});
+
+app.post("/pointagram/hash", async (req, res) => {
+  try {
+    const { email } = req.body;
+    const timestamp = Math.floor(Date.now() / 1000);
+    const api_key = process.env.POINTAGRAM_API_KEY;
+    const api_user = process.env.POINTAGRAM_API_USER;
+    const appSecret = process.env.POINTAGRAM_APP_SECRET;
+    const appId = process.env.POINTAGRAM_APP_ID;
+    const config = {
+      headers: {
+        api_key: api_key,
+        "Content-Type": "application/json",
+        api_user: api_user,
+      },
+    };
+    const findPlayer = await axios.get(
+      `https://app.pointagram.com/server/externalapi.php/list_players?search_by=Email&filter=${email}`,
+      config
+    );
+    if (findPlayer.data?.length > 0) {
+      const playerId = findPlayer.data[0].id;
+      const msg = `${playerId} ${appId} ${timestamp}`;
+      const hmac = crypto
+        .createHmac("sha256", appSecret)
+        .update(msg)
+        .digest("hex");
+      return res.status(200).send({
+        status: 200,
+        hmac: hmac,
+        playerId,
+        appId,
+        timestamp,
+      });
+    }
+  } catch (error) {
+    return res.status(error.status || 500).send({
+      status: "error",
+      message: error.message,
+      code: error.status || 500,
+    });
+  }
+});
+
+const getStudentDetails = async (email) => {
+  try {
+    const accessToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+    const contact = await axios.get(
+      `https://www.zohoapis.com/crm/v2/Contacts/search?email=${email}`,
+      zohoConfig
+    );
+
+    if (contact.status >= 400) {
+      return {
+        status: contact.status,
+        mode: "internalservererrorinfindinguser",
+      };
+    }
+
+    if (contact.status === 204) {
+      return {
+        status: contact.status,
+        mode: "nouser",
+      };
+    }
+
+    const studentName = contact.data.data[0].Student_Name;
+    const name = contact.data.data[0].Full_Name;
+    const credits = contact.data.data[0].Credits;
+    const coins = contact.data.data[0].Coins;
+    const phone = contact.data.data[0].Phone;
+    const contactId = contact.data.data[0].id;
+    const grade = contact.data.data[0].Student_Grade;
+
+    const referralsQuery = `select Email, Student_Name, Student_Grade, Phone, Credits from Contacts where Referee = '${contactId}'`;
+    const [referrals] = await Promise.all([
+      limit(() => getAnalysisData(referralsQuery, zohoConfig)),
+    ]);
+
+    if (referrals.status === 204) {
+      return {
+        status: 200,
+        mode: "user",
+        contactId: contactId,
+        studentName,
+        credits,
+        coins,
+        email: email,
+        phone: phone,
+        name,
+        referrals: 0,
+      };
+    }
+
+    const referralsAttempted = await Promise.all(
+      referrals.data.data.map(async (user) => {
+        const attemptsQuery = `select Contact_Name.id as ContactId from Attempts where Contact_Name = '${user.id}'`;
+        const [attempts] = await Promise.all([
+          limit(() => getAnalysisData(attemptsQuery, zohoConfig)),
+        ]);
+
+        if (attempts.status === 204) {
+          return {
+            ...user,
+            quizAttempted: 0,
+          };
+        }
+        return {
+          ...user,
+          quizAttempted: attempts.data.info.count,
+        };
+      })
+    );
+
+    referralsAttempted.sort((a, b) => b.quizAttempted - a.quizAttempted);
+
+    return {
+      status: 200,
+      mode: "user",
+      contactId: contactId,
+      studentName,
+      credits,
+      coins,
+      email: email,
+      phone: phone,
+      name,
+      referrals: referralsAttempted,
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+app.post("/student", async (req, res) => {
+  try {
+    const { email } = req.body;
+    const data = await getStudentDetails(email);
+    return res.status(200).send(data);
+  } catch (error) {
+    return res.status(error.status || 500).send({
+      status: "error",
+      message: error.message,
+      code: error.status || 500,
+    });
   }
 });
 
