@@ -2985,10 +2985,27 @@ const getStudentDetails = async (email) => {
     const phone = contact.data.data[0].Phone;
     const contactId = contact.data.data[0].id;
     const grade = contact.data.data[0].Student_Grade;
+    const createdTime = contact.data.data[0].Created_Time;
+    const tags = contact.data.data[0].Tag;
+    const category = tags.filter(
+      ({ name }) =>
+        name === "Regular" ||
+        name === "Active" ||
+        name === "Inactive" ||
+        name === "AtRisk" ||
+        name === "Revival" ||
+        name === "Dropouts"
+    );
+    console.log(category);
+    const age = getNumberOfDays(createdTime);
 
     const referralsQuery = `select Email, Student_Name, Student_Grade, Phone, Credits from Contacts where Referee = '${contactId}'`;
-    const [referrals] = await Promise.all([
+
+    const attemptsQuery = `select Contact_Name.id as contactId from Attempts where Contact_Name = '${contactId}'`;
+
+    const [referrals, attempts] = await Promise.all([
       limit(() => getAnalysisData(referralsQuery, zohoConfig)),
+      limit(() => getAnalysisData(attemptsQuery, zohoConfig)),
     ]);
 
     if (referrals.status === 204) {
@@ -3003,6 +3020,9 @@ const getStudentDetails = async (email) => {
         phone: phone,
         name,
         referrals: 0,
+        quizzes: attempts.status === 200 ? attempts.data.info.count : 0,
+        age: age,
+        category: category[0]?.name,
       };
     }
 
@@ -3039,6 +3059,9 @@ const getStudentDetails = async (email) => {
       phone: phone,
       name,
       referrals: referralsAttempted,
+      quizzes: attempts.status === 200 ? attempts.data.info.count : 0,
+      age: age,
+      category: category[0]?.name,
     };
   } catch (error) {
     throw new Error(error);
