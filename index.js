@@ -2978,7 +2978,7 @@ const getStudentDetails = async (email) => {
       };
     }
 
-    const studentName = contact.data.data[0].Student_Name;
+    const studentName = contact.data.data[0].Student_Name.toLowerCase();
     const name = contact.data.data[0].Full_Name;
     const credits = contact.data.data[0].Credits;
     const coins = contact.data.data[0].Coins;
