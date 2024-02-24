@@ -2996,7 +2996,7 @@ const getStudentDetails = async (email) => {
         name === "Revival" ||
         name === "Dropouts"
     );
-    console.log(category);
+
     const age = getNumberOfDays(createdTime);
 
     const referralsQuery = `select Email, Student_Name, Student_Grade, Phone, Credits from Contacts where Referee = '${contactId}'`;
