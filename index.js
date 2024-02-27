@@ -1052,7 +1052,7 @@ app.post("/payment_links", async (req, res) => {
         )
       : null;
     const credits = {
-      119: 4,
+      199: 5,
       499: 20,
       1999: 200,
     };
@@ -1100,7 +1100,7 @@ app.post("/payment/capture", async (req, res) => {
   try {
     const plans = {
       1: 1,
-      119: 4,
+      199: 5,
       499: 20,
       1999: 200,
     };
