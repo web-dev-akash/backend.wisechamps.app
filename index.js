@@ -2980,8 +2980,8 @@ const getStudentDetails = async (email) => {
 
     const studentName = contact.data.data[0].Student_Name.toLowerCase();
     const name = contact.data.data[0].Full_Name;
-    const credits = contact.data.data[0].Credits;
-    const coins = contact.data.data[0].Coins;
+    const credits = contact.data.data[0].Credits || 0;
+    const coins = contact.data.data[0].Coins || 0;
     const phone = contact.data.data[0].Phone;
     const contactId = contact.data.data[0].id;
     const grade = contact.data.data[0].Student_Grade;
