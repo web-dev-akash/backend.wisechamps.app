@@ -2996,17 +2996,92 @@ const getStudentDetails = async (email) => {
         name === "Revival" ||
         name === "Dropouts"
     );
-
+    let gradeGroup;
+    if (grade == 1 || grade == 2) {
+      gradeGroup = "1;2";
+    } else if (grade == 7 || grade == 8) {
+      gradeGroup = "7;8";
+    } else gradeGroup = grade;
     const age = getNumberOfDays(createdTime);
+    const today = moment();
+    const currDay = today.day();
+    const diff = today.date() - currDay + (currDay === 0 ? -6 : 1);
+    const monday = moment(new Date(today.date(diff)));
+    const sunday = monday.clone().add(6, "days");
+    const formattedDateStart = `${monday.format("YYYY-MM-DD")}T00:00:00+05:30`;
+    const formattedDateEnd = `${sunday.format("YYYY-MM-DD")}T23:59:59+05:30`;
 
     const referralsQuery = `select Email, Student_Name, Student_Grade, Phone, Credits from Contacts where Referee = '${contactId}'`;
 
     const attemptsQuery = `select Contact_Name.id as contactId from Attempts where Contact_Name = '${contactId}'`;
 
-    const [referrals, attempts] = await Promise.all([
+    const sessionQuery = `select Name as Session_Name, Subject, Number_of_Questions as Total_Questions, Session_Date_Time from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`;
+
+    const [referrals, attempts, sessions] = await Promise.all([
       limit(() => getAnalysisData(referralsQuery, zohoConfig)),
       limit(() => getAnalysisData(attemptsQuery, zohoConfig)),
+      limit(() => getAnalysisData(sessionQuery, zohoConfig)),
     ]);
+
+    const finalSessions = [];
+    if (sessions.status === 200) {
+      const sessionData = sessions.data.data;
+      let wordsToRemove = [
+        "Final",
+        "&",
+        "Math",
+        "Science",
+        "English",
+        "GK",
+        "Grade",
+        "Live",
+        "Quiz",
+        "for",
+        "Nov",
+        "Dec",
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+      ];
+
+      const sortedSessionData = sessionData.sort(
+        (a, b) => new Date(a.Session_Date_Time) - new Date(b.Session_Date_Time)
+      );
+
+      for (let i = 0; i < sortedSessionData.length; i++) {
+        const sessionName = sortedSessionData[i].Session_Name;
+        let newString = sessionName;
+        let regexString = wordsToRemove.join("|");
+        let regex = new RegExp("\\b(" + regexString + ")\\b|\\d+|&", "gi");
+        newString = newString.replace(regex, "");
+        finalSessions.push({
+          ...sortedSessionData[i],
+          Session_Name: newString.trim(),
+        });
+      }
+    } else {
+      finalSessions.push(
+        {
+          Session_Name: "Science Live Quiz",
+        },
+        {
+          Session_Name: "Maths Live Quiz",
+        },
+        {
+          Session_Name: "Maths Live Quiz",
+        },
+        {
+          Session_Name: "Logical Reasoning Live Quiz",
+        }
+      );
+    }
 
     if (referrals.status === 204) {
       return {
@@ -3023,6 +3098,7 @@ const getStudentDetails = async (email) => {
         quizzes: attempts.status === 200 ? attempts.data.info.count : 0,
         age: age,
         category: category[0]?.name,
+        session: finalSessions,
       };
     }
 
@@ -3062,6 +3138,7 @@ const getStudentDetails = async (email) => {
       quizzes: attempts.status === 200 ? attempts.data.info.count : 0,
       age: age,
       category: category[0]?.name,
+      session: finalSessions,
     };
   } catch (error) {
     throw new Error(error);
