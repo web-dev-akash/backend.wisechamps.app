@@ -3078,7 +3078,7 @@ const getStudentDetails = async (email) => {
           Session_Name: "Maths Live Quiz",
         },
         {
-          Session_Name: "Logical Reasoning Live Quiz",
+          Session_Name: "Maths Live Quiz",
         }
       );
     }
