@@ -2662,7 +2662,7 @@ const getWeeklyQuizAnalysis = async (startDate, endDate) => {
             userStatuses.activeUsers.push(user);
           }
 
-          if (lastThreeAttempt.status === 204 && user.Credits === 0) {
+          if (lastThreeAttempt.status === 204 && user.Credits === 0 && !flag) {
             addtags.dropoutUsers.push(user);
           } else if (lastThreeAttempt.status === 204 && !flag) {
             addtags.inactiveUsers.push(user);
@@ -2704,22 +2704,42 @@ const getWeeklyQuizAnalysis = async (startDate, endDate) => {
             }
           }
 
+          // Add users data
+
           if (
             lastSixAttempt.status === 200 &&
             Number(lastSixAttempt.data.info.count) >= 6
           ) {
             if (lastThreeAttempt.status === 204 && user.Credits != 0) {
               userStatuses.atRiskUsers.push(user);
-              addtags.atRiskUsers.push(user);
             } else if (lastThreeAttempt.status === 204 && user.Credits == 0) {
               userStatuses.dropoutUsers.push(user);
-              addtags.dropoutUsers.push(user);
             } else {
               userStatuses.regularUsers.push(user);
-              addtags.regularUsers.push(user);
             }
           } else if (lastThreeAttempt.status === 204 && user.Credits == 0) {
             userStatuses.dropoutUsers.push(user);
+          }
+
+          // Add User Tags
+
+          if (
+            lastSixAttempt.status === 200 &&
+            Number(lastSixAttempt.data.info.count) >= 6 &&
+            !flag
+          ) {
+            if (lastThreeAttempt.status === 204 && user.Credits != 0) {
+              addtags.atRiskUsers.push(user);
+            } else if (lastThreeAttempt.status === 204 && user.Credits == 0) {
+              addtags.dropoutUsers.push(user);
+            } else {
+              addtags.regularUsers.push(user);
+            }
+          } else if (
+            lastThreeAttempt.status === 204 &&
+            user.Credits == 0 &&
+            !flag
+          ) {
             addtags.dropoutUsers.push(user);
           } else if (lastThreeAttempt.status === 204 && !flag) {
             addtags.inactiveUsers.push(user);
