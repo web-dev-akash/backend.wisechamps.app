@@ -3084,7 +3084,7 @@ const getStudentDetails = async (email) => {
 
     const sessionQuery = `select Name as Session_Name, Subject, Number_of_Questions as Total_Questions, Session_Date_Time from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`;
 
-    const coinsQuery = `select Coins, Updated_Date from Coins where Contact = '${contactId}'`;
+    const coinsQuery = `select Coins, Updated_Date, Action_Type from Coins where Contact = '${contactId}'`;
 
     const [referrals, attempts, sessions, coinsHistory] = await Promise.all([
       limit(() => getAnalysisData(referralsQuery, zohoConfig)),
