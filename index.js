@@ -5,11 +5,13 @@ const cors = require("cors");
 const axios = require("axios");
 const crypto = require("crypto");
 const Razorpay = require("razorpay");
-const pLimit = require("p-limit");
+const { google } = require("googleapis");
 require("dotenv").config();
+const pLimit = require("p-limit");
 const app = express();
 app.use(express.json());
 app.use(cors());
+const limit = pLimit(20);
 const PORT = process.env.PORT || 8080;
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
@@ -2475,9 +2477,50 @@ const getWeeklyDates = (start, end) => {
   return weeklyDates;
 };
 
-const limit = pLimit(20);
+const addDataToSheet = async (data, columnRange) => {
+  const spreadsheetId = process.env.SPREADSHEET_ID;
+  const auth = new google.auth.GoogleAuth({
+    keyFile: "key.json",
+    scopes: "https://www.googleapis.com/auth/spreadsheets",
+  });
+  const authClientObject = await auth.getClient();
+  const sheet = google.sheets({
+    version: "v4",
+    auth: authClientObject,
+  });
+  const values = data.map((record) => {
+    return [
+      record.firstTimer,
+      record.activeUsers,
+      record.inactiveUsers,
+      record.regularUsers,
+      record.atRiskUsers,
+      record.dropoutUsers,
+      record.revivalUsers,
+      record.totalCreditExostedUsers,
+    ];
+  });
+  const writeData = await sheet.spreadsheets.values.batchUpdate({
+    auth,
+    spreadsheetId,
+    resource: {
+      valueInputOption: "USER_ENTERED",
+      data: [
+        {
+          range: `Sheet1!${columnRange}`,
+          majorDimension: "COLUMNS",
+          values: values,
+        },
+      ],
+      includeValuesInResponse: false,
+      responseValueRenderOption: "FORMATTED_VALUE",
+      responseDateTimeRenderOption: "SERIAL_NUMBER",
+    },
+  });
+  return writeData.data;
+};
 
-const getWeeklyQuizAnalysis = async (startDate, endDate) => {
+const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
   try {
     const timezoneOffset = "T00:00:00+05:30";
     const oneDayMS = 24 * 60 * 60 * 1000;
@@ -2898,6 +2941,9 @@ const getWeeklyQuizAnalysis = async (startDate, endDate) => {
         );
       }
     }
+
+    const updatedSheet = await addDataToSheet(totalData, columnRange);
+    console.log("Sheet Data", updatedSheet);
     return {
       status: "success",
       totalData: totalData,
@@ -2914,8 +2960,8 @@ const getWeeklyQuizAnalysis = async (startDate, endDate) => {
 
 app.post("/quiz/analysis/weekly", async (req, res) => {
   try {
-    let { startDate, endDate } = req.body;
-    const data = await getWeeklyQuizAnalysis(startDate, endDate);
+    let { startDate, endDate, range } = req.body;
+    const data = await getWeeklyQuizAnalysis(startDate, endDate, range);
     return res.status(200).send(data);
   } catch (error) {
     return res.status(error.status || 500).send({
@@ -3038,10 +3084,13 @@ const getStudentDetails = async (email) => {
 
     const sessionQuery = `select Name as Session_Name, Subject, Number_of_Questions as Total_Questions, Session_Date_Time from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`;
 
-    const [referrals, attempts, sessions] = await Promise.all([
+    const coinsQuery = `select Coins, Updated_Date from Coins where Contact = '${contactId}'`;
+
+    const [referrals, attempts, sessions, coinsHistory] = await Promise.all([
       limit(() => getAnalysisData(referralsQuery, zohoConfig)),
       limit(() => getAnalysisData(attemptsQuery, zohoConfig)),
       limit(() => getAnalysisData(sessionQuery, zohoConfig)),
+      limit(() => getAnalysisData(coinsQuery, zohoConfig)),
     ]);
 
     const finalSessions = [];
@@ -3120,6 +3169,7 @@ const getStudentDetails = async (email) => {
         age: age,
         category: category[0]?.name,
         session: finalSessions,
+        coinsHistory: coinsHistory.status === 200 ? coinsHistory.data.data : 0,
       };
     }
 
@@ -3160,6 +3210,7 @@ const getStudentDetails = async (email) => {
       age: age,
       category: category[0]?.name,
       session: finalSessions,
+      coinsHistory: coinsHistory.status === 200 ? coinsHistory.data.data : 0,
     };
   } catch (error) {
     throw new Error(error);
