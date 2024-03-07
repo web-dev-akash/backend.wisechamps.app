@@ -58,7 +58,7 @@ const getDailyReports = async (grade) => {
     },
   };
 
-  const date = new Date("2024-03-01");
+  const date = new Date();
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const day = date.getDate().toString().padStart(2, "0");

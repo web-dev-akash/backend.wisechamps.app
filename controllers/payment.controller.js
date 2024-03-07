@@ -25,7 +25,7 @@ paymentRouter.post("/payment_links", async (req, res) => {
     //   : null;
     const credits = {
       199: 5,
-      499: 20,
+      499: 25,
       1999: 200,
     };
     const instance = new Razorpay({
@@ -75,7 +75,7 @@ paymentRouter.post("/payment/capture", async (req, res) => {
     const plans = {
       1: 1,
       199: 5,
-      499: 20,
+      499: 25,
       1999: 200,
     };
     const id = req.body.payload.payment_link.entity.id;
