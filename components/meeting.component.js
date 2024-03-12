@@ -4,19 +4,6 @@ const { getZohoTokenOptimized } = require("./common.component");
 const freeMeetLink = `https://us06web.zoom.us/j/87300068676?pwd=4mj1Nck0plfYDJle9YcfX1MJYrcLbu.1`;
 
 const getMeetingLink = async (emailParam) => {
-  // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-  // logsData.zoomLogs?.push({
-  //   email: emailParam,
-  //   description: "EnteredEmail",
-  //   date: new Date().toDateString(),
-  //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-  // });
-  // logsData.zoomLogs
-  //   ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
-  //       if (err) throw err;
-  //     })
-  //     : null;
-  // // return "success";
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -32,45 +19,13 @@ const getMeetingLink = async (emailParam) => {
   );
 
   if (contact.status >= 400) {
-    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-    // logsData.zoomLogs?.push({
-    //   email: emailParam,
-    //   description: `internalservererrorinfindinguser ${contact.status}`,
-    //   date: new Date().toDateString(),
-    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-    // });
-    // logsData.zoomLogs
-    //   ? fs.writeFile(
-    //       "./logs.json",
-    //       JSON.stringify(logsData, null, 2),
-    //       (err) => {
-    //         if (err) throw err;
-    //       }
-    //     )
-    //   : null;
     return {
       status: contact.status,
       mode: "internalservererrorinfindinguser",
     };
   }
-  // // return { contact };
+
   if (contact.status === 204) {
-    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-    // logsData.zoomLogs?.push({
-    //   email: emailParam,
-    //   description: `nouser 204`,
-    //   date: new Date().toDateString(),
-    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-    // });
-    // logsData.zoomLogs
-    //   ? fs.writeFile(
-    //       "./logs.json",
-    //       JSON.stringify(logsData, null, 2),
-    //       (err) => {
-    //         if (err) throw err;
-    //       }
-    //     )
-    //   : null;
     return {
       status: contact.status,
       mode: "nouser",
@@ -80,8 +35,17 @@ const getMeetingLink = async (emailParam) => {
   const contactid = contact.data.data[0].id;
   const email = contact.data.data[0].Email;
   const grade = contact.data.data[0].Student_Grade;
+
+  let gradeGroup;
+  if (grade == 1 || grade == 2) {
+    gradeGroup = "1;2";
+  } else if (grade == 7 || grade == 8) {
+    gradeGroup = "7;8";
+  } else gradeGroup = grade;
+
   const name = contact.data.data[0].Student_Name;
-  const credits = contact.data.data[0].Credits || 0;
+  const credits = Number(contact.data.data[0].Credits) || 0;
+
   const team = contact.data.data[0].Team;
   const address = contact.data.data[0].Address;
   const pincode = contact.data.data[0].Pincode;
@@ -97,7 +61,7 @@ const getMeetingLink = async (emailParam) => {
   const formattedDateStart = `${year}-${month}-${day}T00:00:00+05:30`;
   const formattedDateEnd = `${year}-${month}-${day}T23:59:00+05:30`;
   const sessionBody = {
-    select_query: `select Session_Grade, LMS_Activity_ID, Explanation_Meeting_Link from Sessions where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
+    select_query: `select Session_Grade, LMS_Activity_ID, Explanation_Meeting_Link from Sessions where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' and Session_Grade = '${gradeGroup}'`,
   };
 
   const session = await axios.post(
@@ -107,22 +71,6 @@ const getMeetingLink = async (emailParam) => {
   );
 
   if (session.status >= 400) {
-    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-    // logsData.zoomLogs?.push({
-    //   email: emailParam,
-    //   description: `internalservererrorinfindingsession ${session.status}`,
-    //   date: new Date().toDateString(),
-    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-    // });
-    // logsData.zoomLogs
-    //   ? fs.writeFile(
-    //       "./logs.json",
-    //       JSON.stringify(logsData, null, 2),
-    //       (err) => {
-    //         if (err) throw err;
-    //       }
-    //     )
-    //   : null;
     return {
       status: session.status,
       mode: "internalservererrorinfindingsession",
@@ -130,22 +78,6 @@ const getMeetingLink = async (emailParam) => {
   }
 
   if (session.status === 204) {
-    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-    // logsData.zoomLogs?.push({
-    //   email: emailParam,
-    //   description: `nosession ${session.status}`,
-    //   date: new Date().toDateString(),
-    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-    // });
-    // logsData.zoomLogs
-    //   ? fs.writeFile(
-    //       "./logs.json",
-    //       JSON.stringify(logsData, null, 2),
-    //       (err) => {
-    //         if (err) throw err;
-    //       }
-    //     )
-    //   : null;
     return {
       status: session.status,
       mode: "nosession",
@@ -165,68 +97,27 @@ const getMeetingLink = async (emailParam) => {
     zohoConfig
   );
 
-  // console.log(session.data.data);
-  let finalAddress = "";
-  if (address) {
-    finalAddress = address;
-  } else if (attempt.status === 200) {
-    finalAddress = Number(attempt.data.info.count) <= 3 ? "Temp address" : null;
-  } else {
-    finalAddress = "Temp address";
-  }
+  const finalAddress = address
+    ? address
+    : attempt.status === 200 && attempt.data.info.count <= 3
+    ? "Temp Address"
+    : null;
 
-  for (let i = 0; i < session.data.data.length; i++) {
-    const sessionGrade = session.data.data[i].Session_Grade;
-    const paidMeetLink = session.data.data[i].Explanation_Meeting_Link;
-    const link = !credits || credits == 0 ? freeMeetLink : paidMeetLink;
-    const correctSession = sessionGrade.find((res) => res === grade);
-    if (correctSession || Number(grade) === 0) {
-      // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-      // logsData.zoomLogs?.push({
-      //   email: emailParam,
-      //   description: `LinkGenerated 200`,
-      //   date: new Date().toDateString(),
-      //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-      // });
-      // logsData.zoomLogs
-      //   ? fs.writeFile(
-      //       "./logs.json",
-      //       JSON.stringify(logsData, null, 2),
-      //       (err) => {
-      //         if (err) throw err;
-      //       }
-      //     )
-      //   : null;
-      return {
-        status: 200,
-        mode: !gradeUpdated ? "oldData" : "zoomlink",
-        email,
-        link,
-        name,
-        credits: credits,
-        grade: grade,
-        team: team === "Boys" || team === "Girls" ? null : team,
-        address: finalAddress,
-        pincode,
-      };
-    }
-  }
+  const meetLink = !credits
+    ? freeMeetLink
+    : session.data.data[0].Explanation_Meeting_Link;
 
-  // let oldDate1 = new Date().setMinutes(new Date().getMinutes() + 330);
-  // logsData.zoomLogs?.push({
-  //   email: emailParam,
-  //   description: `nosession 204`,
-  //   date: new Date().toDateString(),
-  //   time: new Date(oldDate1).toLocaleTimeString("en-US"),
-  // });
-  // logsData.zoomLogs
-  //   ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
-  //       if (err) throw err;
-  //     })
-  //   : null;
   return {
-    status: session.status,
-    mode: "nosession",
+    status: 200,
+    mode: !gradeUpdated ? "oldData" : "zoomlink",
+    email,
+    link: meetLink,
+    name,
+    credits: credits,
+    grade: grade,
+    team: team === "Boys" || team === "Girls" ? null : team,
+    address: finalAddress,
+    pincode,
   };
 };
 
