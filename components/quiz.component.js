@@ -965,13 +965,10 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
         );
       }
     }
-
     const updatedSheet = await addDataToSheet(totalData, columnRange);
-    console.log("Sheet Data", updatedSheet);
     return {
       status: "success",
-      totalData: totalData,
-      totalTags: totalTags,
+      updatedSheet,
     };
   } catch (error) {
     return {

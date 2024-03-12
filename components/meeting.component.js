@@ -3,7 +3,7 @@ const { getZohoTokenOptimized } = require("./common.component");
 
 const freeMeetLink = `https://us06web.zoom.us/j/87300068676?pwd=4mj1Nck0plfYDJle9YcfX1MJYrcLbu.1`;
 
-const getMeetingLink = async (emailParam, payId) => {
+const getMeetingLink = async (emailParam) => {
   // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
   // logsData.zoomLogs?.push({
   //   email: emailParam,
@@ -81,12 +81,11 @@ const getMeetingLink = async (emailParam, payId) => {
   const email = contact.data.data[0].Email;
   const grade = contact.data.data[0].Student_Grade;
   const name = contact.data.data[0].Student_Name;
-  const credits = contact.data.data[0].Credits;
+  const credits = contact.data.data[0].Credits || 0;
   const team = contact.data.data[0].Team;
   const address = contact.data.data[0].Address;
   const pincode = contact.data.data[0].Pincode;
   const gradeUpdated = contact.data.data[0].Grade_Updated;
-  const source_campaign = contact.data.data[0].Source_Campaign;
   const date = new Date();
   const start = new Date();
   start.setMinutes(start.getMinutes() + 270);
@@ -170,7 +169,7 @@ const getMeetingLink = async (emailParam, payId) => {
   let finalAddress = "";
   if (address) {
     finalAddress = address;
-  } else if (attempt.data && attempt.data.info) {
+  } else if (attempt.status === 200) {
     finalAddress = Number(attempt.data.info.count) <= 3 ? "Temp address" : null;
   } else {
     finalAddress = "Temp address";
@@ -179,8 +178,7 @@ const getMeetingLink = async (emailParam, payId) => {
   for (let i = 0; i < session.data.data.length; i++) {
     const sessionGrade = session.data.data[i].Session_Grade;
     const paidMeetLink = session.data.data[i].Explanation_Meeting_Link;
-    let link = !credits || credits == 0 ? freeMeetLink : paidMeetLink;
-    link = payId ? paidMeetLink : link;
+    const link = !credits || credits == 0 ? freeMeetLink : paidMeetLink;
     const correctSession = sessionGrade.find((res) => res === grade);
     if (correctSession || Number(grade) === 0) {
       // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
@@ -201,15 +199,11 @@ const getMeetingLink = async (emailParam, payId) => {
       //   : null;
       return {
         status: 200,
-        mode:
-          (source_campaign === "old olympiad data" && !gradeUpdated) ||
-          (source_campaign === "old abacus data" && !gradeUpdated)
-            ? "oldData"
-            : "zoomlink",
+        mode: !gradeUpdated ? "oldData" : "zoomlink",
         email,
         link,
         name,
-        credits: credits ? credits : 0,
+        credits: credits,
         grade: grade,
         team: team === "Boys" || team === "Girls" ? null : team,
         address: finalAddress,
