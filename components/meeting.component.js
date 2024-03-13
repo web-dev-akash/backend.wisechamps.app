@@ -3,6 +3,19 @@ const { getZohoTokenOptimized } = require("./common.component");
 
 const freeMeetLink = process.env.FREE_MEETING_LINK;
 
+const isDateInRange = () => {
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth() + 1;
+  if (currentMonth === 3 || currentMonth === 4) {
+    if (currentMonth === 3 && currentDate.getDate() >= 1) {
+      return true;
+    } else if (currentMonth === 4 && currentDate.getDate() <= 15) {
+      return true;
+    }
+  }
+  return false;
+};
+
 const getMeetingLink = async (emailParam) => {
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
@@ -76,16 +89,6 @@ const getMeetingLink = async (emailParam) => {
     };
   }
 
-  // if (session.status === 204) {
-  //   return {
-  //     status: session.status,
-  //     mode: "nosession",
-  //     name,
-  //     credits: credits ? credits : 0,
-  //     grade: grade,
-  //   };
-  // }
-
   const attemptBody = {
     select_query: `select Session.id as Session_id, Session.Name as Session_Name,Session.Subject as Subject, Session.Number_of_Questions as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}'`,
   };
@@ -95,7 +98,8 @@ const getMeetingLink = async (emailParam) => {
     attemptBody,
     zohoConfig
   );
-
+  const updateGrade = isDateInRange();
+  console.log("Update Grade", updateGrade);
   const finalAddress = address
     ? address
     : attempt.status === 200 && attempt.data.info.count <= 3
@@ -111,7 +115,7 @@ const getMeetingLink = async (emailParam) => {
 
   return {
     status: 200,
-    mode: !gradeUpdated ? "oldData" : "zoomlink",
+    mode: !gradeUpdated && updateGrade ? "oldData" : "zoomlink",
     email,
     link: meetLink,
     name,
