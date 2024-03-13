@@ -356,8 +356,8 @@ const getWeeklyUserAttempts = async (email) => {
     };
   }
 
-  let minPercentage = 15;
-  let maxPercentage = 92;
+  let minPercentage = 0;
+  let maxPercentage = 100;
   let finalPercentage = minPercentage;
   let totalAnswer = 0;
   let totalQuestion = 0;
