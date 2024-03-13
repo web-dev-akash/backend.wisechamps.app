@@ -76,15 +76,15 @@ const getMeetingLink = async (emailParam) => {
     };
   }
 
-  if (session.status === 204) {
-    return {
-      status: session.status,
-      mode: "nosession",
-      name,
-      credits: credits ? credits : 0,
-      grade: grade,
-    };
-  }
+  // if (session.status === 204) {
+  //   return {
+  //     status: session.status,
+  //     mode: "nosession",
+  //     name,
+  //     credits: credits ? credits : 0,
+  //     grade: grade,
+  //   };
+  // }
 
   const attemptBody = {
     select_query: `select Session.id as Session_id, Session.Name as Session_Name,Session.Subject as Subject, Session.Number_of_Questions as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}'`,
@@ -102,9 +102,12 @@ const getMeetingLink = async (emailParam) => {
     ? "Temp Address"
     : null;
 
-  const meetLink = !credits
-    ? freeMeetLink
-    : session.data.data[0].Explanation_Meeting_Link;
+  const meetLink =
+    !credits && session.status === 200
+      ? freeMeetLink
+      : session.status === 200
+      ? session.data.data[0].Explanation_Meeting_Link
+      : null;
 
   return {
     status: 200,
