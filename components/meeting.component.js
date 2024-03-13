@@ -46,7 +46,6 @@ const getMeetingLink = async (emailParam) => {
   const name = contact.data.data[0].Student_Name;
   const credits = Number(contact.data.data[0].Credits) || 0;
 
-  const team = contact.data.data[0].Team;
   const address = contact.data.data[0].Address;
   const pincode = contact.data.data[0].Pincode;
   const gradeUpdated = contact.data.data[0].Grade_Updated;
@@ -115,7 +114,7 @@ const getMeetingLink = async (emailParam) => {
     name,
     credits: credits,
     grade: grade,
-    team: team === "Boys" || team === "Girls" ? null : team,
+    team: "not required",
     address: finalAddress,
     pincode,
   };
