@@ -45,6 +45,7 @@ const getStudentDetails = async (email) => {
     const phone = contact.data.data[0].Phone;
     const contactId = contact.data.data[0].id;
     const grade = contact.data.data[0].Student_Grade;
+    const address = contact.data.data[0].Address || null;
     const createdTime = contact.data.data[0].Created_Time;
     const tags = contact.data.data[0].Tag;
     const category = tags.filter(
@@ -157,6 +158,7 @@ const getStudentDetails = async (email) => {
         email: email,
         phone: phone,
         name,
+        address,
         referrals: 0,
         quizzes: attempts.status === 200 ? attempts.data.info.count : 0,
         age: age,
@@ -198,6 +200,7 @@ const getStudentDetails = async (email) => {
       email: email,
       phone: phone,
       name,
+      address,
       referrals: referralsAttempted,
       quizzes: attempts.status === 200 ? attempts.data.info.count : 0,
       age: age,
