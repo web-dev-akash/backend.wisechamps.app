@@ -96,7 +96,7 @@ const updateCoinsForWeeklyToppers = async () => {
         Authorization: `Bearer ${accessToken}`,
       },
     };
-    const today = moment("2024-03-22");
+    const today = moment();
     const currDay = today.day();
     const diff = today.date() - currDay + (currDay === 0 ? -6 : 1);
     const monday = moment(new Date(today.date(diff)));
