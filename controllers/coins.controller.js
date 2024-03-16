@@ -2,19 +2,10 @@ const express = require("express");
 const {
   updateCoinsForWeeklyToppers,
 } = require("../components/coins.component");
+const { authMiddleware } = require("../components/common.component");
 const coinsRouter = express.Router();
 
-coinsRouter.post("/attendance", async (req, res) => {
-  try {
-    const { email } = req.body;
-  } catch (error) {
-    return res.status(500).send({
-      message: error.message,
-    });
-  }
-});
-
-coinsRouter.get("/weekly/toppers", async (req, res) => {
+coinsRouter.get("/weekly/toppers", authMiddleware, async (req, res) => {
   try {
     const data = await updateCoinsForWeeklyToppers();
     return res.status(200).send(data);

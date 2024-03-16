@@ -92,9 +92,35 @@ const formatDateWithTimezone = (date, time) => {
   return `${year}-${month}-${day}${time}`;
 };
 
+const authMiddleware = async (req, res, next) => {
+  try {
+    if (
+      !req.headers.authorization ||
+      req.headers.authorization.split(" ")[0] !== "Bearer"
+    ) {
+      return res.status(401).send({
+        status: "Error",
+        message: "Invalid Authorization",
+      });
+    }
+    const token = req.headers.authorization.split(" ")[1];
+    const authToken = process.env.AUTH_TOKEN;
+    if (token !== authToken) {
+      return res.status(401).send({
+        status: "Error",
+        message: "Invalid Authorization Token",
+      });
+    }
+    next();
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
+
 module.exports = {
   getZohoTokenOptimized,
   getAnalysisData,
   getNumberOfDays,
   formatDateWithTimezone,
+  authMiddleware,
 };
