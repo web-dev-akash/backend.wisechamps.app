@@ -44,7 +44,7 @@ quizRouter.post("/analysis/weekly", async (req, res) => {
   try {
     const { startDate, endDate, range } = req.body;
     const data = await getWeeklyQuizAnalysis(startDate, endDate, range);
-    return res.status(200).send(data);
+    return res.status(200).send({ status: "Success" });
   } catch (error) {
     return res.status(error.status || 500).send({
       status: "error",
