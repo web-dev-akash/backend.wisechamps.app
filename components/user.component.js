@@ -228,10 +228,22 @@ const addUserToZoho = async ({
   relation,
 }) => {
   try {
-    const newphone = `91${phone.substring(
-      phone.length() - 10,
-      phone.length()
-    )}`;
+    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+    // logsData.dailyLogs?.push({
+    //   email: email,
+    //   description: `Filled Form ${referralId}`,
+    //   date: new Date().toDateString(),
+    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
+    // });
+    // logsData.dailyLogs
+    //   ? fs.writeFile(
+    //       "./logs.json",
+    //       JSON.stringify(logsData, null, 2),
+    //       (err) => {
+    //         if (err) throw err;
+    //       }
+    //     )
+    //   : null;
     const zohoToken = await getZohoTokenOptimized();
     const zohoConfig = {
       headers: {
@@ -244,7 +256,7 @@ const addUserToZoho = async ({
       data: [
         {
           Email: email,
-          Phone: newphone,
+          Phone: phone,
           Last_Name: parent_name,
           Student_Name: student_name,
           Student_Grade: student_grade,
@@ -268,6 +280,22 @@ const addUserToZoho = async ({
     );
 
     if (result.status >= 400) {
+      // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
+      // logsData.dailyLogs?.push({
+      //   email: email,
+      //   description: `Interal Server Error ${result.status}`,
+      //   date: new Date().toDateString(),
+      //   time: new Date(oldDate).toLocaleTimeString("en-US"),
+      // });
+      // logsData.dailyLogs
+      //   ? fs.writeFile(
+      //       "./logs.json",
+      //       JSON.stringify(logsData, null, 2),
+      //       (err) => {
+      //         if (err) throw err;
+      //       }
+      //     )
+      //   : null;
       return {
         status: result.status,
         mode: "internalservererrorinfindinguser",
@@ -279,6 +307,23 @@ const addUserToZoho = async ({
         mode: "duplicateuser",
       };
     }
+    // let oldDate1 = new Date().setMinutes(new Date().getMinutes() + 330);
+    // logsData.dailyLogs?.push({
+    //   email: email,
+    //   description: `Contact Added to Zoho ${referralId}`,
+    //   date: new Date().toDateString(),
+    //   time: new Date(oldDate1).toLocaleTimeString("en-US"),
+    // });
+    // logsData.dailyLogs
+    //   ? fs.writeFile(
+    //       "./logs.json",
+    //       JSON.stringify(logsData, null, 2),
+    //       (err) => {
+    //         if (err) throw err;
+    //       }
+    //     )
+    //   : null;
+
     return {
       status: 200,
       mode: "useradded",
