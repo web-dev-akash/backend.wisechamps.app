@@ -1,7 +1,8 @@
 const { default: axios } = require("axios");
 const fs = require("fs");
+const pLimit = require("p-limit");
 require("dotenv").config();
-
+const limit = pLimit(20);
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 const refreshToken = process.env.REFRESH_TOKEN;
@@ -117,7 +118,44 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
+const getProductsFromStore = async () => {
+  try {
+    const accessToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+    const productQuery = `select Product_Name, Unit_Price, Product_Image_URL, Product_Stock, Description from Products where Product_Name is not null`;
+    const [products] = await Promise.all([
+      limit(() => getAnalysisData(productQuery, zohoConfig)),
+    ]);
+    if (products.status >= 400) {
+      return {
+        status: products.status,
+        mode: "error",
+      };
+    }
+    if (products.status === 204) {
+      return {
+        status: products.status,
+        mode: "noproducts",
+      };
+    }
+
+    return {
+      status: 200,
+      products: products.data.data,
+    };
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
+
 module.exports = {
+  getProductsFromStore,
   getZohoTokenOptimized,
   getAnalysisData,
   getNumberOfDays,

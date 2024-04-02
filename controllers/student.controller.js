@@ -1,6 +1,10 @@
 const express = require("express");
 const { getStudentDetails } = require("../components/student.component");
-const { getZohoTokenOptimized } = require("../components/common.component");
+const {
+  getZohoTokenOptimized,
+  authMiddleware,
+  getProductsFromStore,
+} = require("../components/common.component");
 const { default: axios } = require("axios");
 const studentRouter = express.Router();
 
@@ -8,6 +12,19 @@ studentRouter.post("/", async (req, res) => {
   try {
     const { email } = req.body;
     const data = await getStudentDetails(email);
+    return res.status(200).send(data);
+  } catch (error) {
+    return res.status(error.status || 500).send({
+      status: "error",
+      message: error.message,
+      code: error.status || 500,
+    });
+  }
+});
+
+studentRouter.get("/store", authMiddleware, async (req, res) => {
+  try {
+    const data = await getProductsFromStore();
     return res.status(200).send(data);
   } catch (error) {
     return res.status(error.status || 500).send({
