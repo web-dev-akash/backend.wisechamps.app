@@ -213,4 +213,40 @@ const getStudentDetails = async (email) => {
   }
 };
 
-module.exports = { getStudentDetails };
+const getStudentOrders = async (contactId) => {
+  try {
+    const accessToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+
+    const ordersQuery = `select Product.Product_Name as Product_Name, Product.Product_Image_URL as Product_Image_URL, Expected_Delivery_Date, Order_Status, Order_Date from Orders where Contact = '${contactId}'`;
+    const [orders] = await Promise.all([
+      limit(() => getAnalysisData(ordersQuery, zohoConfig)),
+    ]);
+    if (orders.status >= 400) {
+      return {
+        status: orders.status,
+        mode: "error",
+      };
+    }
+    if (orders.status === 204) {
+      return {
+        status: orders.status,
+        mode: "noorders",
+      };
+    }
+    return {
+      status: 200,
+      orders: orders.data.data,
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+module.exports = { getStudentDetails, getStudentOrders };
