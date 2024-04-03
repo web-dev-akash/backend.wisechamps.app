@@ -224,7 +224,7 @@ const getStudentOrders = async (contactId) => {
       },
     };
 
-    const ordersQuery = `select Product.Product_Name as Product_Name, Product.Unit_Price as Unit_Price, Product.Product_Image_URL as Product_Image_URL, Expected_Delivery_Date, Order_Status, Order_Date from Orders where Contact = '${contactId}'`;
+    const ordersQuery = `select id as Order_Id, Product.Product_Name as Product_Name, Product.Unit_Price as Unit_Price, Product.Product_Image_URL as Product_Image_URL, Expected_Delivery_Date, Order_Status, Order_Date from Orders where Contact = '${contactId}'`;
     const [orders] = await Promise.all([
       limit(() => getAnalysisData(ordersQuery, zohoConfig)),
     ]);
@@ -249,4 +249,58 @@ const getStudentOrders = async (contactId) => {
   }
 };
 
-module.exports = { getStudentDetails, getStudentOrders };
+const placeStudentOrder = async (contactId, productId) => {
+  try {
+    const accessToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+    const currentDate = moment().format("YYYY-MM-DD");
+    const body = {
+      data: [
+        {
+          Contact: contactId,
+          Product: productId,
+          Order_Status: "Placed",
+          Order_Date: currentDate,
+        },
+      ],
+      apply_feature_execution: [
+        {
+          name: "layout_rules",
+        },
+      ],
+      trigger: ["workflow"],
+    };
+    const result = await axios.post(
+      `https://www.zohoapis.com/crm/v2/Orders`,
+      body,
+      zohoConfig
+    );
+
+    if (result.status >= 400) {
+      return {
+        status: result.status,
+        mode: "internalservererror",
+      };
+    }
+    if (result.data.data[0].code === "DUPLICATE_DATA") {
+      return {
+        status: result.status,
+        mode: "duplicateorder",
+      };
+    }
+    return {
+      status: result.status,
+      message: "Order Placed Successfully!",
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+module.exports = { getStudentDetails, getStudentOrders, placeStudentOrder };
