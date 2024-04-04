@@ -128,7 +128,7 @@ const getProductsFromStore = async () => {
         Authorization: `Bearer ${accessToken}`,
       },
     };
-    const productQuery = `select id as Product_Id, Product_Name, Unit_Price, Product_Image_URL, Product_Stock, Description from Products where Product_Name is not null`;
+    const productQuery = `select id as Product_Id, Product_Name, Unit_Price, Product_Image_URL, Product_Stock, Description from Products where Product_Name is not null order by Unit_Price asc`;
     const [products] = await Promise.all([
       limit(() => getAnalysisData(productQuery, zohoConfig)),
     ]);

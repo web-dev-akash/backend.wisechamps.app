@@ -224,7 +224,7 @@ const getStudentOrders = async (contactId) => {
       },
     };
 
-    const ordersQuery = `select id as Order_Id, Product.Product_Name as Product_Name, Product.Unit_Price as Unit_Price, Product.Product_Image_URL as Product_Image_URL, Expected_Delivery_Date, Order_Status, Order_Date from Orders where Contact = '${contactId}'`;
+    const ordersQuery = `select id as Order_Id, Product.Product_Name as Product_Name, Product.Unit_Price as Unit_Price, Product.Product_Image_URL as Product_Image_URL, Expected_Delivery_Date, Order_Status, Order_Date from Orders where Contact = '${contactId}' order by Order_Date desc`;
     const [orders] = await Promise.all([
       limit(() => getAnalysisData(ordersQuery, zohoConfig)),
     ]);
