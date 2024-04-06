@@ -259,6 +259,35 @@ const placeStudentOrder = async (contactId, productId) => {
         Authorization: `Bearer ${accessToken}`,
       },
     };
+    const contactQuery = `select Coins from Contacts where id = '${contactId}'`;
+    const productQuery = `select Unit_Price from Products where id = '${productId}'`;
+    const [contact, product] = await Promise.all([
+      limit(() => getAnalysisData(contactQuery, zohoConfig)),
+      limit(() => getAnalysisData(productQuery, zohoConfig)),
+    ]);
+
+    if (
+      contact.status === 204 ||
+      contact.status >= 400 ||
+      product.status === 204 ||
+      product.status >= 400
+    ) {
+      return {
+        status: contact.status === 200 ? product.status : contact.status,
+        mode: "error",
+      };
+    }
+
+    const coins = contact.data.data[0].Coins;
+    const productPrice = product.data.data[0].Unit_Price;
+
+    if (Number(coins) < Number(productPrice)) {
+      return {
+        status: 406,
+        mode: "error",
+      };
+    }
+
     const currentDate = moment().format("YYYY-MM-DD");
     const body = {
       data: [
