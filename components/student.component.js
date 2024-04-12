@@ -113,6 +113,17 @@ const getStudentDetails = async (email) => {
         "Aug",
         "Sep",
         "Oct",
+        "November",
+        "December",
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
       ];
 
       const sortedSessionData = sessionData.sort(
