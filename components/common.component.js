@@ -145,9 +145,27 @@ const getProductsFromStore = async () => {
       };
     }
 
+    const quizBalanceProduct = products.data.data.find(
+      (product) => product.Product_Name === "25 Quiz Balance"
+    );
+
+    if (!quizBalanceProduct) {
+      console.log("No Quiz Balance Product");
+      return {
+        status: 200,
+        products: products.data.data,
+      };
+    }
+
+    const filteredProducts = products.data.data.filter(
+      (product) => product.Product_Name !== "25 Quiz Balance"
+    );
+
+    filteredProducts.unshift(quizBalanceProduct);
+
     return {
       status: 200,
-      products: products.data.data,
+      products: filteredProducts,
     };
   } catch (error) {
     throw new Error(error.message);
