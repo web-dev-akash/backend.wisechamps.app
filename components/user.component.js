@@ -317,6 +317,7 @@ const generateAndSendOtp = async (phone) => {
     };
 
     const response = await axios.post(watiURI, body, watiConfig);
+
     return {
       status: 200,
       otp: otp,
