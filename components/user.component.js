@@ -291,6 +291,31 @@ const addUserToZoho = async ({
 
 const generateAndSendOtp = async (phone) => {
   try {
+    const accessToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+    const contact = await axios.get(
+      `https://www.zohoapis.com/crm/v2/Contacts/search?phone=${phone}`,
+      zohoConfig
+    );
+
+    if (contact.status >= 400) {
+      return {
+        status: contact.status,
+        mode: "internalservererrorinfindinguser",
+      };
+    }
+    if (contact.status === 204) {
+      return {
+        status: contact.status,
+        mode: "duplicateuser",
+      };
+    }
     // const formattedphone = `91${phone.substring(
     //   phone.length - 10,
     //   phone.length
