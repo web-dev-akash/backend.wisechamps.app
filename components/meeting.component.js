@@ -64,14 +64,18 @@ const getMeetingLink = async (emailParam) => {
   const gradeUpdated = contact.data.data[0].Grade_Updated;
   const date = new Date();
   const start = new Date();
-  start.setMinutes(start.getMinutes() + 270);
+  start.setMinutes(start.getMinutes() + 280);
   const end = new Date();
   end.setHours(23, 59, 59, 999);
+  const startHours = start.getHours().toString().padStart(2, "0");
+  const endHours = end.getHours().toString().padStart(2, "0");
+  const startMinutes = start.getMinutes().toString().padStart(2, "0");
+  const endMinutes = end.getMinutes().toString().padStart(2, "0");
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const day = date.getDate().toString().padStart(2, "0");
-  const formattedDateStart = `${year}-${month}-${day}T00:00:00+05:30`;
-  const formattedDateEnd = `${year}-${month}-${day}T23:59:00+05:30`;
+  const formattedDateStart = `${year}-${month}-${day}T${startHours}:${startMinutes}:00+05:30`;
+  const formattedDateEnd = `${year}-${month}-${day}T${endHours}:${endMinutes}:00+05:30`;
   const sessionBody = {
     select_query: `select Session_Grade, LMS_Activity_ID, Explanation_Meeting_Link from Sessions where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' and Session_Grade = '${gradeGroup}'`,
   };
