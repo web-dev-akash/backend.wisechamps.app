@@ -615,7 +615,8 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
 
       const finalUsers = attempts.filter(
         (attempt) =>
-          !attemptsBefore.find((before) => before.Email === attempt.Email)
+          !attemptsBefore.find((before) => before.Email === attempt.Email) &&
+          attempt.Email !== null
       );
 
       const currentDate = new Date();
