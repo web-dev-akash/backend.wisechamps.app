@@ -291,18 +291,18 @@ const addUserToZoho = async ({
 
 const generateAndSendOtp = async (phone) => {
   try {
-    const formattedphone = `91${phone.substring(
-      phone.length - 10,
-      phone.length
-    )}`;
-    const watiURI = `https://live-server-105694.wati.io/api/v1/sendTemplateMessage?whatsappNumber=${formattedphone}`;
-    const watiAuthToken = process.env.WATI_AUTH_TOKEN;
-    const watiConfig = {
-      Authorization: "Bearer " + watiAuthToken,
-      "Content-Type": "application/json",
-    };
-    const template_name = "otp_verification";
-    const broadcast_name = `otp_verification_${formattedphone}`;
+    // const formattedphone = `91${phone.substring(
+    //   phone.length - 10,
+    //   phone.length
+    // )}`;
+    // const watiURI = `https://live-server-105694.wati.io/api/v1/sendTemplateMessage?whatsappNumber=${formattedphone}`;
+    // const watiAuthToken = process.env.WATI_AUTH_TOKEN;
+    // const watiConfig = {
+    //   Authorization: "Bearer " + watiAuthToken,
+    //   "Content-Type": "application/json",
+    // };
+    // const template_name = "otp_verification";
+    // const broadcast_name = `otp_verification_${formattedphone}`;
     const otp = optGenerator.generate(6, {
       digits: true,
       lowerCaseAlphabets: false,
@@ -310,18 +310,16 @@ const generateAndSendOtp = async (phone) => {
       upperCaseAlphabets: false,
     });
 
-    const body = {
-      template_name,
-      broadcast_name,
-      parameters: [{ name: "otp", value: otp }],
-    };
-
-    const response = await axios.post(watiURI, body, watiConfig);
-
+    // const body = {
+    //   template_name,
+    //   broadcast_name,
+    //   parameters: [{ name: "otp", value: otp }],
+    // };
+    // const response = await axios.post(watiURI, body, watiConfig);
     return {
       status: 200,
       otp: otp,
-      response: response.data,
+      // response: response.data,
     };
   } catch (error) {
     throw new Error(error);
