@@ -310,7 +310,7 @@ const generateAndSendOtp = async (phone) => {
         mode: "internalservererrorinfindinguser",
       };
     }
-    if (contact.status === 204) {
+    if (contact.status === 200) {
       return {
         status: contact.status,
         mode: "duplicateuser",
@@ -342,7 +342,7 @@ const generateAndSendOtp = async (phone) => {
     // };
     // const response = await axios.post(watiURI, body, watiConfig);
     return {
-      status: 200,
+      status: 201,
       otp: otp,
       // response: response.data,
     };
