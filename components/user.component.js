@@ -1,6 +1,12 @@
 const { default: axios } = require("axios");
-const { getZohoTokenOptimized } = require("./common.component");
+const {
+  getZohoTokenOptimized,
+  getAnalysisData,
+} = require("./common.component");
 const optGenerator = require("otp-generator");
+const pLimit = require("p-limit");
+
+const limit = pLimit(20);
 
 const getZohoUserDetailsWithEmail = async (email) => {
   const accessToken = await getZohoTokenOptimized();
@@ -289,9 +295,11 @@ const addUserToZoho = async ({
   }
 };
 
-const generateAndSendOtp = async (phone) => {
+const generateAndSendOtp = async (phone, email) => {
   try {
-    const newphone = `91${phone.substring(phone.length - 10, phone.length)}`;
+    const newphone = `91${phone
+      .toString()
+      .substring(phone.length - 10, phone.length)}`;
     const accessToken = await getZohoTokenOptimized();
     const zohoConfig = {
       headers: {
@@ -300,20 +308,17 @@ const generateAndSendOtp = async (phone) => {
         Authorization: `Bearer ${accessToken}`,
       },
     };
-    const contact = await axios.get(
-      `https://www.zohoapis.com/crm/v2/Contacts/search?phone=${newphone}`,
-      zohoConfig
-    );
 
-    if (contact.status >= 400) {
+    const phoneQuery = `select id from Contacts where Phone = '${newphone}'`;
+    const emailQuery = `select id from Contacts where Email = '${email}'`;
+    const [contactWithPhone, contactWithEmail] = await Promise.all([
+      limit(() => getAnalysisData(phoneQuery, zohoConfig)),
+      limit(() => getAnalysisData(emailQuery, zohoConfig)),
+    ]);
+
+    if (contactWithPhone.status === 200 || contactWithEmail.status === 200) {
       return {
-        status: contact.status,
-        mode: "internalservererrorinfindinguser",
-      };
-    }
-    if (contact.status === 200) {
-      return {
-        status: contact.status,
+        status: 200,
         mode: "duplicateuser",
       };
     }

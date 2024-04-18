@@ -69,7 +69,10 @@ const getAnalysisData = async (query, zohoConfig) => {
       zohoConfig
     );
     if (response.status >= 400) {
-      throw new Error("Internal Server Error");
+      return {
+        status: contact.status,
+        mode: "internalservererrorinfindinguser",
+      };
     }
     return response;
   } catch (error) {
