@@ -248,10 +248,10 @@ const addUserToZoho = async ({
           Last_Name: parent_name,
           Student_Name: student_name,
           Student_Grade: student_grade,
-          Referee_Relation: relation ? relation : "",
+          Referee_Relation: relation || "",
           Lead_Source: "External Referral",
-          Source_Campaign: source_campaign ? source_campaign : "Join Community",
-          Referral_Contact_Id: referralId ? referralId : "",
+          Source_Campaign: source_campaign || "Join Community",
+          Referral_Contact_Id: referralId || "",
         },
       ],
       apply_feature_execution: [
@@ -291,6 +291,7 @@ const addUserToZoho = async ({
 
 const generateAndSendOtp = async (phone) => {
   try {
+    const newphone = `91${phone.substring(phone.length - 10, phone.length)}`;
     const accessToken = await getZohoTokenOptimized();
     const zohoConfig = {
       headers: {
@@ -300,7 +301,7 @@ const generateAndSendOtp = async (phone) => {
       },
     };
     const contact = await axios.get(
-      `https://www.zohoapis.com/crm/v2/Contacts/search?phone=${phone}`,
+      `https://www.zohoapis.com/crm/v2/Contacts/search?phone=${newphone}`,
       zohoConfig
     );
 
