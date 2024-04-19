@@ -321,14 +321,12 @@ const generateAndSendOtp = async (phone, email) => {
         mode: "duplicateuser",
       };
     }
-
     const otp = optGenerator.generate(6, {
       digits: true,
       lowerCaseAlphabets: false,
       specialChars: false,
       upperCaseAlphabets: false,
     });
-
     const smsURI = process.env.SMS_URI;
     const smsFrom = process.env.SMS_FROM;
     const smsEntityId = process.env.SMS_ENTITY_ID;
