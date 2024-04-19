@@ -308,7 +308,6 @@ const generateAndSendOtp = async (phone, email) => {
         Authorization: `Bearer ${accessToken}`,
       },
     };
-
     const phoneQuery = `select id from Contacts where Phone = '${newphone}'`;
     const emailQuery = `select id from Contacts where Email = '${email}'`;
     const [contactWithPhone, contactWithEmail] = await Promise.all([
@@ -322,18 +321,7 @@ const generateAndSendOtp = async (phone, email) => {
         mode: "duplicateuser",
       };
     }
-    // const formattedphone = `91${phone.substring(
-    //   phone.length - 10,
-    //   phone.length
-    // )}`;
-    // const watiURI = `https://live-server-105694.wati.io/api/v1/sendTemplateMessage?whatsappNumber=${formattedphone}`;
-    // const watiAuthToken = process.env.WATI_AUTH_TOKEN;
-    // const watiConfig = {
-    //   Authorization: "Bearer " + watiAuthToken,
-    //   "Content-Type": "application/json",
-    // };
-    // const template_name = "otp_verification";
-    // const broadcast_name = `otp_verification_${formattedphone}`;
+
     const otp = optGenerator.generate(6, {
       digits: true,
       lowerCaseAlphabets: false,
@@ -341,16 +329,20 @@ const generateAndSendOtp = async (phone, email) => {
       upperCaseAlphabets: false,
     });
 
-    // const body = {
-    //   template_name,
-    //   broadcast_name,
-    //   parameters: [{ name: "otp", value: otp }],
-    // };
-    // const response = await axios.post(watiURI, body, watiConfig);
+    const smsURI = process.env.SMS_URI;
+    const smsFrom = process.env.SMS_FROM;
+    const smsEntityId = process.env.SMS_ENTITY_ID;
+    const data = `From=${smsFrom}&To=${newphone}&Body=${otp} - OTP for your Wisechamps account verification.&DltEntityId=${smsEntityId}`;
+    const response = await axios.post(smsURI, data);
+    if (response.status >= 400) {
+      return {
+        status: response.status,
+        mode: "error",
+      };
+    }
     return {
       status: 201,
       otp: otp,
-      // response: response.data,
     };
   } catch (error) {
     throw new Error(error);
