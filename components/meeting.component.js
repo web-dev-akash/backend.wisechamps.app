@@ -58,7 +58,7 @@ const getMeetingLink = async (emailParam) => {
 
   const name = contact.data.data[0].Student_Name;
   const credits = Number(contact.data.data[0].Credits) || 0;
-
+  const source_campaign = contact.data.data[0].Source_Campaign;
   const address = contact.data.data[0].Address;
   const pincode = contact.data.data[0].Pincode;
   const gradeUpdated = contact.data.data[0].Grade_Updated;
@@ -102,7 +102,7 @@ const getMeetingLink = async (emailParam) => {
     attemptBody,
     zohoConfig
   );
-  const updateGrade = isDateInRange();
+  const updateGrade = source_campaign === "old olympiad data" ? true : false;
   console.log("Update Grade", updateGrade);
   const finalAddress = address
     ? address
