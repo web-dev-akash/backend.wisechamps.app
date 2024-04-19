@@ -11,6 +11,7 @@ const {
 } = require("../components/common.component");
 const { default: axios } = require("axios");
 const studentRouter = express.Router();
+studentRouter.use(cors());
 
 studentRouter.post("/", async (req, res) => {
   try {
