@@ -47,6 +47,9 @@ const getStudentDetails = async (email) => {
     const grade = contact.data.data[0].Student_Grade;
     const address = contact.data.data[0].Address || null;
     const createdTime = contact.data.data[0].Created_Time;
+    const joinedWisechamps = contact.data.data[0].Joined_Wisechampions
+      ? true
+      : false;
     const tags = contact.data.data[0].Tag;
     const category = tags.filter(
       ({ name }) =>
@@ -176,6 +179,7 @@ const getStudentDetails = async (email) => {
         category: category[0]?.name,
         session: finalSessions,
         coinsHistory: coinsHistory.status === 200 ? coinsHistory.data.data : 0,
+        joinedWisechamps,
       };
     }
 
@@ -218,6 +222,7 @@ const getStudentDetails = async (email) => {
       category: category[0]?.name,
       session: finalSessions,
       coinsHistory: coinsHistory.status === 200 ? coinsHistory.data.data : 0,
+      joinedWisechamps,
     };
   } catch (error) {
     throw new Error(error);
