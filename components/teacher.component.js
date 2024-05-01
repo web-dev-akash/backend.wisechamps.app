@@ -2,7 +2,7 @@ const { default: axios } = require("axios");
 const { getZohoTokenOptimized } = require("./common.component");
 const moment = require("moment");
 
-const getTeacherDetailsWithEmail = async (email) => {
+const getTeacherDetailsWithEmail = async (email, pass) => {
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -12,7 +12,7 @@ const getTeacherDetailsWithEmail = async (email) => {
     },
   };
   const contact = await axios.get(
-    `https://www.zohoapis.com/crm/v2/Teachers/search?email=${email}`,
+    `https://www.zohoapis.com/crm/v2/Teachers/search?criteria=((Email:equals:${email})and(Password:equals:${pass}))`,
     zohoConfig
   );
 

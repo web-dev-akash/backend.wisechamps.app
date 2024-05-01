@@ -7,8 +7,8 @@ const {
 const teacherRouter = express.Router();
 
 teacherRouter.post("/", async (req, res) => {
-  const { email } = req.body;
-  const data = await getTeacherDetailsWithEmail(email);
+  const { email, password } = req.body;
+  const data = await getTeacherDetailsWithEmail(email, password);
   return res.status(200).send({
     ...data,
   });

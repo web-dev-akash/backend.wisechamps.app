@@ -967,6 +967,7 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
       }
     }
     const updatedSheet = await addDataToSheet(totalData, columnRange);
+    console.log("Sheet Updated Successfully!");
     return {
       status: "success",
       updatedSheet,

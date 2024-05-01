@@ -327,17 +327,7 @@ const generateAndSendOtp = async (phone, email) => {
       specialChars: false,
       upperCaseAlphabets: false,
     });
-    const smsURI = process.env.SMS_URI;
-    const smsFrom = process.env.SMS_FROM;
-    const smsEntityId = process.env.SMS_ENTITY_ID;
-    const data = `From=${smsFrom}&To=${newphone}&Body=${otp} - OTP for your Wisechamps account verification.&DltEntityId=${smsEntityId}`;
-    const response = await axios.post(smsURI, data);
-    if (response.status >= 400) {
-      return {
-        status: response.status,
-        mode: "error",
-      };
-    }
+
     return {
       status: 201,
       otp: otp,
