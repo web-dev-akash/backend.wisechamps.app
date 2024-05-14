@@ -585,7 +585,7 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
           zohoConfig
         );
         if (attemptsResponse.status === 204) {
-          return { status: "noattempts" };
+          break;
         }
         attempts.push(...attemptsResponse.data.data);
         if (!attemptsResponse.data.info.more_records) {
@@ -604,13 +604,29 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
           zohoConfig
         );
         if (attemptsBeforeResponse.status === 204) {
-          return { status: "noattempts" };
+          break;
         }
         attemptsBefore.push(...attemptsBeforeResponse.data.data);
         if (!attemptsBeforeResponse.data.info.more_records) {
           break;
         }
         currentPage++;
+      }
+
+      if (attempts.length === 0) {
+        totalData.push({
+          startDate: new Date(formattedDateStart).toDateString(),
+          startEnd: new Date(formattedDateEnd).toDateString(),
+          firstTimer: 0,
+          activeUsers: 0,
+          inactiveUsers: 0,
+          regularUsers: 0,
+          atRiskUsers: 0,
+          dropoutUsers: 0,
+          revivalUsers: 0,
+          totalCreditExostedUsers: 0,
+        });
+        continue;
       }
 
       const finalUsers = attempts.filter(
