@@ -346,6 +346,7 @@ const generateAndSendOtp = async (phone, email) => {
         status: 400,
       };
     }
+
     return {
       response: otpResponse.data.type,
       status: 201,
