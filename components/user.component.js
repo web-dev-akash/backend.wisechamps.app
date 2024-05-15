@@ -328,7 +328,26 @@ const generateAndSendOtp = async (phone, email) => {
       upperCaseAlphabets: false,
     });
 
+    const smsUri = process.env.SMS_URI;
+    const templateId = process.env.SMS_TEMPLATE_ID;
+    const authKey = process.env.SMS_AUTH_KEY;
+    const otpConfig = {
+      params: {
+        template_id: templateId,
+        mobile: newphone,
+        authkey: authKey,
+      },
+      headers: { "Content-Type": "application/JSON" },
+    };
+    const otpResponse = await axios.post(smsUri, { OTP: otp }, otpConfig);
+    if (otpResponse.data.type === "error") {
+      return {
+        mode: "error",
+        status: 400,
+      };
+    }
     return {
+      response: otpResponse.data.type,
       status: 201,
       otp: otp,
     };
