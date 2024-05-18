@@ -134,17 +134,12 @@ const updateTeachersAttendance = async (requestBody) => {
       Authorization: `Bearer ${zohoToken}`,
     },
   };
-
   const date = moment(sessionDate);
-  if (date.day() === 0) {
-    date.add(11, "hours");
-  } else {
-    date.add(19, "hours");
-  }
-  const sessionDateTime = date.format("YYYY-MM-DDTHH:mm:ss+05:30");
+  const formattedDateStart = `${date.format("YYYY-MM-DD")}T00:00:00+05:30`;
+  const formattedDateEnd = `${date.format("YYYY-MM-DD")}T23:59:59+05:30`;
 
   const sessionBody = {
-    select_query: `select id as Session_ID, Session_Date_Time from Sessions where Session_Grade = '${grade}' and Session_Date_Time = '${sessionDateTime}'`,
+    select_query: `select id as Session_ID, Session_Date_Time from Sessions where Session_Grade = '${grade}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
   };
 
   const session = await axios.post(
@@ -169,7 +164,7 @@ const updateTeachersAttendance = async (requestBody) => {
 
   if (winner) {
     const attemptBody = {
-      select_query: `select id as Attempt_id, Session_Date_Time from Attempts where Contact_Name = '${winner}' and Session_Date_Time = '${sessionDateTime}'`,
+      select_query: `select id as Attempt_id, Session_Date_Time from Attempts where Contact_Name = '${winner}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
     };
 
     const attempt = await axios.post(
@@ -197,7 +192,7 @@ const updateTeachersAttendance = async (requestBody) => {
       data: [
         {
           id: attemptId,
-          Quiz_Winner: sessionDate,
+          Quiz_Winner: date.format("YYYY-MM-DD"),
           $append_values: {
             Quiz_Winner: true,
           },
@@ -227,6 +222,7 @@ const updateTeachersAttendance = async (requestBody) => {
   }
 
   const sessionId = session.data.data[0].Session_ID;
+  const sessionDateTime = session.data.data[0].Session_Date_Time;
   const body = {
     data: [
       {
