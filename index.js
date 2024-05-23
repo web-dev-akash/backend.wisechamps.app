@@ -14,7 +14,7 @@ const pointagramRouter = require("./controllers/pointagram.controller");
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: true }));
 const PORT = process.env.PORT || 8080;
 
 app.use("/meeting", meetingRouter);
