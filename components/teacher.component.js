@@ -220,7 +220,6 @@ const updateTeachersAttendance = async (requestBody) => {
       };
     }
   }
-
   const sessionId = session.data.data[0].Session_ID;
   const sessionDateTime = session.data.data[0].Session_Date_Time;
   const body = {
