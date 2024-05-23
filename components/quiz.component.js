@@ -177,7 +177,7 @@ const getQuizLink = async (emailParam) => {
   if (!session.data.data[0].LMS_Activity_ID) {
     return {
       status: 500,
-      mode: "error",
+      mode: "noactivityid",
     };
   }
   const sessionid = session.data.data[0].LMS_Activity_ID.toString();
