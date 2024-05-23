@@ -11,18 +11,8 @@ const { google } = require("googleapis");
 const limit = pLimit(20);
 
 const getQuizLink = async (emailParam) => {
-  // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-  // logsData.quizLogs?.push({
-  //   email: emailParam,
-  //   description: "EnteredEmail",
-  //   date: new Date().toDateString(),
-  //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-  // });
-  // logsData.quizLogs
-  //   ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
-  //       if (err) throw err;
-  //     })
-  //   : null;
+  const wstoken = process.env.WS_TOKEN;
+  const wsfunction = process.env.WS_FUNCTION;
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -172,8 +162,6 @@ const getQuizLink = async (emailParam) => {
     };
   }
 
-  console.log(session.data);
-
   if (!credits || credits === 0) {
     return {
       mode: "nocredits",
@@ -186,27 +174,25 @@ const getQuizLink = async (emailParam) => {
       pincode,
     };
   }
+  if (!session.data.data[0].LMS_Activity_ID) {
+    return {
+      status: 500,
+      mode: "error",
+    };
+  }
   const sessionid = session.data.data[0].LMS_Activity_ID.toString();
-
-  // let oldDate1 = new Date().setMinutes(new Date().getMinutes() + 330);
-  // logsData.quizLogs?.push({
-  //   email: emailParam,
-  //   description: `nosession 204`,
-  //   date: new Date().toDateString(),
-  //   time: new Date(oldDate1).toLocaleTimeString("en-US"),
-  // });
-  // logsData.quizLogs
-  //   ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
-  //       if (err) throw err;
-  //     })
-  //   : null;
+  const loginURL = `https://wisechamps.app/webservice/rest/server.php?wstoken=${wstoken}&wsfunction=${wsfunction}&user[email]=${emailParam}&moodlewsrestformat=json`;
+  const loginRes = await axios.get(loginURL);
+  const loginLink = loginRes.data.loginurl;
+  const quizLink = `https://wisechamps.app/mod/lti/view.php?id=${sessionid}`;
+  const finalLink = `${loginLink}&wantsurl=${quizLink}`;
   return {
     status: 200,
     mode: "quizlink",
     email,
     credits: credits ? credits : 0,
     name,
-    link: `https://wisechamps.app/mod/lti/view.php?id=${sessionid}`,
+    link: finalLink,
     grade,
     team,
     address,
