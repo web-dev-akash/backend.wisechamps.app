@@ -64,7 +64,7 @@ const getZohoTokenOptimized = async () => {
 const getAnalysisData = async (query, zohoConfig) => {
   try {
     const response = await axios.post(
-      `https://www.zohoapis.com/crm/v3/coql`,
+      `https://www.zohoapis.com/crm/v6/coql`,
       { select_query: query },
       zohoConfig
     );

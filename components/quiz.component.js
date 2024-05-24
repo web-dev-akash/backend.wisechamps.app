@@ -564,8 +564,8 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
       const attemptsBefore = [];
       while (true) {
         const attemptsQuery = `select Contact_Name.id as contactId, Contact_Name.Email as Email, Contact_Name.Credits as Credits, Contact_Name.Phone as Phone from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' group by Contact_Name.Email,Contact_Name.Credits,Contact_Name.Phone,Contact_Name.id limit ${
-          currentPage * 200
-        }, 200`;
+          currentPage * 2000
+        }, 2000`;
         const attemptsResponse = await getAnalysisData(
           attemptsQuery,
           zohoConfig
@@ -583,8 +583,8 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
       currentPage = 0;
       while (true) {
         const attemptBeforeQuery = `select Contact_Name.Email as Email from Attempts where Session_Date_Time < '${formattedDateStart}' group by Contact_Name.Email limit ${
-          currentPage * 200
-        }, 200`;
+          currentPage * 2000
+        }, 2000`;
         const attemptsBeforeResponse = await getAnalysisData(
           attemptBeforeQuery,
           zohoConfig
