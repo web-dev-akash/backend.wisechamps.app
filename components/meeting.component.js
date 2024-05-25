@@ -119,7 +119,7 @@ const getMeetingLink = async (emailParam) => {
 
   return {
     status: 200,
-    mode: !gradeUpdated && updateGrade ? "oldData" : "zoomlink",
+    mode: !gradeUpdated ? "oldData" : "zoomlink",
     email,
     link: meetLink,
     name,
