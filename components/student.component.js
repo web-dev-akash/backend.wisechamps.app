@@ -276,7 +276,7 @@ const placeStudentOrder = async (contactId, productId) => {
       },
     };
     const contactQuery = `select Coins from Contacts where id = '${contactId}'`;
-    const productQuery = `select Unit_Price from Products where id = '${productId}'`;
+    const productQuery = `select Unit_Price, Product_URL from Products where id = '${productId}'`;
     const [contact, product] = await Promise.all([
       limit(() => getAnalysisData(contactQuery, zohoConfig)),
       limit(() => getAnalysisData(productQuery, zohoConfig)),
