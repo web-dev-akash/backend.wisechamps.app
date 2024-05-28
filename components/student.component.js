@@ -296,6 +296,7 @@ const placeStudentOrder = async (contactId, productId) => {
 
     const coins = contact.data.data[0].Coins;
     const productPrice = product.data.data[0].Unit_Price;
+    const productUrl = product.data.data[0].Product_URL;
 
     if (Number(coins) < Number(productPrice)) {
       return {
@@ -312,6 +313,8 @@ const placeStudentOrder = async (contactId, productId) => {
           Product: productId,
           Order_Status: "Placed",
           Order_Date: currentDate,
+          Order_Price: Number(productPrice),
+          Product_URL: productUrl,
         },
       ],
       apply_feature_execution: [
