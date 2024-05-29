@@ -476,14 +476,21 @@ const getWeeklyDates = (start, end) => {
   const endDate = new Date(end);
   const weeklyDates = [];
   let current = new Date(startDate);
-  current.setDate(current.getDate() + ((4 + 7 - current.getDay()) % 7));
-  while (current < endDate) {
+  current.setDate(current.getDate() + ((1 + 7 - current.getDay()) % 7));
+
+  while (current <= endDate) {
     const weekStart = new Date(current);
     const weekEnd = new Date(current);
-    weekEnd.setDate(weekEnd.getDate() + 3);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+
+    if (weekEnd > endDate) {
+      weekEnd.setTime(endDate.getTime());
+    }
+
     weeklyDates.push({ start: weekStart, end: weekEnd });
     current.setDate(current.getDate() + 7);
   }
+
   return weeklyDates;
 };
 
