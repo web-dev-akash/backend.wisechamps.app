@@ -1,5 +1,8 @@
 const { default: axios } = require("axios");
-const { getZohoTokenOptimized } = require("./common.component");
+const {
+  getZohoTokenOptimized,
+  getAnalysisData,
+} = require("./common.component");
 const moment = require("moment");
 
 const getTeacherDetailsWithEmail = async (email, pass) => {
@@ -162,6 +165,23 @@ const updateTeachersAttendance = async (requestBody) => {
     };
   }
 
+  const sessionId = session.data.data[0].Session_ID;
+  const sessionDateTime = session.data.data[0].Session_Date_Time;
+
+  const attendanceQuery = `select Session, Session_Date_Time from Teachers_Attendance
+ where (Session = '${sessionId}' and Session_Date_Time = '${sessionDateTime}') and Teacher = '${contactId}'`;
+
+  const attendanceAlreadyExists = await getAnalysisData(
+    attendanceQuery,
+    zohoConfig
+  );
+  if (attendanceAlreadyExists.status === 200) {
+    return {
+      status: 409,
+      mode: "duplicateAttendance",
+    };
+  }
+
   if (winner) {
     const attemptBody = {
       select_query: `select id as Attempt_id, Session_Date_Time from Attempts where Contact_Name = '${winner}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
@@ -220,8 +240,7 @@ const updateTeachersAttendance = async (requestBody) => {
       };
     }
   }
-  const sessionId = session.data.data[0].Session_ID;
-  const sessionDateTime = session.data.data[0].Session_Date_Time;
+
   const body = {
     data: [
       {
