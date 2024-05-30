@@ -91,7 +91,7 @@ const getQuizLink = async (emailParam) => {
   const pincode = contact.data.data[0].Pincode;
   const date = new Date();
   const start = new Date();
-  start.setMinutes(start.getMinutes() + 280);
+  start.setMinutes(start.getMinutes() + 270);
   const end = new Date();
   end.setHours(23, 59, 59, 999);
   const year = date.getFullYear();

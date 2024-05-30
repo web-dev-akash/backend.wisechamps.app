@@ -64,7 +64,7 @@ const getMeetingLink = async (emailParam) => {
   const gradeUpdated = contact.data.data[0].Grade_Updated;
   const date = new Date();
   const start = new Date();
-  start.setMinutes(start.getMinutes() + 280);
+  start.setMinutes(start.getMinutes() + 240);
   const end = new Date();
   end.setHours(23, 59, 59, 999);
   const startHours = start.getHours().toString().padStart(2, "0");
