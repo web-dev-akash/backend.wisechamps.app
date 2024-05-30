@@ -4,6 +4,7 @@ const {
   getZohoUserDetailsWithPhone,
   addUserToZoho,
   generateAndSendOtp,
+  resendOTP,
 } = require("../components/user.component");
 const { default: axios } = require("axios");
 const userRouter = express.Router();
@@ -39,7 +40,20 @@ userRouter.post("/verify", async (req, res) => {
   try {
     const { phone, email } = req.body;
     const data = await generateAndSendOtp(phone, email);
-    return res.status(data.status).send({
+    return res.status(200).send({
+      ...data,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send(error);
+  }
+});
+
+userRouter.post("/resend/otp", async (req, res) => {
+  try {
+    const { phone } = req.body;
+    const data = await resendOTP(phone);
+    return res.status(200).send({
       ...data,
     });
   } catch (error) {

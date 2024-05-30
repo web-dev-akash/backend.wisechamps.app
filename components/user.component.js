@@ -357,9 +357,41 @@ const generateAndSendOtp = async (phone, email) => {
   }
 };
 
+const resendOTP = async (phone) => {
+  try {
+    const newphone = `91${phone
+      .toString()
+      .substring(phone.length - 10, phone.length)}`;
+    const smsUri = "https://control.msg91.com/api/v5/otp/retry";
+    const authKey = process.env.SMS_AUTH_KEY;
+    const otpConfig = {
+      params: {
+        retrytype: "text",
+        mobile: newphone,
+        authkey: authKey,
+      },
+      headers: { "Content-Type": "application/JSON" },
+    };
+    const otpResponse = await axios.post(smsUri, null, otpConfig);
+    if (otpResponse.data.type === "error") {
+      return {
+        mode: "error",
+        status: 400,
+      };
+    }
+    return {
+      response: otpResponse.data.type,
+      status: 201,
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 module.exports = {
   getZohoUserDetailsWithPhone,
   getZohoUserDetailsWithEmail,
   addUserToZoho,
   generateAndSendOtp,
+  resendOTP,
 };
