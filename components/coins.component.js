@@ -64,7 +64,7 @@ const createCoinsHistory = async (email, contactId) => {
           Contact: contactId,
           Coins: 300,
           Action_Type: "Credit",
-          Description: "Top 3 Highest Scorers Weekly",
+          Description: "Top 5 Highest Scorers Weekly",
           Updated_Date: currentDate,
         },
       ],
