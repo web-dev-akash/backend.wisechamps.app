@@ -233,6 +233,7 @@ const addUserToZoho = async ({
   referralId,
   source_campaign,
   relation,
+  lead_source,
 }) => {
   try {
     const zohoToken = await getZohoTokenOptimized();
@@ -255,7 +256,7 @@ const addUserToZoho = async ({
           Student_Name: student_name,
           Student_Grade: student_grade,
           Referee_Relation: relation || "",
-          Lead_Source: "External Referral",
+          Lead_Source: lead_source || "External Referral",
           Source_Campaign: source_campaign || "Join Community",
           Referral_Contact_Id: referralId || "",
           Grade_Updated: true,
