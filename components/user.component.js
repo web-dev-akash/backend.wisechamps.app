@@ -389,10 +389,83 @@ const resendOTP = async (phone) => {
   }
 };
 
+const getReferralAnalysisData = async () => {
+  try {
+    const zohoToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${zohoToken}`,
+      },
+    };
+    let currentPage = 0;
+    const layer1Referrals = [];
+    while (true) {
+      const layer1ReferralQuery = `select id, Email, Referral_Count from Contacts where Referee is not null and (Student_Grade != 0 and Blocked = false) limit ${
+        currentPage * 200
+      }, 200`;
+
+      const layer1ReferralResponse = await getAnalysisData(
+        layer1ReferralQuery,
+        zohoConfig
+      );
+      if (layer1ReferralResponse.status === 204) {
+        break;
+      }
+      layer1Referrals.push(...layer1ReferralResponse.data.data);
+      if (!layer1ReferralResponse.data.info.more_records) {
+        break;
+      }
+      currentPage++;
+    }
+
+    const layer1FurtherReferral = [];
+
+    for (const user of layer1Referrals) {
+      if (!user.Referral_Count) {
+        continue;
+      }
+      layer1FurtherReferral.push(user);
+    }
+
+    const layer2FurtherReferral = [];
+    for (const user of layer1FurtherReferral) {
+      const url = `https://www.zohoapis.com/crm/v6/Contacts/${user.id}/Referral?fields=id,Email,Referral_Count,Student_Grade,Blocked`;
+      const layer2FurtherReferralResponse = await axios.get(url, zohoConfig);
+      if (layer2FurtherReferralResponse.data.data) {
+        layer2FurtherReferralResponse.data.data.forEach((item) => {
+          if (
+            item.Blocked === false &&
+            item.Student_Grade !== 0 &&
+            item.Referral_Count !== null
+          ) {
+            layer2FurtherReferral.push(item);
+          }
+        });
+      }
+    }
+
+    return {
+      status: 200,
+      layer1Referrals: layer1Referrals.length,
+      layer1FurtherReferral: layer1FurtherReferral.length,
+      layer1NoFurtherReferral:
+        layer1Referrals.length - layer1FurtherReferral.length,
+      layer2FurtherReferral: layer2FurtherReferral.length,
+      layer2NoFurtherReferral:
+        layer1FurtherReferral.length - layer2FurtherReferral.length,
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 module.exports = {
   getZohoUserDetailsWithPhone,
   getZohoUserDetailsWithEmail,
   addUserToZoho,
   generateAndSendOtp,
   resendOTP,
+  getReferralAnalysisData,
 };

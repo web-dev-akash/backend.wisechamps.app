@@ -5,8 +5,10 @@ const {
   addUserToZoho,
   generateAndSendOtp,
   resendOTP,
+  getReferralAnalysisData,
 } = require("../components/user.component");
 const { default: axios } = require("axios");
+const { authMiddleware } = require("../components/common.component");
 const userRouter = express.Router();
 
 userRouter.post("/", async (req, res) => {
@@ -72,6 +74,17 @@ userRouter.post("/feedback", async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(500).send(error);
+  }
+});
+
+userRouter.get("/analysis/referral", authMiddleware, async (req, res) => {
+  try {
+    const data = await getReferralAnalysisData();
+    return res.status(data.status).send(data);
+  } catch (error) {
+    return res
+      .status(500)
+      .send({ status: error.status || 500, message: error.message });
   }
 });
 
