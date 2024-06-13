@@ -281,7 +281,47 @@ const addUserToZoho = async ({
         mode: "internalservererrorinfindinguser",
       };
     }
+
     if (result.data.data[0].code === "DUPLICATE_DATA") {
+      if (
+        source_campaign &&
+        !source_campaign.toLowerCase().includes("community") &&
+        lead_source
+      ) {
+        const contactId = result.data.data[0].details.id;
+        const updateCampaignBody = {
+          data: [
+            {
+              id: contactId,
+              Source_Campaign: source_campaign,
+              Lead_Source: lead_source,
+            },
+          ],
+          duplicate_check_fields: ["id"],
+          apply_feature_execution: [
+            {
+              name: "layout_rules",
+            },
+          ],
+          trigger: [],
+        };
+
+        const updateCampaign = await axios.post(
+          `https://www.zohoapis.com/crm/v6/Contacts/upsert`,
+          updateCampaignBody,
+          zohoConfig
+        );
+        if (updateCampaign.status >= 400 || updateCampaign.status === 204) {
+          return {
+            status: result.status,
+            mode: "duplicateuser",
+          };
+        }
+        return {
+          status: result.status,
+          mode: "duplicateuser",
+        };
+      }
       return {
         status: result.status,
         mode: "duplicateuser",
