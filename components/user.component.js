@@ -495,15 +495,12 @@ const getReferralAnalysisData = async () => {
         });
       }
     }
-    let count = 0;
     for (const user of layer2Referrals) {
       if (!user.Referral_Count) {
-        count++;
         continue;
       }
       layer2FurtherReferral.push(user);
     }
-    console.log("Count is :", count);
     return {
       status: 200,
       layer1Referrals: layer1Referrals.length,
