@@ -482,32 +482,38 @@ const getReferralAnalysisData = async () => {
       layer1FurtherReferral.push(user);
     }
 
+    const layer2Referrals = [];
     const layer2FurtherReferral = [];
     for (const user of layer1FurtherReferral) {
       const url = `https://www.zohoapis.com/crm/v6/Contacts/${user.id}/Referral?fields=id,Email,Referral_Count,Student_Grade,Blocked`;
       const layer2FurtherReferralResponse = await axios.get(url, zohoConfig);
       if (layer2FurtherReferralResponse.data.data) {
         layer2FurtherReferralResponse.data.data.forEach((item) => {
-          if (
-            item.Blocked === false &&
-            item.Student_Grade !== 0 &&
-            item.Referral_Count !== null
-          ) {
-            layer2FurtherReferral.push(item);
+          if (item.Blocked === false && item.Student_Grade !== 0) {
+            layer2Referrals.push(item);
           }
         });
       }
     }
-
+    let count = 0;
+    for (const user of layer2Referrals) {
+      if (!user.Referral_Count) {
+        count++;
+        continue;
+      }
+      layer2FurtherReferral.push(user);
+    }
+    console.log("Count is :", count);
     return {
       status: 200,
       layer1Referrals: layer1Referrals.length,
       layer1FurtherReferral: layer1FurtherReferral.length,
       layer1NoFurtherReferral:
         layer1Referrals.length - layer1FurtherReferral.length,
+      layer2Referrals: layer2Referrals.length,
       layer2FurtherReferral: layer2FurtherReferral.length,
       layer2NoFurtherReferral:
-        layer1FurtherReferral.length - layer2FurtherReferral.length,
+        layer2Referrals.length - layer2FurtherReferral.length,
     };
   } catch (error) {
     throw new Error(error);
