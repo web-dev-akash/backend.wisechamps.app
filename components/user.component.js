@@ -360,8 +360,14 @@ const generateAndSendOtp = async (
           return {
             status: 200,
             mode: "duplicateuser",
+            updateStatus: updateCampaign.status,
           };
         }
+        return {
+          status: 200,
+          mode: "duplicateuser",
+          updateStatus: updateCampaign.status,
+        };
       }
 
       return {
