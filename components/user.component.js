@@ -283,12 +283,56 @@ const addUserToZoho = async ({
     }
 
     if (result.data.data[0].code === "DUPLICATE_DATA") {
+      return {
+        status: result.status,
+        mode: "duplicateuser",
+      };
+    }
+    return {
+      status: 200,
+      mode: "useradded",
+    };
+  } catch (error) {
+    console.log(error);
+    return error;
+  }
+};
+
+const generateAndSendOtp = async (
+  phone,
+  email,
+  lead_source,
+  source_campaign
+) => {
+  try {
+    const newphone = `91${phone
+      .toString()
+      .substring(phone.length - 10, phone.length)}`;
+    const accessToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+    const phoneQuery = `select id from Contacts where Phone = '${newphone}'`;
+    const emailQuery = `select id from Contacts where Email = '${email}'`;
+    const [contactWithPhone, contactWithEmail] = await Promise.all([
+      limit(() => getAnalysisData(phoneQuery, zohoConfig)),
+      limit(() => getAnalysisData(emailQuery, zohoConfig)),
+    ]);
+
+    if (contactWithPhone.status === 200 || contactWithEmail.status === 200) {
+      const contactId =
+        contactWithPhone.status === 200
+          ? contactWithPhone.data.data[0].id
+          : contactWithEmail.data.data[0].id;
       if (
         source_campaign &&
         !source_campaign.toLowerCase().includes("community") &&
         lead_source
       ) {
-        const contactId = result.data.data[0].details.id;
         const updateCampaignBody = {
           data: [
             {
@@ -311,58 +355,21 @@ const addUserToZoho = async ({
           updateCampaignBody,
           zohoConfig
         );
+
         if (updateCampaign.status >= 400 || updateCampaign.status === 204) {
           return {
-            status: result.status,
+            status: 200,
             mode: "duplicateuser",
           };
         }
-        return {
-          status: result.status,
-          mode: "duplicateuser",
-        };
       }
-      return {
-        status: result.status,
-        mode: "duplicateuser",
-      };
-    }
-    return {
-      status: 200,
-      mode: "useradded",
-    };
-  } catch (error) {
-    console.log(error);
-    return error;
-  }
-};
 
-const generateAndSendOtp = async (phone, email) => {
-  try {
-    const newphone = `91${phone
-      .toString()
-      .substring(phone.length - 10, phone.length)}`;
-    const accessToken = await getZohoTokenOptimized();
-    const zohoConfig = {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        Authorization: `Bearer ${accessToken}`,
-      },
-    };
-    const phoneQuery = `select id from Contacts where Phone = '${newphone}'`;
-    const emailQuery = `select id from Contacts where Email = '${email}'`;
-    const [contactWithPhone, contactWithEmail] = await Promise.all([
-      limit(() => getAnalysisData(phoneQuery, zohoConfig)),
-      limit(() => getAnalysisData(emailQuery, zohoConfig)),
-    ]);
-
-    if (contactWithPhone.status === 200 || contactWithEmail.status === 200) {
       return {
         status: 200,
         mode: "duplicateuser",
       };
     }
+
     const otp = optGenerator.generate(6, {
       digits: true,
       lowerCaseAlphabets: false,

@@ -40,8 +40,13 @@ userRouter.post("/add", async (req, res) => {
 
 userRouter.post("/verify", async (req, res) => {
   try {
-    const { phone, email } = req.body;
-    const data = await generateAndSendOtp(phone, email);
+    const { phone, email, lead_source, source_campaign } = req.body;
+    const data = await generateAndSendOtp(
+      phone,
+      email,
+      lead_source,
+      source_campaign
+    );
     return res.status(200).send({
       ...data,
     });
