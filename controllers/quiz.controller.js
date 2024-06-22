@@ -1,6 +1,9 @@
 const express = require("express");
 const quizRouter = express.Router();
-const { getZohoTokenOptimized } = require("../components/common.component");
+const {
+  getZohoTokenOptimized,
+  authMiddleware,
+} = require("../components/common.component");
 const {
   getQuizLink,
   getWeeklyUserAttempts,
@@ -45,6 +48,28 @@ quizRouter.post("/analysis/weekly", async (req, res) => {
     const { startDate, endDate, range } = req.body;
     await getWeeklyQuizAnalysis(startDate, endDate, range);
     return res.status(200).send({ status: "Success" });
+  } catch (error) {
+    return res.status(error.status || 500).send({
+      status: "error",
+      message: error.message,
+      code: error.status || 500,
+    });
+  }
+});
+
+quizRouter.post("/loginLink", authMiddleware, async (req, res) => {
+  try {
+    const { email, surveyId } = req.body;
+    const wstoken = process.env.WS_TOKEN;
+    const wsfunction = process.env.WS_FUNCTION;
+    const loginURL = `https://wisechamps.app/webservice/rest/server.php?wstoken=${wstoken}&wsfunction=${wsfunction}&user[email]=${email}&moodlewsrestformat=json`;
+    const loginRes = await axios.get(loginURL);
+    const loginLink = loginRes.data.loginurl;
+    const quizLink = `https://wisechamps.app/mod/lti/view.php?id=${surveyId}`;
+    const finalLink = `${loginLink}&wantsurl=${quizLink}`;
+    return res.status(200).send({
+      finalLink: finalLink,
+    });
   } catch (error) {
     return res.status(error.status || 500).send({
       status: "error",

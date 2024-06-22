@@ -75,20 +75,35 @@ const getStudentDetails = async (email) => {
     const formattedDateStart = `${monday.format("YYYY-MM-DD")}T00:00:00+05:30`;
     const formattedDateEnd = `${sunday.format("YYYY-MM-DD")}T23:59:59+05:30`;
 
+    const currentDate = moment();
+    const sevenDaysBefore = `${currentDate
+      .clone()
+      .subtract(7, "days")
+      .format("YYYY-MM-DD")}T00:00:00+05:30`;
+
+    const sevenDaysAfter = `${currentDate
+      .clone()
+      .add(7, "days")
+      .format("YYYY-MM-DD")}T23:59:59+05:30`;
+
     const referralsQuery = `select Email, Student_Name, Student_Grade, Phone, Credits from Contacts where Referee = '${contactId}'`;
 
     const attemptsQuery = `select Contact_Name.id as contactId from Attempts where Contact_Name = '${contactId}'`;
 
     const sessionQuery = `select Name as Session_Name, Subject, Number_of_Questions as Total_Questions, Session_Date_Time from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`;
 
+    const weeklyQuizzesQuery = `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, LMS_Survey_ID from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}'`;
+
     const coinsQuery = `select Coins, Updated_Date, Action_Type, Description from Coins where Contact = '${contactId}' order by Updated_Date desc`;
 
-    const [referrals, attempts, sessions, coinsHistory] = await Promise.all([
-      limit(() => getAnalysisData(referralsQuery, zohoConfig)),
-      limit(() => getAnalysisData(attemptsQuery, zohoConfig)),
-      limit(() => getAnalysisData(sessionQuery, zohoConfig)),
-      limit(() => getAnalysisData(coinsQuery, zohoConfig)),
-    ]);
+    const [referrals, attempts, sessions, coinsHistory, weeklyQuizzes] =
+      await Promise.all([
+        limit(() => getAnalysisData(referralsQuery, zohoConfig)),
+        limit(() => getAnalysisData(attemptsQuery, zohoConfig)),
+        limit(() => getAnalysisData(sessionQuery, zohoConfig)),
+        limit(() => getAnalysisData(coinsQuery, zohoConfig)),
+        limit(() => getAnalysisData(weeklyQuizzesQuery, zohoConfig)),
+      ]);
 
     const finalSessions = [];
     if (sessions.status === 200) {
@@ -144,21 +159,62 @@ const getStudentDetails = async (email) => {
           Session_Name: newString.trim(),
         });
       }
-    } else {
-      finalSessions.push(
-        {
-          Session_Name: "Science Live Quiz",
-        },
-        {
-          Session_Name: "Maths Live Quiz",
-        },
-        {
-          Session_Name: "Maths Live Quiz",
-        },
-        {
-          Session_Name: "Maths Live Quiz",
-        }
+    }
+
+    const finalWeeklyQuizzes = [];
+    if (weeklyQuizzes.status === 200) {
+      const sessionData = weeklyQuizzes.data.data;
+      let wordsToRemove = [
+        "Final",
+        "&",
+        "Math",
+        "Science",
+        "English",
+        "GK",
+        "Grade",
+        "Live",
+        "Quiz",
+        "for",
+        "Nov",
+        "Dec",
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "November",
+        "December",
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+      ];
+
+      const sortedSessionData = sessionData.sort(
+        (a, b) => new Date(a.Session_Date_Time) - new Date(b.Session_Date_Time)
       );
+
+      for (let i = 0; i < sortedSessionData.length; i++) {
+        const sessionName = sortedSessionData[i].Session_Name;
+        let newString = sessionName;
+        let regexString = wordsToRemove.join("|");
+        let regex = new RegExp("\\b(" + regexString + ")\\b|\\d+|&", "gi");
+        newString = newString.replace(regex, "");
+        finalWeeklyQuizzes.push({
+          ...sortedSessionData[i],
+          Session_Name: newString.trim(),
+        });
+      }
     }
 
     if (referrals.status === 204) {
@@ -181,6 +237,7 @@ const getStudentDetails = async (email) => {
         session: finalSessions,
         coinsHistory: coinsHistory.status === 200 ? coinsHistory.data.data : 0,
         joinedWisechamps,
+        weeklyQuizzes: finalWeeklyQuizzes,
       };
     }
 
@@ -225,6 +282,7 @@ const getStudentDetails = async (email) => {
       session: finalSessions,
       coinsHistory: coinsHistory.status === 200 ? coinsHistory.data.data : 0,
       joinedWisechamps,
+      weeklyQuizzes: finalWeeklyQuizzes,
     };
   } catch (error) {
     throw new Error(error);
