@@ -216,6 +216,15 @@ const getStudentDetails = async (email) => {
         });
       }
     }
+    let newUser = false;
+    if (credits < 6) {
+      if (
+        attempts.status === 204 ||
+        (attempts.status === 200 && attempts.data.info.count < 5)
+      ) {
+        newUser = true;
+      }
+    }
 
     if (referrals.status === 204) {
       return {
@@ -238,6 +247,7 @@ const getStudentDetails = async (email) => {
         coinsHistory: coinsHistory.status === 200 ? coinsHistory.data.data : 0,
         joinedWisechamps,
         weeklyQuizzes: finalWeeklyQuizzes,
+        newUser,
       };
     }
 
@@ -283,6 +293,7 @@ const getStudentDetails = async (email) => {
       coinsHistory: coinsHistory.status === 200 ? coinsHistory.data.data : 0,
       joinedWisechamps,
       weeklyQuizzes: finalWeeklyQuizzes,
+      newUser,
     };
   } catch (error) {
     throw new Error(error);
@@ -319,6 +330,83 @@ const getStudentOrders = async (contactId) => {
     return {
       status: 200,
       orders: orders.data.data,
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+const updateIntroMeetData = async (contactId) => {
+  try {
+    const accessToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+
+    const userQuery = `select id, Email, Number_of_Intro_Meeting_Joined, Last_Intro_Meeting_Joined from Contacts where id = '${contactId}'`;
+    const [user] = await Promise.all([
+      limit(() => getAnalysisData(userQuery, zohoConfig)),
+    ]);
+    if (user.status >= 400) {
+      return {
+        status: user.status,
+        mode: "error",
+      };
+    }
+    if (user.status === 204) {
+      return {
+        status: user.status,
+        mode: "nouser",
+      };
+    }
+
+    if (
+      user.data.data[0].Last_Intro_Meeting_Joined &&
+      moment(user.data.data[0].Last_Intro_Meeting_Joined).format(
+        "YYYY-MM-DD"
+      ) === moment().format("YYYY-MM-DD")
+    ) {
+      return {
+        status: 200,
+        message: "AlreadyMarkedForToday",
+      };
+    }
+
+    let numOfIntoMeetJoined =
+      user.data.data[0].Number_of_Intro_Meeting_Joined || 0;
+    numOfIntoMeetJoined = numOfIntoMeetJoined + 1;
+    const lastIntroMeetJoined = moment().format("YYYY-MM-DD");
+
+    const introMeetBody = {
+      data: [
+        {
+          id: contactId,
+          Number_of_Intro_Meeting_Joined: numOfIntoMeetJoined,
+          Last_Intro_Meeting_Joined: lastIntroMeetJoined,
+        },
+      ],
+      duplicate_check_fields: ["id"],
+      apply_feature_execution: [
+        {
+          name: "layout_rules",
+        },
+      ],
+      trigger: [],
+    };
+
+    const updateData = await axios.post(
+      `https://www.zohoapis.com/crm/v6/Contacts/upsert`,
+      introMeetBody,
+      zohoConfig
+    );
+
+    return {
+      status: updateData.status,
+      message: "Done",
     };
   } catch (error) {
     throw new Error(error);
@@ -411,4 +499,9 @@ const placeStudentOrder = async (contactId, productId) => {
   }
 };
 
-module.exports = { getStudentDetails, getStudentOrders, placeStudentOrder };
+module.exports = {
+  getStudentDetails,
+  getStudentOrders,
+  placeStudentOrder,
+  updateIntroMeetData,
+};

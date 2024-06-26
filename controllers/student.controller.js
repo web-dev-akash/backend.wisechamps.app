@@ -3,6 +3,7 @@ const {
   getStudentDetails,
   getStudentOrders,
   placeStudentOrder,
+  updateIntroMeetData,
 } = require("../components/student.component");
 const {
   getZohoTokenOptimized,
@@ -16,6 +17,20 @@ studentRouter.post("/", async (req, res) => {
   try {
     const { email } = req.body;
     const data = await getStudentDetails(email);
+    return res.status(200).send(data);
+  } catch (error) {
+    return res.status(error.status || 500).send({
+      status: "error",
+      message: error.message,
+      code: error.status || 500,
+    });
+  }
+});
+
+studentRouter.post("/introMeet", authMiddleware, async (req, res) => {
+  try {
+    const { contactId } = req.body;
+    const data = await updateIntroMeetData(contactId);
     return res.status(200).send(data);
   } catch (error) {
     return res.status(error.status || 500).send({
