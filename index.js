@@ -11,6 +11,7 @@ const logsRouter = require("./controllers/logs.controller");
 const questionRouter = require("./controllers/question.controller");
 const studentRouter = require("./controllers/student.controller");
 const pointagramRouter = require("./controllers/pointagram.controller");
+const zoomRouter = require("./controllers/zoom.controller");
 
 const app = express();
 app.use(express.json());
@@ -28,6 +29,7 @@ app.use("/teachers", teacherRouter);
 app.use("/student", studentRouter);
 app.use("/pointagram", pointagramRouter);
 app.use("/coins", coinsRouter);
+app.use("/zoom", zoomRouter);
 
 app.get("/", (req, res) => {
   res.status(200).send({
