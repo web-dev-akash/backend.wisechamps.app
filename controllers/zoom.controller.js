@@ -116,6 +116,7 @@ zoomRouter.post("/recording/:id", async (req, res) => {
         "DD-MM-YYYY"
       );
       const fileSize = recording.file_size;
+      console.log("File Size is :", fileSize);
       const fileExtension = recording.file_extension;
       const recordingPath = `/Zoom Recording Math Olympiad/${dropboxPath[id]}/Grade ${id} ${recordingDate}.${fileExtension}`;
       const recordingLink = recording.download_url;
