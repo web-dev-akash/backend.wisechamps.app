@@ -103,7 +103,7 @@ const getMeetingLink = async (emailParam) => {
     zohoConfig
   );
   const updateGrade = source_campaign === "old olympiad data" ? true : false;
-  console.log("Update Grade", updateGrade);
+
   const finalAddress = address
     ? address
     : attempt.status === 200 && attempt.data.info.count <= 3
@@ -119,7 +119,7 @@ const getMeetingLink = async (emailParam) => {
 
   return {
     status: 200,
-    mode: !gradeUpdated ? "oldData" : "zoomlink",
+    mode: !gradeUpdated || updateGrade ? "oldData" : "zoomlink",
     email,
     link: meetLink,
     name,
