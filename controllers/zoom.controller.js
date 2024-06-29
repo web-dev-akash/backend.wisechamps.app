@@ -88,7 +88,7 @@ const getOptimizedAccessToken = async () => {
   }
 };
 
-zoomRouter.post("/recording/:id", async (req, res) => {
+zoomRouter.post("/recording/notUsing", async (req, res) => {
   try {
     const data = req.body;
     const id = req.params.id;
