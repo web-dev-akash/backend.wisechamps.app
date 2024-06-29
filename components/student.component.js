@@ -50,6 +50,8 @@ const getStudentDetails = async (email) => {
     const joinedWisechamps = contact.data.data[0].Joined_Wisechampions
       ? true
       : false;
+    const numOfIntoMeetJoined =
+      contact.data.data[0].Number_of_Intro_Meeting_Joined || 0;
     const tags = contact.data.data[0].Tag;
     const category = tags.filter(
       ({ name }) =>
@@ -216,15 +218,7 @@ const getStudentDetails = async (email) => {
         });
       }
     }
-    let newUser = false;
-    if (credits < 6) {
-      if (
-        attempts.status === 204 ||
-        (attempts.status === 200 && attempts.data.info.count < 5)
-      ) {
-        newUser = true;
-      }
-    }
+    let newUser = numOfIntoMeetJoined < 5 ? true : false;
 
     if (referrals.status === 204) {
       return {
