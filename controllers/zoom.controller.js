@@ -25,19 +25,6 @@ const dropboxPath = {
   7: "wclqgrade7@gmail.com",
 };
 
-async function downloadChunk(recordingLink, start, end, downloadToken) {
-  const response = await axios({
-    url: recordingLink,
-    method: "GET",
-    responseType: "arraybuffer",
-    headers: {
-      Authorization: `Bearer ${downloadToken}`,
-      Range: `bytes=${start}-${end}`,
-    },
-  });
-  return response.data;
-}
-
 const getDropboxAccessToken = async () => {
   const dropboxRefreshToken = process.env.DROPBOX_REFRESH_TOKEN;
   const dropboxAppKey = process.env.DROPBOX_APP_KEY;
@@ -88,7 +75,107 @@ const getOptimizedAccessToken = async () => {
   }
 };
 
-zoomRouter.post("/recording/notUsing", async (req, res) => {
+const streamToDropbox = async (
+  recordingUrl,
+  dropboxPath,
+  fileSize,
+  dropboxAccessToken,
+  downloadToken
+) => {
+  const dbx = new Dropbox({ accessToken: dropboxAccessToken });
+  const response = await axios({
+    url: recordingUrl,
+    method: "GET",
+    responseType: "stream",
+    headers: {
+      Authorization: `Bearer ${downloadToken}`,
+    },
+  });
+
+  if (fileSize < 150 * 1024 * 1024) {
+    const uploadStream = new stream.PassThrough();
+    response.data.pipe(uploadStream);
+    const buffers = [];
+    for await (const chunk of uploadStream) {
+      buffers.push(chunk);
+    }
+    const fileBuffer = Buffer.concat(buffers);
+    const data = await dbx.filesUpload({
+      path: dropboxPath,
+      contents: fileBuffer,
+    });
+    console.log(`File uploaded to Dropbox at ${dropboxPath}`);
+    return {
+      status: 200,
+      data: data.data,
+    };
+  } else {
+    const maxBlob = 40 * 1024 * 1024; // 40 MB
+    let buffer = [];
+    let bufferLength = 0;
+    let sessionId = null;
+    let offset = 0;
+
+    for await (const chunk of response.data) {
+      buffer.push(chunk);
+      bufferLength += chunk.length;
+
+      if (bufferLength >= maxBlob) {
+        const content = Buffer.concat(buffer);
+        buffer = [];
+        bufferLength = 0;
+
+        if (!sessionId) {
+          const sessionStartRes = await dbx.filesUploadSessionStart({
+            close: false,
+            contents: content,
+          });
+          sessionId = sessionStartRes.result.session_id;
+          console.log("Session id 1:", sessionId);
+        } else {
+          await dbx.filesUploadSessionAppendV2({
+            cursor: { session_id: sessionId, offset: offset },
+            contents: content,
+            close: false,
+          });
+          console.log("Session id 2:", sessionId);
+        }
+
+        offset += content.length;
+      }
+    }
+
+    if (bufferLength > 0) {
+      const content = Buffer.concat(buffer);
+
+      if (!sessionId) {
+        await dbx.filesUploadSessionStart({
+          close: true,
+          contents: content,
+        });
+        console.log("Session id 3:", sessionId);
+      } else {
+        await dbx.filesUploadSessionFinish({
+          cursor: { session_id: sessionId, offset: offset },
+          commit: {
+            path: dropboxPath,
+            mode: "add",
+            autorename: true,
+            mute: false,
+          },
+          contents: content,
+        });
+        console.log("Session id 4:", sessionId);
+      }
+    }
+    console.log(`Large file uploaded to Dropbox at ${dropboxPath}`);
+    return {
+      status: 200,
+    };
+  }
+};
+
+zoomRouter.post("/recording/:id", async (req, res) => {
   try {
     const data = req.body;
     const id = req.params.id;
@@ -107,11 +194,16 @@ zoomRouter.post("/recording/notUsing", async (req, res) => {
     }
 
     if (data.event === "recording.completed") {
-      const UPLOAD_FILE_SIZE_LIMIT = 150 * 1024 * 1024;
       const files = data.payload.object.recording_files;
       const recording = files.find(
         (file) => file.recording_type === "shared_screen_with_speaker_view"
       );
+      if (!recording || !recording.recording_start) {
+        return res.status(204).send({
+          status: 204,
+          message: "No Recording Found",
+        });
+      }
       const recordingDate = moment(recording.recording_start).format(
         "DD-MM-YYYY"
       );
@@ -120,75 +212,17 @@ zoomRouter.post("/recording/notUsing", async (req, res) => {
       const recordingPath = `/Zoom Recording Math Olympiad/${dropboxPath[id]}/Grade ${id} ${recordingDate}.${fileExtension}`;
       const recordingLink = recording.download_url;
       const downloadToken = data.download_token;
-
       const dropboxAccessToken = await getOptimizedAccessToken();
-      const dbx = new Dropbox({ accessToken: dropboxAccessToken });
-      if (fileSize < UPLOAD_FILE_SIZE_LIMIT) {
-        const fileBuffer = await downloadChunk(
-          recordingLink,
-          0,
-          fileSize - 1,
-          downloadToken
-        );
-
-        dbx
-          .filesUpload({ path: recordingPath, contents: fileBuffer })
-          .then(function (response) {
-            console.log(response);
-          })
-          .catch(function (error) {
-            console.log("Dropbox Error");
-            console.error(error.error || error);
-          });
-      } else {
-        const maxBlob = 150 * 1024 * 1024;
-        let offset = 0;
-        let sessionId = null;
-
-        while (offset < fileSize) {
-          const chunkSize = Math.min(maxBlob, fileSize - offset);
-          const chunk = await downloadChunk(
-            recordingLink,
-            offset,
-            offset + chunkSize - 1,
-            downloadToken
-          );
-
-          if (offset === 0) {
-            const response = await dbx.filesUploadSessionStart({
-              close: false,
-              contents: chunk,
-            });
-            sessionId = response.result.session_id;
-          } else if (offset + chunkSize < fileSize) {
-            const cursor = { session_id: sessionId, offset };
-            await dbx.filesUploadSessionAppendV2({
-              cursor,
-              close: false,
-              contents: chunk,
-            });
-          } else {
-            const cursor = { session_id: sessionId, offset };
-            const commit = {
-              path: recordingPath,
-              mode: "add",
-              autorename: true,
-              mute: false,
-            };
-            await dbx.filesUploadSessionFinish({
-              cursor,
-              commit,
-              contents: chunk,
-            });
-          }
-          offset += chunkSize;
-        }
-        console.log(`Large file Uploaded to Dropbox at ${recordingPath}`);
-      }
-
+      const uploadStatus = await streamToDropbox(
+        recordingLink,
+        recordingPath,
+        fileSize,
+        dropboxAccessToken,
+        downloadToken
+      );
       return res.status(200).send({
         status: "success",
-        recording: recording,
+        data: uploadStatus,
       });
     }
     return res.status(200).send({
