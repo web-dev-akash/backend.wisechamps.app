@@ -104,10 +104,9 @@ const streamToDropbox = async (
       path: dropboxPath,
       contents: fileBuffer,
     });
-    console.log(`File uploaded to Dropbox at ${dropboxPath}`);
     return {
       status: 200,
-      data: data.data,
+      data: data,
     };
   } else {
     const maxBlob = 40 * 1024 * 1024; // 40 MB
@@ -131,14 +130,12 @@ const streamToDropbox = async (
             contents: content,
           });
           sessionId = sessionStartRes.result.session_id;
-          console.log("Session id 1:", sessionId);
         } else {
           await dbx.filesUploadSessionAppendV2({
             cursor: { session_id: sessionId, offset: offset },
             contents: content,
             close: false,
           });
-          console.log("Session id 2:", sessionId);
         }
 
         offset += content.length;
@@ -153,7 +150,6 @@ const streamToDropbox = async (
           close: true,
           contents: content,
         });
-        console.log("Session id 3:", sessionId);
       } else {
         await dbx.filesUploadSessionFinish({
           cursor: { session_id: sessionId, offset: offset },
@@ -165,7 +161,6 @@ const streamToDropbox = async (
           },
           contents: content,
         });
-        console.log("Session id 4:", sessionId);
       }
     }
     console.log(`Large file uploaded to Dropbox at ${dropboxPath}`);
@@ -194,18 +189,16 @@ zoomRouter.post("/recording/:id", async (req, res) => {
     }
 
     if (data.event === "recording.completed") {
+      res.status(200).send({ message: "success" });
       const files = data.payload.object.recording_files;
       const recording = files.find(
         (file) => file.recording_type === "shared_screen_with_speaker_view"
       );
       if (!recording || !recording.recording_start) {
-        return res.status(204).send({
-          status: 204,
-          message: "No Recording Found",
-        });
+        return;
       }
       const recordingDate = moment(recording.recording_start).format(
-        "DD-MM-YYYY"
+        "Do MMM h:mm A"
       );
       const fileSize = recording.file_size;
       const fileExtension = recording.file_extension;
@@ -220,14 +213,9 @@ zoomRouter.post("/recording/:id", async (req, res) => {
         dropboxAccessToken,
         downloadToken
       );
-      return res.status(200).send({
-        status: "success",
-        data: uploadStatus,
-      });
+      return;
     }
-    return res.status(200).send({
-      message: "success",
-    });
+    return res.status(200).send({ message: "success" });
   } catch (error) {
     console.log({
       status: error.status || 500,
