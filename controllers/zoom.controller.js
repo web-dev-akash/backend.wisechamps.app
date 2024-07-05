@@ -14,6 +14,7 @@ const zoomIdToken = {
   5: "ZOOM_WEBHOOK_SECRET_TOKEN_5",
   6: "ZOOM_WEBHOOK_SECRET_TOKEN_6",
   7: "ZOOM_WEBHOOK_SECRET_TOKEN_7_8",
+  "001": "ZOOM_WEBHOOK_SECRET_TOKEN_001",
 };
 
 const dropboxPath = {
@@ -23,6 +24,7 @@ const dropboxPath = {
   5: "wclqgrade5@gmail.com",
   6: "wclqgrade6@gmail.com",
   7: "wclqgrade7@gmail.com",
+  "001": "wisechampteacher001@gmail.com",
 };
 
 const getDropboxAccessToken = async () => {
@@ -200,9 +202,10 @@ zoomRouter.post("/recording/:id", async (req, res) => {
       const recordingDate = moment(recording.recording_start).format(
         "Do MMM h:mm A"
       );
+      const recordingName = data.payload.object.topic;
       const fileSize = recording.file_size;
       const fileExtension = recording.file_extension;
-      const recordingPath = `/Zoom Recording Math Olympiad/${dropboxPath[id]}/Grade ${id} ${recordingDate}.${fileExtension}`;
+      const recordingPath = `/Zoom Recording Math Olympiad/${dropboxPath[id]}/${recordingName} ${recordingDate}.${fileExtension}`;
       const recordingLink = recording.download_url;
       const downloadToken = data.download_token;
       const dropboxAccessToken = await getOptimizedAccessToken();

@@ -47,7 +47,7 @@ const updateCoinsOnZoho = async (email, coins) => {
   }
 };
 
-const createCoinsHistory = async (email, contactId) => {
+const createCoinsHistory = async (email, contactId, percentage) => {
   try {
     const accessToken = await getZohoTokenOptimized();
     const zohoConfig = {
@@ -64,7 +64,9 @@ const createCoinsHistory = async (email, contactId) => {
           Contact: contactId,
           Coins: 300,
           Action_Type: "Credit",
-          Description: "Top 5 Highest Scorers Weekly",
+          Description: percentage
+            ? "Top 3 Highest Percentage Weekly"
+            : "Top 3 Highest Scorers Weekly",
           Updated_Date: currentDate,
         },
       ],
@@ -104,12 +106,10 @@ const updateCoinsForWeeklyToppers = async () => {
     const formattedDateStart = `${monday.format("YYYY-MM-DD")}T00:00:00+05:30`;
     const formattedDateEnd = `${sunday.format("YYYY-MM-DD")}T23:59:59+05:30`;
 
-    console.log(formattedDateStart, formattedDateEnd);
-
     let currentPage = 0;
     const attempts = [];
     while (true) {
-      const attemptsQuery = `select Contact_Name.id as contactId, Contact_Name.Email as Email,Contact_Name.Student_Grade as Student_Grade, Quiz_Score, Contact_Name.Coins as Coins from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' order by Session_Date_Time asc limit ${
+      const attemptsQuery = `select Contact_Name.id as contactId, Contact_Name.Email as Email,Contact_Name.Student_Grade as Student_Grade, Quiz_Score, Contact_Name.Coins as Coins, Session.Number_of_Questions as Total_Questions from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' order by Session_Date_Time asc limit ${
         currentPage * 2000
       }, 2000`;
       const attemptsResponse = await getAnalysisData(attemptsQuery, zohoConfig);
@@ -126,6 +126,7 @@ const updateCoinsForWeeklyToppers = async () => {
     attempts.forEach((attempt) => {
       if (uniqueUsers[attempt.Email]) {
         uniqueUsers[attempt.Email].Quiz_Score += attempt.Quiz_Score;
+        uniqueUsers[attempt.Email].Total_Questions += attempt.Total_Questions;
       } else {
         uniqueUsers[attempt.Email] = { ...attempt };
       }
@@ -166,20 +167,53 @@ const updateCoinsForWeeklyToppers = async () => {
       }
     });
 
-    const topFiveUsers = [];
+    const topThreeUsers = [];
     const grades = [grade1And2, grade3, grade4, grade5, grade6, grade7And8];
     grades.forEach((grade) => {
-      const topFive = grade
+      const topThree = grade
         .sort((a, b) => b.Quiz_Score - a.Quiz_Score)
-        .slice(0, 5);
-      topFiveUsers.push(...topFive);
+        .slice(0, 3);
+      topThreeUsers.push(...topThree);
     });
 
-    const updateCoinsStatus = await Promise.all(
-      topFiveUsers.map(async (user) => {
+    const filterTopThree = (grade) =>
+      grade.filter(
+        (user) => !topThreeUsers.some((topUser) => topUser.Email === user.Email)
+      );
+
+    const filteredGrades = grades.map(filterTopThree);
+    filteredGrades.forEach((grade) => {
+      grade.forEach((user) => {
+        user.percentage = (user.Quiz_Score / user.Total_Questions) * 100;
+      });
+    });
+
+    const topThreePercentageUsers = [];
+    filteredGrades.forEach((grade) => {
+      const topThree = grade
+        .sort((a, b) => b.percentage - a.percentage)
+        .slice(0, 3);
+      topThreePercentageUsers.push(...topThree);
+    });
+
+    await Promise.all(
+      topThreeUsers.map(async (user) => {
         const [updateCoinsResult, addCoinsHistoryResult] = await Promise.all([
           limit(() => updateCoinsOnZoho(user.Email, user.Coins)),
-          limit(() => createCoinsHistory(user.Email, user.contactId)),
+          limit(() => createCoinsHistory(user.Email, user.contactId, false)),
+        ]);
+        return {
+          updateCoins: { ...updateCoinsResult },
+          addCoins: { ...addCoinsHistoryResult },
+        };
+      })
+    );
+
+    await Promise.all(
+      topThreePercentageUsers.map(async (user) => {
+        const [updateCoinsResult, addCoinsHistoryResult] = await Promise.all([
+          limit(() => updateCoinsOnZoho(user.Email, user.Coins)),
+          limit(() => createCoinsHistory(user.Email, user.contactId, true)),
         ]);
         return {
           updateCoins: { ...updateCoinsResult },
@@ -190,8 +224,6 @@ const updateCoinsForWeeklyToppers = async () => {
 
     return {
       status: "Success",
-      updateCoinsStatus,
-      topFiveUsers,
     };
   } catch (error) {
     throw new Error(error);

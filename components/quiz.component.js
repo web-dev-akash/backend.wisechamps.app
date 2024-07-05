@@ -515,6 +515,18 @@ const addDataToSheet = async (data, columnRange) => {
       record.dropoutUsers,
       record.revivalUsers,
       record.totalCreditExostedUsers,
+      record.grade12Total,
+      record.grade12Unique,
+      record.grade3Total,
+      record.grade3Unique,
+      record.grade4Total,
+      record.grade4Unique,
+      record.grade5Total,
+      record.grade5Unique,
+      record.grade6Total,
+      record.grade6Unique,
+      record.grade78Total,
+      record.grade78Unique,
     ];
   });
   const writeData = await sheet.spreadsheets.values.batchUpdate({
@@ -567,10 +579,13 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
       console.log(formattedDateStart, formattedDateEnd);
 
       let currentPage = 0;
+      const totalAttempts = [];
       const attempts = [];
-      const attemptsBefore = [];
+      const attemptsBefore = new Map();
+      const uniqueEmails = new Set();
+
       while (true) {
-        const attemptsQuery = `select Contact_Name.id as contactId, Contact_Name.Email as Email, Contact_Name.Credits as Credits, Contact_Name.Phone as Phone from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' group by Contact_Name.Email,Contact_Name.Credits,Contact_Name.Phone,Contact_Name.id limit ${
+        const attemptsQuery = `select Contact_Name.id as contactId, Contact_Name.Email as Email, Contact_Name.Credits as Credits, Contact_Name.Phone as Phone, Contact_Name.Student_Grade as Student_Grade from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' limit ${
           currentPage * 2000
         }, 2000`;
         const attemptsResponse = await getAnalysisData(
@@ -580,7 +595,13 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
         if (attemptsResponse.status === 204) {
           break;
         }
-        attempts.push(...attemptsResponse.data.data);
+        for (const attempt of attemptsResponse.data.data) {
+          if (!uniqueEmails.has(attempt.Email)) {
+            uniqueEmails.add(attempt.Email);
+            attempts.push(attempt);
+          }
+        }
+        totalAttempts.push(...attemptsResponse.data.data);
         if (!attemptsResponse.data.info.more_records) {
           break;
         }
@@ -599,7 +620,9 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
         if (attemptsBeforeResponse.status === 204) {
           break;
         }
-        attemptsBefore.push(...attemptsBeforeResponse.data.data);
+        for (const attemptBefore of attemptsBeforeResponse.data.data) {
+          attemptsBefore.set(attemptBefore.Email, true); // Store in map
+        }
         if (!attemptsBeforeResponse.data.info.more_records) {
           break;
         }
@@ -618,14 +641,25 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
           dropoutUsers: 0,
           revivalUsers: 0,
           totalCreditExostedUsers: 0,
+          grade12Total: 0,
+          grade12Unique: 0,
+          grade3Total: 0,
+          grade3Unique: 0,
+          grade4Total: 0,
+          grade4Unique: 0,
+          grade5Total: 0,
+          grade5Unique: 0,
+          grade6Total: 0,
+          grade6Unique: 0,
+          grade78Total: 0,
+          grade78Unique: 0,
         });
         continue;
       }
 
       const finalUsers = attempts.filter(
         (attempt) =>
-          !attemptsBefore.find((before) => before.Email === attempt.Email) &&
-          attempt.Email !== null
+          !attemptsBefore.has(attempt.Email) && attempt.Email !== null
       );
 
       const currentDate = new Date();
@@ -652,6 +686,18 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
         dropoutUsers: [],
         revivalUsers: [],
         totalCreditExostedUsers: [],
+        grade12Total: [],
+        grade12Unique: [],
+        grade3Total: [],
+        grade3Unique: [],
+        grade4Total: [],
+        grade4Unique: [],
+        grade5Total: [],
+        grade5Unique: [],
+        grade6Total: [],
+        grade6Unique: [],
+        grade78Total: [],
+        grade78Unique: [],
       };
 
       const addtags = {
@@ -826,6 +872,61 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
         }
       });
       await Promise.all(userStatusPromises);
+
+      attempts.forEach((user) => {
+        switch (user.Student_Grade) {
+          case "1":
+          case "2":
+            userStatuses.grade12Unique.push(user);
+            break;
+          case "3":
+            userStatuses.grade3Unique.push(user);
+            break;
+          case "4":
+            userStatuses.grade4Unique.push(user);
+            break;
+          case "5":
+            userStatuses.grade5Unique.push(user);
+            break;
+          case "6":
+            userStatuses.grade6Unique.push(user);
+            break;
+          case "7":
+          case "8":
+            userStatuses.grade78Unique.push(user);
+            break;
+          default:
+            break;
+        }
+      });
+
+      totalAttempts.forEach((user) => {
+        switch (user.Student_Grade) {
+          case "1":
+          case "2":
+            userStatuses.grade12Total.push(user);
+            break;
+          case "3":
+            userStatuses.grade3Total.push(user);
+            break;
+          case "4":
+            userStatuses.grade4Total.push(user);
+            break;
+          case "5":
+            userStatuses.grade5Total.push(user);
+            break;
+          case "6":
+            userStatuses.grade6Total.push(user);
+            break;
+          case "7":
+          case "8":
+            userStatuses.grade78Total.push(user);
+            break;
+          default:
+            break;
+        }
+      });
+
       totalData.push({
         startDate: new Date(formattedDateStart).toDateString(),
         startEnd: new Date(formattedDateEnd).toDateString(),
@@ -838,6 +939,18 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
         revivalUsers: userStatuses.revivalUsers.length,
         totalCreditExostedUsers:
           userStatuses.dropoutUsers.length + userStatuses.revivalUsers.length,
+        grade12Total: userStatuses.grade12Total.length,
+        grade12Unique: userStatuses.grade12Unique.length,
+        grade3Total: userStatuses.grade3Total.length,
+        grade3Unique: userStatuses.grade3Unique.length,
+        grade4Total: userStatuses.grade4Total.length,
+        grade4Unique: userStatuses.grade4Unique.length,
+        grade5Total: userStatuses.grade5Total.length,
+        grade5Unique: userStatuses.grade5Unique.length,
+        grade6Total: userStatuses.grade6Total.length,
+        grade6Unique: userStatuses.grade6Unique.length,
+        grade78Total: userStatuses.grade78Total.length,
+        grade78Unique: userStatuses.grade78Unique.length,
       });
 
       totalTags.push({
@@ -978,8 +1091,7 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
     const updatedSheet = await addDataToSheet(totalData, columnRange);
     console.log("Sheet Updated Successfully!");
     return {
-      status: "success",
-      updatedSheet,
+      status: "Updated Successfully",
     };
   } catch (error) {
     return {
