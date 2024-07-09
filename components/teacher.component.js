@@ -127,7 +127,7 @@ const getDailyReports = async (grade) => {
 };
 
 const updateTeachersAttendance = async (requestBody) => {
-  const { sessionDate, zoom, grade, explanation, contactId, winner } =
+  const { sessionDate, zoom, grade, explanation, contactId, winners } =
     requestBody;
   const zohoToken = await getZohoTokenOptimized();
   const zohoConfig = {
@@ -182,63 +182,65 @@ const updateTeachersAttendance = async (requestBody) => {
     };
   }
 
-  if (winner) {
-    const attemptBody = {
-      select_query: `select id as Attempt_id, Session_Date_Time from Attempts where Contact_Name = '${winner}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
-    };
-
-    const attempt = await axios.post(
-      `https://www.zohoapis.com/crm/v3/coql`,
-      attemptBody,
-      zohoConfig
-    );
-
-    if (attempt.status >= 400) {
-      return {
-        status: attempt.status,
-        mode: "internalservererrorinfindingattempt",
+  if (winners && winners.length > 0) {
+    winners.forEach(async (winner) => {
+      const attemptBody = {
+        select_query: `select id as Attempt_id, Session_Date_Time from Attempts where Contact_Name = '${winner}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
       };
-    }
 
-    if (attempt.status == 204) {
-      return {
-        status: attempt.status,
-        mode: "noattempt",
-      };
-    }
+      const attempt = await axios.post(
+        `https://www.zohoapis.com/crm/v3/coql`,
+        attemptBody,
+        zohoConfig
+      );
 
-    const attemptId = attempt.data.data[0].Attempt_id;
-    const updateAttemptBody = {
-      data: [
-        {
-          id: attemptId,
-          Quiz_Winner: date.format("YYYY-MM-DD"),
-          $append_values: {
-            Quiz_Winner: true,
+      if (attempt.status >= 400) {
+        return {
+          status: attempt.status,
+          mode: "internalservererrorinfindingattempt",
+        };
+      }
+
+      if (attempt.status == 204) {
+        return {
+          status: attempt.status,
+          mode: "noattempt",
+        };
+      }
+
+      const attemptId = attempt.data.data[0].Attempt_id;
+      const updateAttemptBody = {
+        data: [
+          {
+            id: attemptId,
+            Quiz_Winner: date.format("YYYY-MM-DD"),
+            $append_values: {
+              Quiz_Winner: true,
+            },
           },
-        },
-      ],
-      duplicate_check_fields: ["id"],
-      apply_feature_execution: [
-        {
-          name: "layout_rules",
-        },
-      ],
-      trigger: ["workflow"],
-    };
-
-    const updateAttempt = await axios.post(
-      `https://www.zohoapis.com/crm/v3/Attempts/upsert`,
-      updateAttemptBody,
-      zohoConfig
-    );
-
-    if (updateAttempt.data.data[0].status !== "success") {
-      return {
-        mode: "errorInUpdating",
-        attempt: updateAttempt.data.data[0],
+        ],
+        duplicate_check_fields: ["id"],
+        apply_feature_execution: [
+          {
+            name: "layout_rules",
+          },
+        ],
+        trigger: ["workflow"],
       };
-    }
+
+      const updateAttempt = await axios.post(
+        `https://www.zohoapis.com/crm/v3/Attempts/upsert`,
+        updateAttemptBody,
+        zohoConfig
+      );
+
+      if (updateAttempt.data.data[0].status !== "success") {
+        return {
+          mode: "errorInUpdating",
+          attempt: updateAttempt.data.data[0],
+        };
+      }
+    });
   }
 
   const body = {
