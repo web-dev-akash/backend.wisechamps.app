@@ -700,14 +700,6 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
         grade78Unique: [],
       };
 
-      const addtags = {
-        activeUsers: [],
-        inactiveUsers: [],
-        regularUsers: [],
-        atRiskUsers: [],
-        dropoutUsers: [],
-        revivalUsers: [],
-      };
       const removeTagsBody = {
         tags: [
           {
@@ -735,11 +727,14 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
       for (let i = 0; i < finalUsers.length; i++) {
         removeTagsBody.ids.push(finalUsers[i].contactId);
       }
+
       const removeTags = await axios.post(
-        `https://www.zohoapis.com/crm/v3/Contacts/actions/remove_tags`,
+        `https://www.zohoapis.com/crm/v6/Contacts/actions/remove_tags`,
         removeTagsBody,
         zohoConfig
       );
+
+      console.log("Removed Tags :", removeTags.data);
 
       const numberOfDays = getNumberOfDays(totalWeeks[i].end);
       const userStatusPromises = finalUsers.map(async (user) => {
@@ -770,7 +765,6 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
             ]);
             if (attemptAfterExostedCredits.status === 200) {
               userStatuses.revivalUsers.push(user);
-              addtags.revivalUsers.push(user);
               flag = true;
             }
           }
@@ -783,14 +777,6 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
             userStatuses.inactiveUsers.push(user);
           } else {
             userStatuses.activeUsers.push(user);
-          }
-
-          if (lastThreeAttempt.status === 204 && user.Credits === 0 && !flag) {
-            addtags.dropoutUsers.push(user);
-          } else if (lastThreeAttempt.status === 204 && !flag) {
-            addtags.inactiveUsers.push(user);
-          } else if (lastThreeAttempt.status === 200 && !flag) {
-            addtags.activeUsers.push(user);
           }
         } else {
           const [lastThreeAttempt, lastSixAttempt, lastThreeWithExotedCredits] =
@@ -822,12 +808,9 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
             ]);
             if (attemptAfterExostedCredits.status === 200) {
               userStatuses.revivalUsers.push(user);
-              addtags.revivalUsers.push(user);
               flag = true;
             }
           }
-
-          // Add users data
 
           if (
             lastSixAttempt.status === 200 &&
@@ -842,32 +825,6 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
             }
           } else if (lastThreeAttempt.status === 204 && user.Credits == 0) {
             userStatuses.dropoutUsers.push(user);
-          }
-
-          // Add User Tags
-
-          if (
-            lastSixAttempt.status === 200 &&
-            Number(lastSixAttempt.data.info.count) >= 6 &&
-            !flag
-          ) {
-            if (lastThreeAttempt.status === 204 && user.Credits != 0) {
-              addtags.atRiskUsers.push(user);
-            } else if (lastThreeAttempt.status === 204 && user.Credits == 0) {
-              addtags.dropoutUsers.push(user);
-            } else {
-              addtags.regularUsers.push(user);
-            }
-          } else if (
-            lastThreeAttempt.status === 204 &&
-            user.Credits == 0 &&
-            !flag
-          ) {
-            addtags.dropoutUsers.push(user);
-          } else if (lastThreeAttempt.status === 204 && !flag) {
-            addtags.inactiveUsers.push(user);
-          } else if (lastThreeAttempt.status === 200 && !flag) {
-            addtags.activeUsers.push(user);
           }
         }
       });
@@ -953,18 +910,7 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
         grade78Unique: userStatuses.grade78Unique.length,
       });
 
-      totalTags.push({
-        startDate: new Date(formattedDateStart).toDateString(),
-        startEnd: new Date(formattedDateEnd).toDateString(),
-        activeUsers: addtags.activeUsers,
-        inactiveUsers: addtags.inactiveUsers,
-        regularUsers: addtags.regularUsers,
-        atRiskUsers: addtags.atRiskUsers,
-        dropoutUsers: addtags.dropoutUsers,
-        revivalUsers: addtags.revivalUsers,
-      });
-
-      if (addtags.dropoutUsers.length > 0) {
+      if (userStatuses.dropoutUsers.length > 0) {
         const body = {
           tags: [
             {
@@ -975,8 +921,8 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
           ],
           ids: [],
         };
-        for (let i = 0; i < addtags.dropoutUsers.length; i++) {
-          body.ids.push(addtags.dropoutUsers[i].contactId);
+        for (let i = 0; i < userStatuses.dropoutUsers.length; i++) {
+          body.ids.push(userStatuses.dropoutUsers[i].contactId);
         }
         const updateTag = await axios.post(
           `https://www.zohoapis.com/crm/v3/Contacts/actions/add_tags`,
@@ -984,7 +930,7 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
           zohoConfig
         );
       }
-      if (addtags.atRiskUsers.length > 0) {
+      if (userStatuses.atRiskUsers.length > 0) {
         const body = {
           tags: [
             {
@@ -995,8 +941,8 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
           ],
           ids: [],
         };
-        for (let i = 0; i < addtags.atRiskUsers.length; i++) {
-          body.ids.push(addtags.atRiskUsers[i].contactId);
+        for (let i = 0; i < userStatuses.atRiskUsers.length; i++) {
+          body.ids.push(userStatuses.atRiskUsers[i].contactId);
         }
         const updateTag = await axios.post(
           `https://www.zohoapis.com/crm/v3/Contacts/actions/add_tags`,
@@ -1004,7 +950,7 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
           zohoConfig
         );
       }
-      if (addtags.revivalUsers.length > 0) {
+      if (userStatuses.revivalUsers.length > 0) {
         const body = {
           tags: [
             {
@@ -1015,8 +961,8 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
           ],
           ids: [],
         };
-        for (let i = 0; i < addtags.revivalUsers.length; i++) {
-          body.ids.push(addtags.revivalUsers[i].contactId);
+        for (let i = 0; i < userStatuses.revivalUsers.length; i++) {
+          body.ids.push(userStatuses.revivalUsers[i].contactId);
         }
         const updateTag = await axios.post(
           `https://www.zohoapis.com/crm/v3/Contacts/actions/add_tags`,
@@ -1025,7 +971,7 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
         );
       }
 
-      if (addtags.regularUsers.length > 0) {
+      if (userStatuses.regularUsers.length > 0) {
         const body = {
           tags: [
             {
@@ -1036,8 +982,8 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
           ],
           ids: [],
         };
-        for (let i = 0; i < addtags.regularUsers.length; i++) {
-          body.ids.push(addtags.regularUsers[i].contactId);
+        for (let i = 0; i < userStatuses.regularUsers.length; i++) {
+          body.ids.push(userStatuses.regularUsers[i].contactId);
         }
         const updateTag = await axios.post(
           `https://www.zohoapis.com/crm/v3/Contacts/actions/add_tags`,
@@ -1046,7 +992,7 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
         );
       }
 
-      if (addtags.activeUsers.length > 0) {
+      if (userStatuses.activeUsers.length > 0) {
         const body = {
           tags: [
             {
@@ -1057,8 +1003,8 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
           ],
           ids: [],
         };
-        for (let i = 0; i < addtags.activeUsers.length; i++) {
-          body.ids.push(addtags.activeUsers[i].contactId);
+        for (let i = 0; i < userStatuses.activeUsers.length; i++) {
+          body.ids.push(userStatuses.activeUsers[i].contactId);
         }
         const updateTag = await axios.post(
           `https://www.zohoapis.com/crm/v3/Contacts/actions/add_tags`,
@@ -1067,7 +1013,7 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
         );
       }
 
-      if (addtags.inactiveUsers.length > 0) {
+      if (userStatuses.inactiveUsers.length > 0) {
         const body = {
           tags: [
             {
@@ -1078,8 +1024,8 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
           ],
           ids: [],
         };
-        for (let i = 0; i < addtags.inactiveUsers.length; i++) {
-          body.ids.push(addtags.inactiveUsers[i].contactId);
+        for (let i = 0; i < userStatuses.inactiveUsers.length; i++) {
+          body.ids.push(userStatuses.inactiveUsers[i].contactId);
         }
         const updateTag = await axios.post(
           `https://www.zohoapis.com/crm/v3/Contacts/actions/add_tags`,

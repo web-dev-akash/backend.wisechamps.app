@@ -15,10 +15,6 @@ const getTeacherDetailsWithEmail = async (email, pass) => {
     },
   };
 
-  // const contact = await axios.get(
-  //   `https://www.zohoapis.com/crm/v2/Teachers/search?email=${email}`,
-  //   zohoConfig
-  // );
   const contact = await axios.get(
     `https://www.zohoapis.com/crm/v2/Teachers/search?criteria=((Email:equals:${email})and(Password:equals:${pass}))`,
     zohoConfig
