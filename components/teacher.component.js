@@ -123,8 +123,15 @@ const getDailyReports = async (grade) => {
 };
 
 const updateTeachersAttendance = async (requestBody) => {
-  const { sessionDate, zoom, grade, explanation, contactId, winners } =
-    requestBody;
+  const {
+    sessionDate,
+    zoom,
+    grade,
+    explanation,
+    contactId,
+    winners,
+    criteria,
+  } = requestBody;
   const zohoToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -247,6 +254,7 @@ const updateTeachersAttendance = async (requestBody) => {
         Session_Date_Time: sessionDateTime,
         Zoom_Meeting_Strength: zoom,
         Explanation_Meeting_Strength: explanation,
+        Lucky_Draw_Criteria: criteria,
       },
     ],
     apply_feature_execution: [
