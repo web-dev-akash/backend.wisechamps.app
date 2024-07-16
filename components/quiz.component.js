@@ -103,7 +103,7 @@ const getQuizLink = async (emailParam) => {
   const endMinutes = end.getMinutes().toString().padStart(2, "0");
   const formattedDateStart = `${year}-${month}-${day}T${startHours}:${startMinutes}:00+05:30`;
   const formattedDateEnd = `${year}-${month}-${day}T${endHours}:${endMinutes}:00+05:30`;
-  // console.log("Start", formattedDateStart);
+
   const sessionBody = {
     select_query: `select Session_Grade, LMS_Activity_ID from Sessions where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' and Session_Grade = '${gradeGroup}'`,
   };
@@ -733,8 +733,6 @@ const getWeeklyQuizAnalysis = async (startDate, endDate, columnRange) => {
         removeTagsBody,
         zohoConfig
       );
-
-      console.log("Removed Tags :", removeTags.data);
 
       const numberOfDays = getNumberOfDays(totalWeeks[i].end);
       const userStatusPromises = finalUsers.map(async (user) => {

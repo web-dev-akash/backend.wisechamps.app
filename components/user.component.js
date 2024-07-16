@@ -5,6 +5,7 @@ const {
 } = require("./common.component");
 const optGenerator = require("otp-generator");
 const pLimit = require("p-limit");
+const { google } = require("googleapis");
 
 const limit = pLimit(20);
 
@@ -442,6 +443,43 @@ const resendOTP = async (phone) => {
   }
 };
 
+const updateDataInSheet = async (data) => {
+  const spreadsheetId = process.env.SPREADSHEET_ID;
+  const auth = new google.auth.GoogleAuth({
+    keyFile: "./key.json",
+    scopes: "https://www.googleapis.com/auth/spreadsheets",
+  });
+  const authClientObject = await auth.getClient();
+  const sheet = google.sheets({
+    version: "v4",
+    auth: authClientObject,
+  });
+  const values = data.map((record) => {
+    return [
+      record.totalReferrals,
+      record.furtherReferrals,
+      record.noFurtherReferrals,
+    ];
+  });
+  const writeData = await sheet.spreadsheets.values.batchUpdate({
+    auth,
+    spreadsheetId,
+    resource: {
+      valueInputOption: "USER_ENTERED",
+      data: [
+        {
+          range: `Referral Level Analysis!B2:D`,
+          values: values,
+        },
+      ],
+      includeValuesInResponse: false,
+      responseValueRenderOption: "FORMATTED_VALUE",
+      responseDateTimeRenderOption: "SERIAL_NUMBER",
+    },
+  });
+  return writeData.data;
+};
+
 const getReferralAnalysisData = async () => {
   try {
     const zohoToken = await getZohoTokenOptimized();
@@ -454,6 +492,8 @@ const getReferralAnalysisData = async () => {
     };
     let currentPage = 0;
     const layer1Referrals = [];
+    const referrals = [];
+
     while (true) {
       const layer1ReferralQuery = `select id, Email, Referral_Count from Contacts where Referee is not null and (Student_Grade != 0 and Blocked = false) limit ${
         currentPage * 200
@@ -473,44 +513,49 @@ const getReferralAnalysisData = async () => {
       currentPage++;
     }
 
-    const layer1FurtherReferral = [];
+    referrals.push(layer1Referrals);
+    let currentLayerReferrals = layer1Referrals.filter(
+      (user) => user.Referral_Count
+    );
 
-    for (const user of layer1Referrals) {
-      if (!user.Referral_Count) {
-        continue;
+    while (currentLayerReferrals.length > 0) {
+      const nextLayerReferrals = [];
+
+      for (const user of currentLayerReferrals) {
+        const url = `https://www.zohoapis.com/crm/v6/Contacts/${user.id}/Referral?fields=id,Email,Referral_Count,Student_Grade,Blocked`;
+        const layerReferralResponse = await axios.get(url, zohoConfig);
+        if (layerReferralResponse.data.data) {
+          layerReferralResponse.data.data.forEach((item) => {
+            if (item.Blocked === false && item.Student_Grade !== 0) {
+              nextLayerReferrals.push(item);
+            }
+          });
+        }
       }
-      layer1FurtherReferral.push(user);
+      referrals.push(nextLayerReferrals);
+      currentLayerReferrals = nextLayerReferrals.filter(
+        (user) => user.Referral_Count
+      );
     }
 
-    const layer2Referrals = [];
-    const layer2FurtherReferral = [];
-    for (const user of layer1FurtherReferral) {
-      const url = `https://www.zohoapis.com/crm/v6/Contacts/${user.id}/Referral?fields=id,Email,Referral_Count,Student_Grade,Blocked`;
-      const layer2FurtherReferralResponse = await axios.get(url, zohoConfig);
-      if (layer2FurtherReferralResponse.data.data) {
-        layer2FurtherReferralResponse.data.data.forEach((item) => {
-          if (item.Blocked === false && item.Student_Grade !== 0) {
-            layer2Referrals.push(item);
-          }
-        });
-      }
-    }
-    for (const user of layer2Referrals) {
-      if (!user.Referral_Count) {
-        continue;
-      }
-      layer2FurtherReferral.push(user);
-    }
+    const result = {
+      status: 200,
+      layers: referrals.map((layer, index) => ({
+        layer: index + 1,
+        totalReferrals: layer.length,
+        furtherReferrals: layer.filter((user) => user.Referral_Count).length,
+        noFurtherReferrals:
+          layer.length - layer.filter((user) => user.Referral_Count).length,
+      })),
+    };
+
+    const sheetResponse = await updateDataInSheet(result.layers);
+    console.log("Sheet Updated Successfully!");
+
     return {
       status: 200,
-      layer1Referrals: layer1Referrals.length,
-      layer1FurtherReferral: layer1FurtherReferral.length,
-      layer1NoFurtherReferral:
-        layer1Referrals.length - layer1FurtherReferral.length,
-      layer2Referrals: layer2Referrals.length,
-      layer2FurtherReferral: layer2FurtherReferral.length,
-      layer2NoFurtherReferral:
-        layer2Referrals.length - layer2FurtherReferral.length,
+      message: "success",
+      result: result,
     };
   } catch (error) {
     throw new Error(error);
