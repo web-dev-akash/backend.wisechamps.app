@@ -477,7 +477,7 @@ const getWeeklyWinners = async (grade) => {
     let currentPage = 0;
     const attempts = [];
     while (true) {
-      const attemptsQuery = `select Contact_Name.id as contactId, Contact_Name.Email as Email,Contact_Name.Student_Grade as Student_Grade, Quiz_Score, Contact_Name.Coins as Coins, Session.Number_of_Questions as Total_Questions from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' and Session.Session_Grade = '${gradeGroup}' limit ${
+      const attemptsQuery = `select Contact_Name.id as contactId, Contact_Name.Email as Email,Contact_Name.Student_Name as Student_Name, Contact_Name.Student_Grade as Student_Grade, Quiz_Score, Contact_Name.Coins as Coins, Session.Number_of_Questions as Total_Questions from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' and Session.Session_Grade = '${gradeGroup}' limit ${
         currentPage * 2000
       }, 2000`;
       const attemptsResponse = await getAnalysisData(attemptsQuery, zohoConfig);
@@ -588,7 +588,7 @@ const getWeeklyWinners = async (grade) => {
     const totalAttempts = [];
     currentPage = 0;
     while (true) {
-      const attemptsQuery = `select Contact_Name.id as contactId, Contact_Name.Email as Email,Contact_Name.Student_Grade as Student_Grade, Quiz_Score, Contact_Name.Coins as Coins, Session.Number_of_Questions as Total_Questions from Attempts where Session.Session_Grade = '${gradeGroup}' limit ${
+      const attemptsQuery = `select Contact_Name.id as contactId, Contact_Name.Email as Email,Contact_Name.Student_Grade as Student_Grade, Contact_Name.Student_Name as Student_Name Quiz_Score, Contact_Name.Coins as Coins, Session.Number_of_Questions as Total_Questions from Attempts where Session.Session_Grade = '${gradeGroup}' limit ${
         currentPage * 2000
       }, 2000`;
       const attemptsResponse = await getAnalysisData(attemptsQuery, zohoConfig);
