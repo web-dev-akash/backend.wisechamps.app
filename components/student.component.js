@@ -432,9 +432,207 @@ const placeStudentOrder = async (contactId, productId) => {
   }
 };
 
+const getWeeklyWinners = async (grade) => {
+  try {
+    const accessToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+
+    const today = moment();
+    const currDay = today.day();
+    const diff = today.date() - currDay - 6;
+    const monday = moment(new Date(today.date(diff)));
+    const sunday = monday.clone().add(6, "days");
+
+    const today2 = moment();
+    const currDay2 = today2.day();
+    const diff2 = today2.date() - currDay2 - 13;
+    const monday2 = moment(new Date(today2.date(diff2)));
+    const sunday2 = monday2.clone().add(13, "days");
+
+    const formattedDateStart = `${monday.format("YYYY-MM-DD")}T00:00:00+05:30`;
+    const formattedDateEnd = `${sunday.format("YYYY-MM-DD")}T23:59:59+05:30`;
+    let gradeGroup;
+    let gradeGroup2;
+    let gradeGroup3;
+    if (grade === "1" || grade === "2") {
+      gradeGroup = "1;2";
+      gradeGroup2 = "(Student_Grade = 1 or Student_Grade = 2)";
+      gradeGroup3 = "(Contact.Student_Grade = 1 or Contact.Student_Grade = 2)";
+    } else if (grade === "7" || grade === "8") {
+      gradeGroup = "7;8";
+      gradeGroup2 = "(Student_Grade = 7 or Student_Grade = 8)";
+      gradeGroup3 = "(Contact.Student_Grade = 7 or Contact.Student_Grade = 8)";
+    } else {
+      gradeGroup = grade;
+      gradeGroup2 = `Student_Grade = ${grade}`;
+      gradeGroup3 = `Contact.Student_Grade = ${grade}`;
+    }
+
+    let currentPage = 0;
+    const attempts = [];
+    while (true) {
+      const attemptsQuery = `select Contact_Name.id as contactId, Contact_Name.Email as Email,Contact_Name.Student_Grade as Student_Grade, Quiz_Score, Contact_Name.Coins as Coins, Session.Number_of_Questions as Total_Questions from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' and Session.Session_Grade = '${gradeGroup}' limit ${
+        currentPage * 2000
+      }, 2000`;
+      const attemptsResponse = await getAnalysisData(attemptsQuery, zohoConfig);
+      if (attemptsResponse.status === 204) {
+        return { status: "noattempts" };
+      }
+      attempts.push(...attemptsResponse.data.data);
+      if (!attemptsResponse.data.info.more_records) {
+        break;
+      }
+      currentPage++;
+    }
+    const uniqueUsers = {};
+    attempts.forEach((attempt) => {
+      if (uniqueUsers[attempt.Email]) {
+        uniqueUsers[attempt.Email].Quiz_Score += attempt.Quiz_Score;
+        uniqueUsers[attempt.Email].Total_Questions += attempt.Total_Questions;
+      } else {
+        uniqueUsers[attempt.Email] = { ...attempt };
+      }
+    });
+    const uniqueUsersArray = Object.values(uniqueUsers);
+
+    const topFiveUsers = uniqueUsersArray
+      .sort((a, b) => b.Quiz_Score - a.Quiz_Score)
+      .slice(0, 5);
+
+    const filteredGrades = uniqueUsersArray.filter(
+      (user) => !topFiveUsers.some((topUser) => topUser.Email === user.Email)
+    );
+
+    filteredGrades.forEach((user) => {
+      user.percentage = Math.floor(
+        (user.Quiz_Score / user.Total_Questions) * 100
+      );
+    });
+
+    const topFivePercentageUsers = filteredGrades
+      .sort((a, b) => b.percentage - a.percentage)
+      .slice(0, 5);
+
+    const contactQuery = `select Email, Student_Grade, Student_Name, Referral_Count from Contacts where ((Referral_Count is not null and Blocked = false) and ${gradeGroup2}) order by Referral_Count desc limit 2000`;
+    const ordersQuery = `select Contact.Email as Email, Contact.Student_Grade as Student_Grade, Contact.Student_Name as Student_Name from Orders where (${gradeGroup3} and (Order_Date between '${monday.format(
+      "YYYY-MM-DD"
+    )}' and '${sunday.format("YYYY-MM-DD")}')) limit 2000`;
+
+    const coinsQuery = `select Contact.Email as Email, Contact.Student_Grade as Student_Grade, Contact.Student_Name as Student_Name, Coins from Coins where (((Updated_Date between '${monday.format(
+      "YYYY-MM-DD"
+    )}' and '${sunday.format(
+      "YYYY-MM-DD"
+    )}') and (Action_Type = 'Credit')) and ${gradeGroup3}) limit 2000`;
+
+    const megaLuckyDrawQuery = `select Contact.Email as Email, Contact.Student_Grade as Student_Grade, Contact.Student_Name as Student_Name, Coins, Updated_Date, Description from Coins where (((Updated_Date between '${monday2.format(
+      "YYYY-MM-DD"
+    )}' and '${sunday2.format(
+      "YYYY-MM-DD"
+    )}') and (Description like '%intro%')) and ${gradeGroup3}) limit 2000`;
+
+    const [contact, orders, coins, megaLuckyDrawReq] = await Promise.all([
+      limit(() => getAnalysisData(contactQuery, zohoConfig)),
+      limit(() => getAnalysisData(ordersQuery, zohoConfig)),
+      limit(() => getAnalysisData(coinsQuery, zohoConfig)),
+      limit(() => getAnalysisData(megaLuckyDrawQuery, zohoConfig)),
+    ]);
+
+    let maxReferrals = null;
+    let maxOrders = null;
+    let maxCoins = null;
+    let megaLuckyDraw = null;
+
+    if (contact.status === 200) {
+      maxReferrals = contact.data.data[0];
+    }
+
+    if (orders.status === 200) {
+      const ordersRes = orders.data.data;
+      const uniqueOrders = {};
+      ordersRes.forEach((order) => {
+        if (uniqueOrders[order.Email]) {
+          uniqueOrders[order.Email].Total_Orders += 1;
+        } else {
+          uniqueOrders[order.Email] = { ...order, Total_Orders: 1 };
+        }
+      });
+      const uniqueOrdersArray = Object.values(uniqueOrders);
+      maxOrders = uniqueOrdersArray;
+    }
+
+    if (coins.status === 200) {
+      const coinsRes = coins.data.data;
+      const uniqueCoins = {};
+
+      coinsRes.forEach((coin) => {
+        if (uniqueCoins[coin.Email]) {
+          uniqueCoins[coin.Email].Coins += coin.Coins;
+        } else {
+          uniqueCoins[coin.Email] = { ...coin };
+        }
+      });
+      const uniqueCoinsArray = Object.values(uniqueCoins);
+      maxCoins = uniqueCoinsArray.sort((a, b) => b.Coins - a.Coins)[0];
+    }
+
+    if (megaLuckyDrawReq.status === 200) {
+      megaLuckyDraw = megaLuckyDrawReq.data.data;
+    }
+
+    const totalAttempts = [];
+    currentPage = 0;
+    while (true) {
+      const attemptsQuery = `select Contact_Name.id as contactId, Contact_Name.Email as Email,Contact_Name.Student_Grade as Student_Grade, Quiz_Score, Contact_Name.Coins as Coins, Session.Number_of_Questions as Total_Questions from Attempts where Session.Session_Grade = '${gradeGroup}' limit ${
+        currentPage * 2000
+      }, 2000`;
+      const attemptsResponse = await getAnalysisData(attemptsQuery, zohoConfig);
+      if (attemptsResponse.status === 204) {
+        break;
+      }
+      totalAttempts.push(...attemptsResponse.data.data);
+      if (!attemptsResponse.data.info.more_records) {
+        break;
+      }
+      currentPage++;
+    }
+    const uniqueQuizTakers = {};
+    totalAttempts.forEach((attempt) => {
+      if (uniqueQuizTakers[attempt.Email]) {
+        uniqueQuizTakers[attempt.Email].Total_Attempts += 1;
+      } else {
+        uniqueQuizTakers[attempt.Email] = { ...attempt, Total_Attempts: 1 };
+      }
+    });
+    const uniqueQuizTakersArray = Object.values(uniqueQuizTakers);
+    const maxQuizTaker = uniqueQuizTakersArray.sort(
+      (a, b) => b.Total_Attempts - a.Total_Attempts
+    )[0];
+
+    return {
+      status: 200,
+      topFiveUsers,
+      topFivePercentageUsers,
+      maxReferrals,
+      maxOrders,
+      maxCoins,
+      maxQuizTaker,
+      megaLuckyDraw,
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 module.exports = {
   getStudentDetails,
   getStudentOrders,
   placeStudentOrder,
   updateIntroMeetData,
+  getWeeklyWinners,
 };
