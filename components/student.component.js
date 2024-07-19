@@ -450,10 +450,7 @@ const getWeeklyWinners = async (grade) => {
     const sunday = monday.clone().add(6, "days");
 
     const today2 = moment();
-    const currDay2 = today2.day();
-    const diff2 = today2.date() - currDay2 - 13;
-    const monday2 = moment(new Date(today2.date(diff2)));
-    const sunday2 = monday2.clone().add(13, "days");
+    const last16Days = today2.clone().subtract(16, "days");
 
     const formattedDateStart = `${monday.format("YYYY-MM-DD")}T00:00:00+05:30`;
     const formattedDateEnd = `${sunday.format("YYYY-MM-DD")}T23:59:59+05:30`;
@@ -530,11 +527,13 @@ const getWeeklyWinners = async (grade) => {
       "YYYY-MM-DD"
     )}') and (Action_Type = 'Credit')) and ${gradeGroup3}) limit 2000`;
 
-    const megaLuckyDrawQuery = `select Contact.Email as Email, Contact.Student_Grade as Student_Grade, Contact.Student_Name as Student_Name, Coins, Updated_Date, Description from Coins where (((Updated_Date between '${monday2.format(
+    const megaLuckyDrawQuery = `select Contact.Email as Email, Contact.Student_Grade as Student_Grade, Contact.Student_Name as Student_Name, Coins, Updated_Date, Description from Coins where ((Updated_Date between '${last16Days.format(
       "YYYY-MM-DD"
-    )}' and '${sunday2.format(
+    )}' and '${today2.format(
       "YYYY-MM-DD"
-    )}') and (Description like '%intro%')) and ${gradeGroup3}) limit 2000`;
+    )}') and (Description like '%winning refe%')) limit 2000`;
+
+    console.log("Mega Lucky Draw : ", megaLuckyDrawQuery);
 
     const [contact, orders, coins, megaLuckyDrawReq] = await Promise.all([
       limit(() => getAnalysisData(contactQuery, zohoConfig)),
