@@ -628,10 +628,44 @@ const getWeeklyWinners = async (grade) => {
   }
 };
 
+const getPaymentHistory = async (contactId) => {
+  try {
+    const accessToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+
+    const paymentQuery = `select Payment_Date, Payment_Demanded from Payments where Conntact = '${contactId}' order by Payment_Date desc limit 2000`;
+
+    const [payment] = await Promise.all([
+      limit(() => getAnalysisData(paymentQuery, zohoConfig)),
+    ]);
+
+    if (payment.status === 200) {
+      return {
+        status: 200,
+        paymentHistory: payment.data.data,
+      };
+    }
+
+    return {
+      status: 204,
+      message: "No Purchases made yet",
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 module.exports = {
   getStudentDetails,
   getStudentOrders,
   placeStudentOrder,
   updateIntroMeetData,
   getWeeklyWinners,
+  getPaymentHistory,
 };
