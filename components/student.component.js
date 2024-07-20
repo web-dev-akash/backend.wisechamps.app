@@ -639,7 +639,7 @@ const getPaymentHistory = async (contactId) => {
       },
     };
 
-    const paymentQuery = `select Payment_Date, Payment_Demanded from Payments where Conntact = '${contactId}' order by Payment_Date desc limit 2000`;
+    const paymentQuery = `select Payment_Date, Amount, Credits from Payments where Conntact = '${contactId}' order by Payment_Date desc limit 2000`;
 
     const [payment] = await Promise.all([
       limit(() => getAnalysisData(paymentQuery, zohoConfig)),
