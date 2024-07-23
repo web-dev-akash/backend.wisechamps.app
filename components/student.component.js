@@ -5,6 +5,7 @@ const {
   getAnalysisData,
 } = require("./common.component");
 const moment = require("moment");
+const nodemailer = require("nodemailer");
 const pLimit = require("p-limit");
 const limit = pLimit(20);
 
@@ -661,6 +662,76 @@ const getPaymentHistory = async (contactId) => {
   }
 };
 
+const sendStudentFeedback = async ({
+  name,
+  email,
+  grade,
+  subject,
+  message,
+}) => {
+  try {
+    const user = process.env.NODEMAILER_EMAIL;
+    const pass = process.env.NODEMAILER_PASS;
+    const sender = process.env.NODEMAILER_SENDER;
+    const mailServerInfo = nodemailer.createTransport({
+      service: "gmail",
+      host: "smtp.gmail.com",
+      port: "465",
+      ssl: true,
+      auth: {
+        user: user,
+        pass: pass,
+      },
+    });
+
+    const mailInfo = {
+      from: `"${name}" <${user}>`,
+      to: sender,
+      subject: subject,
+      html: `
+        <div>
+          <p>
+            <b>Name - </b> ${name}
+          </p>
+          <p>
+            <b>Email - </b> ${email}
+          </p>
+          <p>
+            <b>Grade - </b> ${grade}
+          </p>
+          <p>
+            <b>Subject - </b> ${subject}
+          </p>
+          <p>
+            <b>Message - </b> ${message}
+          </p>
+        </div>`,
+    };
+
+    mailServerInfo.sendMail(mailInfo, async (error, info) => {
+      if (error) {
+        return {
+          status: error.status || 500,
+          message: error.message || "Something Went Wrong",
+        };
+      } else {
+        return {
+          status: 200,
+          info: info.response,
+          message: "Email Sent Successfully!",
+        };
+      }
+    });
+
+    return {
+      status: 200,
+      message: "Email Sent Successfully!",
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 module.exports = {
   getStudentDetails,
   getStudentOrders,
@@ -668,4 +739,5 @@ module.exports = {
   updateIntroMeetData,
   getWeeklyWinners,
   getPaymentHistory,
+  sendStudentFeedback,
 };
