@@ -89,13 +89,13 @@ const getStudentDetails = async (email) => {
       .add(7, "days")
       .format("YYYY-MM-DD")}T23:59:59+05:30`;
 
-    const referralsQuery = `select Email, Student_Name, Student_Grade, Phone, Credits from Contacts where Referee = '${contactId}'`;
+    const referralsQuery = `select Email, Student_Name, Student_Grade, Phone, Credits from Contacts where Referee = '${contactId}' limit 2000`;
 
-    const attemptsQuery = `select Contact_Name.id as contactId from Attempts where Contact_Name = '${contactId}'`;
+    const attemptsQuery = `select Contact_Name.id as contactId from Attempts where Contact_Name = '${contactId}' limit 2000`;
 
     const weeklyQuizzesQuery = `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, Session_Video_Link_2, Vevox_Survey_Link from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}'`;
 
-    const coinsQuery = `select Coins, Updated_Date, Action_Type, Description from Coins where Contact = '${contactId}' order by Updated_Date desc`;
+    const coinsQuery = `select Coins, Updated_Date, Action_Type, Description from Coins where Contact = '${contactId}' order by Updated_Date desc limit 2000`;
 
     const [referrals, attempts, coinsHistory, weeklyQuizzes] =
       await Promise.all([
@@ -534,8 +534,6 @@ const getWeeklyWinners = async (grade) => {
       "YYYY-MM-DD"
     )}') and (Description like '%winning refe%')) limit 2000`;
 
-    console.log("Mega Lucky Draw : ", megaLuckyDrawQuery);
-
     const [contact, orders, coins, megaLuckyDrawReq] = await Promise.all([
       limit(() => getAnalysisData(contactQuery, zohoConfig)),
       limit(() => getAnalysisData(ordersQuery, zohoConfig)),
@@ -549,7 +547,7 @@ const getWeeklyWinners = async (grade) => {
     let megaLuckyDraw = null;
 
     if (contact.status === 200) {
-      maxReferrals = contact.data.data[0];
+      maxReferrals = contact.data.data.slice(0, 3);
     }
 
     if (orders.status === 200) {
@@ -578,7 +576,7 @@ const getWeeklyWinners = async (grade) => {
         }
       });
       const uniqueCoinsArray = Object.values(uniqueCoins);
-      maxCoins = uniqueCoinsArray.sort((a, b) => b.Coins - a.Coins)[0];
+      maxCoins = uniqueCoinsArray.sort((a, b) => b.Coins - a.Coins).slice(0, 3);
     }
 
     if (megaLuckyDrawReq.status === 200) {
@@ -610,9 +608,9 @@ const getWeeklyWinners = async (grade) => {
       }
     });
     const uniqueQuizTakersArray = Object.values(uniqueQuizTakers);
-    const maxQuizTaker = uniqueQuizTakersArray.sort(
-      (a, b) => b.Total_Attempts - a.Total_Attempts
-    )[0];
+    const maxQuizTaker = uniqueQuizTakersArray
+      .sort((a, b) => b.Total_Attempts - a.Total_Attempts)
+      .slice(0, 3);
 
     return {
       status: 200,
