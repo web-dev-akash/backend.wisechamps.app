@@ -56,7 +56,7 @@ const createPaymentEntry = async ({ amount, id, email, credits, payId }) => {
     data: [
       {
         Name: `${attemptNumber}`,
-        Payment_Demanded: amount,
+        Amount: amount,
         Payment_Link_ID: id,
         Conntact: contactid,
         Reference_ID: payId,

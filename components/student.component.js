@@ -91,9 +91,9 @@ const getStudentDetails = async (email) => {
 
     const referralsQuery = `select Email, Student_Name, Student_Grade, Phone, Credits from Contacts where Referee = '${contactId}' limit 2000`;
 
-    const attemptsQuery = `select Contact_Name.id as contactId from Attempts where Contact_Name = '${contactId}' limit 2000`;
+    const attemptsQuery = `select Session_Date_Time, Quiz_Score, Session.Name as Session_Name from Attempts where Contact_Name = '${contactId}' order by Session_Date_Time desc limit 2000`;
 
-    const weeklyQuizzesQuery = `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, Session_Video_Link_2, Vevox_Survey_Link from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}'`;
+    const weeklyQuizzesQuery = `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, Session_Video_Link_2, Vevox_Survey_Link from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}' order by Session_Date_Time desc`;
 
     const coinsQuery = `select Coins, Updated_Date, Action_Type, Description from Coins where Contact = '${contactId}' order by Updated_Date desc limit 2000`;
 
@@ -144,18 +144,14 @@ const getStudentDetails = async (email) => {
         "September",
       ];
 
-      const sortedSessionData = sessionData.sort(
-        (a, b) => new Date(a.Session_Date_Time) - new Date(b.Session_Date_Time)
-      );
-
-      for (let i = 0; i < sortedSessionData.length; i++) {
-        const sessionName = sortedSessionData[i].Session_Name;
+      for (let i = 0; i < sessionData.length; i++) {
+        const sessionName = sessionData[i].Session_Name;
         let newString = sessionName;
         let regexString = wordsToRemove.join("|");
         let regex = new RegExp("\\b(" + regexString + ")\\b|\\d+|&", "gi");
         newString = newString.replace(regex, "");
         finalWeeklyQuizzes.push({
-          ...sortedSessionData[i],
+          ...sessionData[i],
           Session_Name: newString.trim(),
         });
       }
@@ -176,7 +172,7 @@ const getStudentDetails = async (email) => {
         name,
         address,
         referrals: 0,
-        quizzes: attempts.status === 200 ? attempts.data.info.count : 0,
+        quizzes: attempts.status === 200 ? attempts.data.data : 0,
         age: age,
         category: category[0]?.name,
         coinsHistory: coinsHistory.status === 200 ? coinsHistory.data.data : 0,
@@ -221,7 +217,7 @@ const getStudentDetails = async (email) => {
       name,
       address,
       referrals: referralsAttempted,
-      quizzes: attempts.status === 200 ? attempts.data.info.count : 0,
+      quizzes: attempts.status === 200 ? attempts.data.data : 0,
       age: age,
       category: category[0]?.name,
       coinsHistory: coinsHistory.status === 200 ? coinsHistory.data.data : 0,
