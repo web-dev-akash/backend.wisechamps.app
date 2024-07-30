@@ -17,10 +17,10 @@ questionRouter.post("/dailyQuiz", async (req, res) => {
   }
 });
 
-questionRouter.post("/quizgrade", async (req, res) => {
+questionRouter.post("/question/daily", async (req, res) => {
   try {
-    const { grade } = req.body;
-    const data = await dailyQuizQuestionsWithGrade(grade);
+    const { grade, contactId } = req.body;
+    const data = await dailyQuizQuestionsWithGrade(grade, contactId);
     return res.status(200).send(data);
   } catch (error) {
     console.log(error);

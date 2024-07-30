@@ -161,20 +161,7 @@ const dailyQuizQuestions = async (email) => {
   };
 };
 
-const dailyQuizQuestionsWithGrade = async (grade) => {
-  // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-  // logsData.dailyLogs?.push({
-  //   email: "NA",
-  //   description: `Grade ${grade}`,
-  //   date: new Date().toDateString(),
-  //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-  // });
-  // logsData.dailyLogs
-  //   ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
-  //       if (err) throw err;
-  //     })
-  //   : null;
-
+const dailyQuizQuestionsWithGrade = async (grade, contactId) => {
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -188,35 +175,46 @@ const dailyQuizQuestionsWithGrade = async (grade) => {
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const day = date.getDate().toString().padStart(2, "0");
   const formattedDate = `${year}-${month}-${day}`;
-  // console.log("Start", formattedDateStart);
+
+  const alreadyAttemptedBody = {
+    select_query: `select Question from Questions_Attempt where Attempt_Date = '${formattedDate}' and Contact_Name	= '${contactId}'`,
+  };
+
+  const alreadyAttempted = await axios.post(
+    `https://www.zohoapis.com/crm/v6/coql`,
+    alreadyAttemptedBody,
+    zohoConfig
+  );
+
+  if (alreadyAttempted.status === 200) {
+    return {
+      status: 409,
+      message: "Already Attempted today's Question",
+    };
+  }
+
+  let gradeGroup = null;
+  if (grade == 1 || grade == 2) {
+    gradeGroup = "1;2";
+  } else if (grade == 3 || grade == 4) {
+    gradeGroup = "3;4";
+  } else if (grade == 5 || grade == 6) {
+    gradeGroup = "5;6";
+  } else if (grade == 7 || grade == 8) {
+    gradeGroup = "7;8";
+  }
+
   const questionBody = {
-    select_query: `select Correct_Answer,Question,Question_Image_URL,Question_Grade,Option_1,Option_2,Option_3,Option_4 from Questions where Question_Date = '${formattedDate}'`,
+    select_query: `select Correct_Answer,Question,Question_Image_URL,Option_1,Option_2,Option_3,Option_4 from Questions where Question_Date = '${formattedDate}' and Question_Grade	= '${gradeGroup}'`,
   };
 
   const question = await axios.post(
-    `https://www.zohoapis.com/crm/v3/coql`,
+    `https://www.zohoapis.com/crm/v6/coql`,
     questionBody,
     zohoConfig
   );
 
   if (question.status >= 400) {
-    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-    // logsData.dailyLogs?.push({
-    //   email: "NA",
-    //   description: `internalservererrorinfindingquestion`,
-    //   date: new Date().toDateString(),
-    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-    // });
-    // logsData.dailyLogs
-    //   ? fs.writeFile(
-    //       "./logs.json",
-    //       JSON.stringify(logsData, null, 2),
-    //       (err) => {
-    //         if (err) throw err;
-    //       }
-    //     )
-    //   : null;
-
     return {
       status: question.status,
       mode: "internalservererrorinfindingquestion",
@@ -224,54 +222,27 @@ const dailyQuizQuestionsWithGrade = async (grade) => {
   }
 
   if (question.status === 204) {
-    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-    // logsData.dailyLogs?.push({
-    //   email: "NA",
-    //   description: `No Question Found 204`,
-    //   date: new Date().toDateString(),
-    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-    // });
-    // logsData.dailyLogs
-    //   ? fs.writeFile(
-    //       "./logs.json",
-    //       JSON.stringify(logsData, null, 2),
-    //       (err) => {
-    //         if (err) throw err;
-    //       }
-    //     )
-    //   : null;
     return {
       status: question.status,
       mode: "noquestion",
     };
   }
-  for (let i = 0; i < question.data.data.length; i++) {
-    const questionGrade = question.data.data[i].Question_Grade;
-    const correctQuestion = questionGrade.find((res) => res === grade);
-    if (correctQuestion) {
-      // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-      // logsData.dailyLogs?.push({
-      //   email: "NA",
-      //   description: `Question Found 200`,
-      //   date: new Date().toDateString(),
-      //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-      // });
-      // logsData.dailyLogs
-      //   ? fs.writeFile(
-      //       "./logs.json",
-      //       JSON.stringify(logsData, null, 2),
-      //       (err) => {
-      //         if (err) throw err;
-      //       }
-      //     )
-      //   : null;
-      return {
-        status: 200,
-        mode: "question",
-        question: question.data.data[i],
-      };
-    }
-  }
+
+  const questionRes = question.data.data[0];
+
+  return {
+    status: 200,
+    id: questionRes.id,
+    question: questionRes.Question,
+    anwser: questionRes.Correct_Answer,
+    options: [
+      questionRes.Option_1,
+      questionRes.Option_2,
+      questionRes.Option_3,
+      questionRes.Option_4,
+    ],
+    image: questionRes.Question_Image_URL,
+  };
 };
 
 const createQuestionAttemptEntry = async ({
