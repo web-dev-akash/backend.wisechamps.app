@@ -4,6 +4,7 @@ const {
   dailyQuizQuestionsWithGrade,
   createQuestionAttemptEntry,
 } = require("../components/question.component");
+const { authMiddleware } = require("../components/common.component");
 const questionRouter = express.Router();
 
 questionRouter.post("/dailyQuiz", async (req, res) => {
@@ -17,7 +18,7 @@ questionRouter.post("/dailyQuiz", async (req, res) => {
   }
 });
 
-questionRouter.post("/question/daily", async (req, res) => {
+questionRouter.post("/question/daily", authMiddleware, async (req, res) => {
   try {
     const { grade, contactId } = req.body;
     const data = await dailyQuizQuestionsWithGrade(grade, contactId);
@@ -28,7 +29,7 @@ questionRouter.post("/question/daily", async (req, res) => {
   }
 });
 
-questionRouter.post("/question/attempt", async (req, res) => {
+questionRouter.post("/question/attempt", authMiddleware, async (req, res) => {
   try {
     const { contactId, questionId, optionSelected, correctAnswer } = req.body;
     const data = await createQuestionAttemptEntry({

@@ -214,17 +214,10 @@ const dailyQuizQuestionsWithGrade = async (grade, contactId) => {
     zohoConfig
   );
 
-  if (question.status >= 400) {
+  if (question.status >= 400 || question.status === 204) {
     return {
       status: question.status,
-      mode: "internalservererrorinfindingquestion",
-    };
-  }
-
-  if (question.status === 204) {
-    return {
-      status: question.status,
-      mode: "noquestion",
+      mode: "error",
     };
   }
 
@@ -234,7 +227,7 @@ const dailyQuizQuestionsWithGrade = async (grade, contactId) => {
     status: 200,
     id: questionRes.id,
     question: questionRes.Question,
-    anwser: questionRes.Correct_Answer,
+    answer: questionRes.Correct_Answer,
     options: [
       questionRes.Option_1,
       questionRes.Option_2,
@@ -286,7 +279,10 @@ const createQuestionAttemptEntry = async ({
     body,
     zohoConfig
   );
-  return result.data.data;
+  return {
+    status: result.status,
+    data: result.data.data,
+  };
 };
 
 module.exports = {
