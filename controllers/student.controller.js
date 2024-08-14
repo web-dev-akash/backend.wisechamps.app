@@ -16,7 +16,7 @@ const {
 const { default: axios } = require("axios");
 const studentRouter = express.Router();
 
-studentRouter.post("/", async (req, res) => {
+studentRouter.post("/", authMiddleware, async (req, res) => {
   try {
     const { email } = req.body;
     const data = await getStudentDetails(email);
@@ -127,7 +127,7 @@ studentRouter.post("/feedback", authMiddleware, async (req, res) => {
   }
 });
 
-studentRouter.post("/tution/create", async (req, res) => {
+studentRouter.post("/tution/create", authMiddleware, async (req, res) => {
   try {
     const { teacherEmail, students } = req.body;
     const zohoToken = await getZohoTokenOptimized();

@@ -562,6 +562,51 @@ const getReferralAnalysisData = async () => {
   }
 };
 
+const updateUserDifficulty = async ({ contactId, difficulty }) => {
+  try {
+    const zohoToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${zohoToken}`,
+      },
+    };
+
+    const body = {
+      data: [
+        {
+          id: contactId,
+          Difficulty: difficulty ? "Level 2" : "Level 1",
+        },
+      ],
+      duplicate_check_fields: ["id"],
+      apply_feature_execution: [
+        {
+          name: "layout_rules",
+        },
+      ],
+      trigger: ["workflow"],
+    };
+
+    const result = await axios.post(
+      `https://www.zohoapis.com/crm/v6/Contacts/upsert`,
+      body,
+      zohoConfig
+    );
+
+    return {
+      status: result.status,
+      message: "Difficulty Updated",
+    };
+  } catch (error) {
+    return {
+      status: error.status || 500,
+      message: "error",
+    };
+  }
+};
+
 module.exports = {
   getZohoUserDetailsWithPhone,
   getZohoUserDetailsWithEmail,
@@ -569,4 +614,5 @@ module.exports = {
   generateAndSendOtp,
   resendOTP,
   getReferralAnalysisData,
+  updateUserDifficulty,
 };

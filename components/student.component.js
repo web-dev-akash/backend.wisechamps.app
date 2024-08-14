@@ -48,6 +48,8 @@ const getStudentDetails = async (email) => {
     const grade = contact.data.data[0].Student_Grade;
     const address = contact.data.data[0].Address || null;
     const createdTime = contact.data.data[0].Created_Time;
+    const difficultyLevel = contact.data.data[0].Difficulty;
+
     const joinedWisechamps = contact.data.data[0].Joined_Wisechampions
       ? true
       : false;
@@ -94,6 +96,11 @@ const getStudentDetails = async (email) => {
     const attemptsQuery = `select Session_Date_Time, Quiz_Score, Session.Name as Session_Name, Created_Time from Attempts where Contact_Name = '${contactId}' order by Session_Date_Time desc limit 2000`;
 
     const weeklyQuizzesQuery = `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, Session_Video_Link_2, Vevox_Survey_Link from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}' order by Session_Date_Time asc`;
+
+    // const weeklyQuizzesQuery =
+    //   !difficultyLevel || difficultyLevel === "Level 1"
+    //     ? `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, Session_Video_Link_2, Vevox_Survey_Link from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}')) and (Difficulty != 'Level 2')) order by Session_Date_Time asc`
+    //     : `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, Session_Video_Link_2, Vevox_Survey_Link from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}')) and (Difficulty = 'Level 2')) order by Session_Date_Time asc`;
 
     const coinsQuery = `select Coins, Updated_Date, Action_Type, Description from Coins where Contact = '${contactId}' order by Updated_Date desc limit 2000`;
 
@@ -179,6 +186,7 @@ const getStudentDetails = async (email) => {
         joinedWisechamps,
         weeklyQuizzes: finalWeeklyQuizzes,
         newUser,
+        difficulty: difficultyLevel === "Level 2",
       };
     }
 
@@ -224,6 +232,7 @@ const getStudentDetails = async (email) => {
       joinedWisechamps,
       weeklyQuizzes: finalWeeklyQuizzes,
       newUser,
+      difficulty: difficultyLevel === "Level 2",
     };
   } catch (error) {
     throw new Error(error);

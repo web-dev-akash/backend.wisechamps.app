@@ -22,60 +22,27 @@ const getQuizLink = async (emailParam) => {
     },
   };
   const contact = await axios.get(
-    `https://www.zohoapis.com/crm/v2/Contacts/search?email=${emailParam}`,
+    `https://www.zohoapis.com/crm/v6/Contacts/search?email=${emailParam}`,
     zohoConfig
   );
 
   if (contact.status >= 400) {
-    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-    // logsData.quizLogs?.push({
-    //   email: emailParam,
-    //   description: `internalservererrorinfindinguser ${contact.status}`,
-    //   date: new Date().toDateString(),
-    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-    // });
-    // logsData.quizLogs
-    //   ? fs.writeFile(
-    //       "./logs.json",
-    //       JSON.stringify(logsData, null, 2),
-    //       (err) => {
-    //         if (err) throw err;
-    //       }
-    //     )
-    //   : null;
     return {
       status: contact.status,
       mode: "internalservererrorinfindinguser",
     };
   }
-  // return { contact };
   if (contact.status === 204) {
-    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-    // logsData.quizLogs?.push({
-    //   email: emailParam,
-    //   description: `nouser ${contact.status}`,
-    //   date: new Date().toDateString(),
-    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-    // });
-    // logsData.quizLogs
-    //   ? fs.writeFile(
-    //       "./logs.json",
-    //       JSON.stringify(logsData, null, 2),
-    //       (err) => {
-    //         if (err) throw err;
-    //       }
-    //     )
-    //   : null;
     return {
       status: contact.status,
       mode: "nouser",
     };
   }
-  // return contact.data.data[0];
 
   const contactid = contact.data.data[0].id;
   const email = contact.data.data[0].Email;
   const grade = contact.data.data[0].Student_Grade;
+  const difficultyLevel = contact.data.data[0].Difficulty;
 
   let gradeGroup;
   if (grade == 1 || grade == 2) {
@@ -91,7 +58,8 @@ const getQuizLink = async (emailParam) => {
   const pincode = contact.data.data[0].Pincode;
   const date = new Date();
   const start = new Date();
-  start.setMinutes(start.getMinutes() + 270);
+  start.setMinutes(start.getMinutes() + 260);
+  // start.setMinutes(start.getMinutes() + 0);
   const end = new Date();
   end.setHours(23, 59, 59, 999);
   const year = date.getFullYear();
@@ -105,32 +73,19 @@ const getQuizLink = async (emailParam) => {
   const formattedDateEnd = `${year}-${month}-${day}T${endHours}:${endMinutes}:00+05:30`;
 
   const sessionBody = {
-    select_query: `select Session_Grade, LMS_Activity_ID from Sessions where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' and Session_Grade = '${gradeGroup}'`,
+    select_query:
+      !difficultyLevel || difficultyLevel === "Level 1"
+        ? `select Session_Grade, LMS_Activity_ID from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}')) and (Difficulty != 'Level 2'))`
+        : `select Session_Grade, LMS_Activity_ID from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}')) and (Difficulty = 'Level 2'))`,
   };
 
   const session = await axios.post(
-    `https://www.zohoapis.com/crm/v3/coql`,
+    `https://www.zohoapis.com/crm/v6/coql`,
     sessionBody,
     zohoConfig
   );
 
   if (session.status >= 400) {
-    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-    // logsData.quizLogs?.push({
-    //   email: emailParam,
-    //   description: `internalservererrorinfindingsession ${session.status}`,
-    //   date: new Date().toDateString(),
-    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-    // });
-    // logsData.quizLogs
-    //   ? fs.writeFile(
-    //       "./logs.json",
-    //       JSON.stringify(logsData, null, 2),
-    //       (err) => {
-    //         if (err) throw err;
-    //       }
-    //     )
-    //   : null;
     return {
       status: session.status,
       mode: "internalservererrorinfindingsession",
@@ -138,22 +93,6 @@ const getQuizLink = async (emailParam) => {
   }
 
   if (session.status === 204) {
-    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-    // logsData.quizLogs?.push({
-    //   email: emailParam,
-    //   description: `nosession ${session.status}`,
-    //   date: new Date().toDateString(),
-    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-    // });
-    // logsData.quizLogs
-    //   ? fs.writeFile(
-    //       "./logs.json",
-    //       JSON.stringify(logsData, null, 2),
-    //       (err) => {
-    //         if (err) throw err;
-    //       }
-    //     )
-    //   : null;
     return {
       status: session.status,
       mode: "nosession",

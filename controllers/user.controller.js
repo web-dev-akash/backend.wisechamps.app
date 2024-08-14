@@ -6,6 +6,7 @@ const {
   generateAndSendOtp,
   resendOTP,
   getReferralAnalysisData,
+  updateUserDifficulty,
 } = require("../components/user.component");
 const { default: axios } = require("axios");
 const { authMiddleware } = require("../components/common.component");
@@ -32,6 +33,16 @@ userRouter.post("/add", async (req, res) => {
     return res.status(200).send({
       ...data,
     });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send(error);
+  }
+});
+
+userRouter.post("/update", authMiddleware, async (req, res) => {
+  try {
+    const data = await updateUserDifficulty(req.body);
+    return res.status(200).send(data);
   } catch (error) {
     console.log(error);
     return res.status(500).send(error);

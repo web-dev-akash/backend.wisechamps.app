@@ -27,7 +27,7 @@ const getMeetingLink = async (emailParam) => {
   };
 
   const contact = await axios.get(
-    `https://www.zohoapis.com/crm/v2/Contacts/search?email=${emailParam}`,
+    `https://www.zohoapis.com/crm/v6/Contacts/search?email=${emailParam}`,
     zohoConfig
   );
 
@@ -48,6 +48,7 @@ const getMeetingLink = async (emailParam) => {
   const contactid = contact.data.data[0].id;
   const email = contact.data.data[0].Email;
   const grade = contact.data.data[0].Student_Grade;
+  const difficultyLevel = contact.data.data[0].Difficulty;
 
   let gradeGroup;
   if (grade == 1 || grade == 2) {
@@ -64,7 +65,8 @@ const getMeetingLink = async (emailParam) => {
   const gradeUpdated = contact.data.data[0].Grade_Updated;
   const date = new Date();
   const start = new Date();
-  start.setMinutes(start.getMinutes() + 240);
+  start.setMinutes(start.getMinutes() + 260);
+  // start.setMinutes(start.getMinutes() + 0);
   const end = new Date();
   end.setHours(23, 59, 59, 999);
   const startHours = start.getHours().toString().padStart(2, "0");
@@ -76,8 +78,30 @@ const getMeetingLink = async (emailParam) => {
   const day = date.getDate().toString().padStart(2, "0");
   const formattedDateStart = `${year}-${month}-${day}T${startHours}:${startMinutes}:00+05:30`;
   const formattedDateEnd = `${year}-${month}-${day}T${endHours}:${endMinutes}:00+05:30`;
+
+  const updateGrade =
+    source_campaign === "old olympiad data" && !gradeUpdated ? true : false;
+
+  if (!credits || credits === 0) {
+    return {
+      status: 200,
+      mode: !gradeUpdated || updateGrade ? "oldData" : "zoomlink",
+      email,
+      link: freeMeetLink,
+      name,
+      credits: credits,
+      grade: grade,
+      team: "not required",
+      address: "Temp Address",
+      pincode,
+    };
+  }
+
   const sessionBody = {
-    select_query: `select Session_Grade, LMS_Activity_ID, Explanation_Meeting_Link from Sessions where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' and Session_Grade = '${gradeGroup}'`,
+    select_query:
+      !difficultyLevel || difficultyLevel === "Level 1"
+        ? `select Session_Grade, LMS_Activity_ID,Explanation_Meeting_Link from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}')) and (Difficulty != 'Level 2'))`
+        : `select Session_Grade, LMS_Activity_ID,Explanation_Meeting_Link from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}')) and (Difficulty = 'Level 2'))`,
   };
 
   const session = await axios.post(
@@ -93,27 +117,24 @@ const getMeetingLink = async (emailParam) => {
     };
   }
 
-  const attemptBody = {
-    select_query: `select Session.id as Session_id, Session.Name as Session_Name,Session.Subject as Subject, Session.Number_of_Questions as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}'`,
-  };
+  // const attemptBody = {
+  //   select_query: `select Session.id as Session_id, Session.Name as Session_Name,Session.Subject as Subject, Session.Number_of_Questions as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}'`,
+  // };
 
-  const attempt = await axios.post(
-    `https://www.zohoapis.com/crm/v3/coql`,
-    attemptBody,
-    zohoConfig
-  );
-  const updateGrade = source_campaign === "old olympiad data" ? true : false;
+  // const attempt = await axios.post(
+  //   `https://www.zohoapis.com/crm/v6/coql`,
+  //   attemptBody,
+  //   zohoConfig
+  // );
 
-  const finalAddress = address
-    ? address
-    : attempt.status === 200 && attempt.data.info.count <= 3
-    ? "Temp Address"
-    : null;
+  // const finalAddress = address
+  //   ? address
+  //   : attempt.status === 200 && attempt.data.info.count <= 3
+  //   ? "Temp Address"
+  //   : null;
 
   const meetLink =
-    !credits && session.status === 200
-      ? freeMeetLink
-      : session.status === 200
+    session.status === 200
       ? session.data.data[0].Explanation_Meeting_Link
       : null;
 
@@ -126,7 +147,7 @@ const getMeetingLink = async (emailParam) => {
     credits: credits,
     grade: grade,
     team: "not required",
-    address: finalAddress,
+    address: "Temp Address",
     pincode,
   };
 };
