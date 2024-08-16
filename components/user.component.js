@@ -607,6 +607,156 @@ const updateUserDifficulty = async ({ contactId, difficulty }) => {
   }
 };
 
+const updateRevenueDataInSheet = async (data) => {
+  const spreadsheetId = process.env.SPREADSHEET_ID;
+  const auth = new google.auth.GoogleAuth({
+    keyFile: "./key.json",
+    scopes: "https://www.googleapis.com/auth/spreadsheets",
+  });
+  const authClientObject = await auth.getClient();
+  const sheet = google.sheets({
+    version: "v4",
+    auth: authClientObject,
+  });
+
+  const daysOfWeek = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
+  const values = data.map((record) => {
+    const date = new Date(record.date);
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0"); // Months are zero-based
+    const year = date.getFullYear();
+    const dayOfWeek = daysOfWeek[date.getDay()];
+    const recordDate = `${day}/${month}/${year}`;
+    return [recordDate, dayOfWeek, record.attemptCount * 10];
+  });
+
+  const range = `Revenue Realised Report (Day Wise)!A2:C`;
+
+  const writeData = await sheet.spreadsheets.values.batchUpdate({
+    auth,
+    spreadsheetId,
+    resource: {
+      valueInputOption: "USER_ENTERED",
+      data: [
+        {
+          range: range,
+          values: values,
+        },
+      ],
+      includeValuesInResponse: false,
+      responseValueRenderOption: "FORMATTED_VALUE",
+      responseDateTimeRenderOption: "SERIAL_NUMBER",
+    },
+  });
+  return writeData.data;
+};
+
+const getDailyRevenueAnalysisData = async () => {
+  try {
+    const zohoToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${zohoToken}`,
+      },
+    };
+    let currentPage = 0;
+    const attempts = [];
+    while (true) {
+      const attemptsQuery = `select Contact_Name.id as contactId,
+      Contact_Name.Email as Email, Session_Date_Time from Attempts where Session_Date_Time >= '2024-04-15T00:00:00+05:30' order by Session_Date_Time asc limit ${
+        currentPage * 2000
+      }, 2000`;
+
+      const response = await getAnalysisData(attemptsQuery, zohoConfig);
+      if (response.status === 204) {
+        break;
+      }
+      attempts.push(...response.data.data);
+      if (!response.data.info.more_records) {
+        break;
+      }
+      currentPage++;
+    }
+
+    const uniqueUsers = {};
+    attempts.forEach((attempt) => {
+      if (attempt.Email) {
+        if (uniqueUsers[attempt.Email]) {
+          uniqueUsers[attempt.Email].Count += 1;
+        } else {
+          uniqueUsers[attempt.Email] = { ...attempt, Count: 1 };
+        }
+      }
+    });
+    const uniqueUsersArray = Object.values(uniqueUsers);
+
+    const filteredUsers = uniqueUsersArray.filter((user) => user.Count > 5);
+
+    const contactIds = new Set(filteredUsers.map((user) => user.contactId));
+
+    const filteredAttempts = attempts.filter((attempt) =>
+      contactIds.has(attempt.contactId)
+    );
+
+    const groupedAttempts = filteredAttempts.reduce((acc, attempt) => {
+      if (!acc[attempt.contactId]) {
+        acc[attempt.contactId] = [];
+      }
+      acc[attempt.contactId].push(attempt);
+      return acc;
+    }, {});
+
+    const updatedAttempts = Object.values(groupedAttempts).map((attempts) => {
+      if (attempts.length > 5) {
+        return attempts.slice(5);
+      }
+      return [];
+    });
+
+    const finalAttempts = updatedAttempts.flat();
+
+    const attemptsByDate = {};
+
+    finalAttempts.forEach((attempt) => {
+      const sessionDateTime = new Date(attempt.Session_Date_Time);
+      const date = sessionDateTime.toISOString().split("T")[0];
+
+      if (!attemptsByDate[date]) {
+        attemptsByDate[date] = [];
+      }
+
+      attemptsByDate[date].push(attempt);
+    });
+
+    const resultArray = Object.keys(attemptsByDate).map((date) => ({
+      date: new Date(date).toDateString(),
+      attemptCount: attemptsByDate[date].length,
+    }));
+
+    resultArray.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const sheetRes = await updateRevenueDataInSheet(resultArray);
+
+    return {
+      status: "sucess",
+      resultArray,
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 module.exports = {
   getZohoUserDetailsWithPhone,
   getZohoUserDetailsWithEmail,
@@ -615,4 +765,5 @@ module.exports = {
   resendOTP,
   getReferralAnalysisData,
   updateUserDifficulty,
+  getDailyRevenueAnalysisData,
 };

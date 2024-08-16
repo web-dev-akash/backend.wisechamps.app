@@ -7,6 +7,7 @@ const {
   resendOTP,
   getReferralAnalysisData,
   updateUserDifficulty,
+  getDailyRevenueAnalysisData,
 } = require("../components/user.component");
 const { default: axios } = require("axios");
 const { authMiddleware } = require("../components/common.component");
@@ -97,6 +98,17 @@ userRouter.get("/analysis/referral", authMiddleware, async (req, res) => {
   try {
     const data = await getReferralAnalysisData();
     return res.status(data.status).send(data);
+  } catch (error) {
+    return res
+      .status(500)
+      .send({ status: error.status || 500, message: error.message });
+  }
+});
+
+userRouter.get("/analysis/daily", authMiddleware, async (req, res) => {
+  try {
+    const data = await getDailyRevenueAnalysisData();
+    return res.status(200).send(data);
   } catch (error) {
     return res
       .status(500)
