@@ -26,6 +26,7 @@ paymentRouter.post("/payment_links", async (req, res) => {
     const credits = {
       199: 5,
       499: 25,
+      999: 67,
       1999: 200,
     };
     const instance = new Razorpay({
@@ -44,7 +45,7 @@ paymentRouter.post("/payment_links", async (req, res) => {
       customer: {
         email,
       },
-      callback_url: `https://zoom.wisechamps.com?email=${email}`,
+      callback_url: `https://students.wisechamps.com?email=${email}`,
       callback_method: "get",
       expire_by: expiryDate,
     });
@@ -76,6 +77,7 @@ paymentRouter.post("/payment/capture", async (req, res) => {
       1: 1,
       199: 5,
       499: 25,
+      999: 67,
       1999: 200,
     };
     const id = req.body.payload.payment_link.entity.id;

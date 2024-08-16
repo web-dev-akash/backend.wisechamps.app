@@ -22,13 +22,13 @@ const createPaymentEntry = async ({ amount, id, email, credits, payId }) => {
   }
 
   const attemptsCount = await axios.get(
-    `https://www.zohoapis.com/crm/v2.1/Payments/actions/count`,
+    `https://www.zohoapis.com/crm/v6/Payments/actions/count`,
     zohoConfig
   );
 
   let attemptNumber = attemptsCount.data.count + 1;
   const contact = await axios.get(
-    `https://www.zohoapis.com/crm/v2/Contacts/search?email=${email}`,
+    `https://www.zohoapis.com/crm/v6/Contacts/search?email=${email}`,
     zohoConfig
   );
 
@@ -72,7 +72,7 @@ const createPaymentEntry = async ({ amount, id, email, credits, payId }) => {
     trigger: ["workflow"],
   };
   const result = await axios.post(
-    `https://www.zohoapis.com/crm/v2/Payments`,
+    `https://www.zohoapis.com/crm/v6/Payments`,
     body,
     zohoConfig
   );
