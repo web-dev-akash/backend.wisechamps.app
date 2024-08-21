@@ -7,22 +7,6 @@ const paymentRouter = express.Router();
 paymentRouter.post("/payment_links", async (req, res) => {
   try {
     const { email, amount } = req.body;
-    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-    // logsData.paymentLogs?.push({
-    //   email: email,
-    //   description: `EnteredEmail 200`,
-    //   date: new Date().toDateString(),
-    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-    // });
-    // logsData.paymentLogs
-    //   ? fs.writeFile(
-    //       "./logs.json",
-    //       JSON.stringify(logsData, null, 2),
-    //       (err) => {
-    //         if (err) throw err;
-    //       }
-    //     )
-    //   : null;
     const credits = {
       199: 5,
       499: 25,
@@ -45,26 +29,10 @@ paymentRouter.post("/payment_links", async (req, res) => {
       customer: {
         email,
       },
-      callback_url: `https://students.wisechamps.com?email=${email}`,
+      callback_url: `https://students.wisechamps.com`,
       callback_method: "get",
       expire_by: expiryDate,
     });
-    // let oldDate1 = new Date().setMinutes(new Date().getMinutes() + 330);
-    // logsData.paymentLogs?.push({
-    //   email: email,
-    //   description: `PyamentLinkCreated 200`,
-    //   date: new Date().toDateString(),
-    //   time: new Date(oldDate1).toLocaleTimeString("en-US"),
-    // });
-    // logsData.paymentLogs
-    //   ? fs.writeFile(
-    //       "./logs.json",
-    //       JSON.stringify(logsData, null, 2),
-    //       (err) => {
-    //         if (err) throw err;
-    //       }
-    //     )
-    //   : null;
     return res.status(200).send(data);
   } catch (error) {
     return res.status(500).send(error);

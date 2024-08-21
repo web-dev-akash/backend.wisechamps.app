@@ -95,7 +95,9 @@ const getStudentDetails = async (email) => {
 
     const attemptsQuery = `select Session_Date_Time, Quiz_Score, Session.Name as Session_Name, Created_Time from Attempts where Contact_Name = '${contactId}' order by Session_Date_Time desc limit 2000`;
 
-    const weeklyQuizzesQuery = `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, Session_Video_Link_2, Vevox_Survey_Link from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}' order by Session_Date_Time asc`;
+    // const weeklyQuizzesQuery = `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, Session_Video_Link_2, Vevox_Survey_Link from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}' order by Session_Date_Time asc`;
+
+    const weeklyQuizzesQuery = `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, Session_Video_Link_2, Vevox_Survey_Link from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}')) and (Difficulty != 'Level 2')) order by Session_Date_Time asc`;
 
     // const weeklyQuizzesQuery =
     //   !difficultyLevel || difficultyLevel === "Level 1"
