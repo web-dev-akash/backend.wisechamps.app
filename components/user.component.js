@@ -577,7 +577,7 @@ const updateUserDifficulty = async ({ contactId, difficulty }) => {
       data: [
         {
           id: contactId,
-          Difficulty: difficulty ? "Level 2" : "Level 1",
+          Difficulty: difficulty ? "Olympiad" : "School",
         },
       ],
       duplicate_check_fields: ["id"],

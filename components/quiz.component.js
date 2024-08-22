@@ -74,9 +74,9 @@ const getQuizLink = async (emailParam) => {
 
   const sessionBody = {
     select_query:
-      !difficultyLevel || difficultyLevel === "Level 1"
-        ? `select Session_Grade, LMS_Activity_ID from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}')) and (Difficulty != 'Level 2'))`
-        : `select Session_Grade, LMS_Activity_ID from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}')) and (Difficulty = 'Level 2'))`,
+      !difficultyLevel || difficultyLevel === "School"
+        ? `select Session_Grade, LMS_Activity_ID from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}')) and (Difficulty != 'Olympiad'))`
+        : `select Session_Grade, LMS_Activity_ID from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}')) and (Difficulty = 'Olympiad'))`,
   };
 
   const session = await axios.post(

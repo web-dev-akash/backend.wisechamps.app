@@ -60,22 +60,6 @@ paymentRouter.post("/payment/capture", async (req, res) => {
       credits: credits,
       payId: payId,
     });
-    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-    // logsData.paymentLogs?.push({
-    //   email: email,
-    //   description: `PaymentCaptured 200`,
-    //   date: new Date().toDateString(),
-    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-    // });
-    // logsData.paymentLogs
-    //   ? fs.writeFile(
-    //       "./logs.json",
-    //       JSON.stringify(logsData, null, 2),
-    //       (err) => {
-    //         if (err) throw err;
-    //       }
-    //     )
-    //   : null;
     return res.status(200).send({ status: "success", data: createdPayment });
   } catch (error) {
     console.log(error);

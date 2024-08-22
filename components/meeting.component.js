@@ -99,9 +99,9 @@ const getMeetingLink = async (emailParam) => {
 
   const sessionBody = {
     select_query:
-      !difficultyLevel || difficultyLevel === "Level 1"
-        ? `select Session_Grade, LMS_Activity_ID,Explanation_Meeting_Link from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}')) and (Difficulty != 'Level 2'))`
-        : `select Session_Grade, LMS_Activity_ID,Explanation_Meeting_Link from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}')) and (Difficulty = 'Level 2'))`,
+      !difficultyLevel || difficultyLevel === "School"
+        ? `select Session_Grade, LMS_Activity_ID,Explanation_Meeting_Link from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}')) and (Difficulty != 'Olympiad'))`
+        : `select Session_Grade, LMS_Activity_ID,Explanation_Meeting_Link from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}')) and (Difficulty = 'Olympiad'))`,
   };
 
   const session = await axios.post(
@@ -116,22 +116,6 @@ const getMeetingLink = async (emailParam) => {
       mode: "internalservererrorinfindingsession",
     };
   }
-
-  // const attemptBody = {
-  //   select_query: `select Session.id as Session_id, Session.Name as Session_Name,Session.Subject as Subject, Session.Number_of_Questions as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}'`,
-  // };
-
-  // const attempt = await axios.post(
-  //   `https://www.zohoapis.com/crm/v6/coql`,
-  //   attemptBody,
-  //   zohoConfig
-  // );
-
-  // const finalAddress = address
-  //   ? address
-  //   : attempt.status === 200 && attempt.data.info.count <= 3
-  //   ? "Temp Address"
-  //   : null;
 
   const meetLink =
     session.status === 200

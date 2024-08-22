@@ -72,13 +72,6 @@ const getStudentDetails = async (email) => {
       gradeGroup = "7;8";
     } else gradeGroup = grade;
     const age = getNumberOfDays(createdTime);
-    const today = moment();
-    const currDay = today.day();
-    const diff = today.date() - currDay + (currDay === 0 ? -6 : 1);
-    const monday = moment(new Date(today.date(diff)));
-    const sunday = monday.clone().add(6, "days");
-    const formattedDateStart = `${monday.format("YYYY-MM-DD")}T00:00:00+05:30`;
-    const formattedDateEnd = `${sunday.format("YYYY-MM-DD")}T23:59:59+05:30`;
 
     const currentDate = moment();
     const sevenDaysBefore = `${currentDate
@@ -151,6 +144,9 @@ const getStudentDetails = async (email) => {
         "July",
         "August",
         "September",
+        "Olympiad",
+        "Level",
+        "School",
       ];
 
       for (let i = 0; i < sessionData.length; i++) {
@@ -188,7 +184,7 @@ const getStudentDetails = async (email) => {
         joinedWisechamps,
         weeklyQuizzes: finalWeeklyQuizzes,
         newUser,
-        difficulty: difficultyLevel === "Level 2",
+        difficulty: difficultyLevel === "Olympiad",
       };
     }
 
@@ -234,7 +230,7 @@ const getStudentDetails = async (email) => {
       joinedWisechamps,
       weeklyQuizzes: finalWeeklyQuizzes,
       newUser,
-      difficulty: difficultyLevel === "Level 2",
+      difficulty: difficultyLevel === "Olympiad",
     };
   } catch (error) {
     throw new Error(error);
