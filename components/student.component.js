@@ -20,7 +20,7 @@ const getStudentDetails = async (email) => {
       },
     };
     const contact = await axios.get(
-      `https://www.zohoapis.com/crm/v2/Contacts/search?email=${email}`,
+      `https://www.zohoapis.com/crm/v6/Contacts/search?email=${email}`,
       zohoConfig
     );
 
@@ -410,7 +410,7 @@ const placeStudentOrder = async (contactId, productId) => {
       trigger: ["workflow"],
     };
     const result = await axios.post(
-      `https://www.zohoapis.com/crm/v2/Orders`,
+      `https://www.zohoapis.com/crm/v6/Orders`,
       body,
       zohoConfig
     );

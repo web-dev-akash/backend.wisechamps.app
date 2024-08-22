@@ -105,7 +105,7 @@ const getMeetingLink = async (emailParam) => {
   };
 
   const session = await axios.post(
-    `https://www.zohoapis.com/crm/v3/coql`,
+    `https://www.zohoapis.com/crm/v6/coql`,
     sessionBody,
     zohoConfig
   );
