@@ -154,7 +154,10 @@ const getStudentDetails = async (email) => {
         const sessionName = sessionData[i].Session_Name;
         let newString = sessionName;
         let regexString = wordsToRemove.join("|");
-        let regex = new RegExp("\\b(" + regexString + ")\\b|\\d+|&", "gi");
+        let regex = new RegExp(
+          "\\b(" + regexString + ")\\b|\\d+|&|\\(|\\)",
+          "gi"
+        );
         newString = newString.replace(regex, "");
         finalWeeklyQuizzes.push({
           ...sessionData[i],
