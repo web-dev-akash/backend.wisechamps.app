@@ -476,52 +476,14 @@ const getWeeklyWinners = async (grade) => {
       gradeGroup3 = `Contact.Student_Grade = ${grade}`;
     }
 
-    let currentPage = 0;
-    const attempts = [];
-    while (true) {
-      const attemptsQuery = `select Contact_Name.id as contactId, Contact_Name.Email as Email,Contact_Name.Student_Name as Student_Name, Contact_Name.Student_Grade as Student_Grade, Quiz_Score, Contact_Name.Coins as Coins, Session.Number_of_Questions as Total_Questions from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' and Session.Session_Grade = '${gradeGroup}' limit ${
-        currentPage * 2000
-      }, 2000`;
-      const attemptsResponse = await getAnalysisData(attemptsQuery, zohoConfig);
-      if (attemptsResponse.status === 204) {
-        return { status: "noattempts" };
-      }
-      attempts.push(...attemptsResponse.data.data);
-      if (!attemptsResponse.data.info.more_records) {
-        break;
-      }
-      currentPage++;
-    }
-    const uniqueUsers = {};
-    attempts.forEach((attempt) => {
-      if (uniqueUsers[attempt.Email]) {
-        uniqueUsers[attempt.Email].Quiz_Score += attempt.Quiz_Score;
-        uniqueUsers[attempt.Email].Total_Questions += attempt.Total_Questions;
-      } else {
-        uniqueUsers[attempt.Email] = { ...attempt };
-      }
-    });
-    const uniqueUsersArray = Object.values(uniqueUsers);
-
-    const topFiveUsers = uniqueUsersArray
-      .sort((a, b) => b.Quiz_Score - a.Quiz_Score)
-      .slice(0, 5);
-
-    const filteredGrades = uniqueUsersArray.filter(
-      (user) => !topFiveUsers.some((topUser) => topUser.Email === user.Email)
-    );
-
-    filteredGrades.forEach((user) => {
-      user.percentage = Math.floor(
-        (user.Quiz_Score / user.Total_Questions) * 100
-      );
-    });
-
-    const topFivePercentageUsers = filteredGrades
-      .sort((a, b) => b.percentage - a.percentage)
-      .slice(0, 5);
+    const winnersQuery = `select Contact.id as contactId, Contact.Email as Email, Contact.Student_Grade as Student_Grade, Contact.Student_Name as Student_Name, Description from Coins where ((((Updated_Date between '${monday.format(
+      "YYYY-MM-DD"
+    )}' and '${sunday.format(
+      "YYYY-MM-DD"
+    )}') and (Action_Type = 'Credit')) and (${gradeGroup3})) and (Description like 'Top 3%')) limit 2000`;
 
     const contactQuery = `select Email, Student_Grade, Student_Name, Referral_Count from Contacts where ((Referral_Count is not null and Blocked = false) and ${gradeGroup2}) order by Referral_Count desc limit 2000`;
+
     const ordersQuery = `select Contact.Email as Email, Contact.Student_Grade as Student_Grade, Contact.Student_Name as Student_Name from Orders where (${gradeGroup3} and (Order_Date between '${monday.format(
       "YYYY-MM-DD"
     )}' and '${sunday.format("YYYY-MM-DD")}')) limit 2000`;
@@ -538,17 +500,31 @@ const getWeeklyWinners = async (grade) => {
       "YYYY-MM-DD"
     )}') and (Description like '%winning refe%')) limit 2000`;
 
-    const [contact, orders, coins, megaLuckyDrawReq] = await Promise.all([
-      limit(() => getAnalysisData(contactQuery, zohoConfig)),
-      limit(() => getAnalysisData(ordersQuery, zohoConfig)),
-      limit(() => getAnalysisData(coinsQuery, zohoConfig)),
-      limit(() => getAnalysisData(megaLuckyDrawQuery, zohoConfig)),
-    ]);
+    const [winnersData, contact, orders, coins, megaLuckyDrawReq] =
+      await Promise.all([
+        limit(() => getAnalysisData(winnersQuery, zohoConfig)),
+        limit(() => getAnalysisData(contactQuery, zohoConfig)),
+        limit(() => getAnalysisData(ordersQuery, zohoConfig)),
+        limit(() => getAnalysisData(coinsQuery, zohoConfig)),
+        limit(() => getAnalysisData(megaLuckyDrawQuery, zohoConfig)),
+      ]);
 
+    let topThreePercentageUsers = null;
+    let topThreeUsers = null;
     let maxReferrals = null;
     let maxOrders = null;
     let maxCoins = null;
     let megaLuckyDraw = null;
+
+    if (winnersData.status === 200) {
+      topThreePercentageUsers = winnersData.data.data.filter((user) =>
+        user.Description.includes("Percentage")
+      );
+
+      topThreeUsers = winnersData.data.data.filter((user) =>
+        user.Description.includes("Scorers")
+      );
+    }
 
     if (contact.status === 200) {
       maxReferrals = contact.data.data.slice(0, 3);
@@ -588,7 +564,7 @@ const getWeeklyWinners = async (grade) => {
     }
 
     const totalAttempts = [];
-    currentPage = 0;
+    let currentPage = 0;
     while (true) {
       const attemptsQuery = `select Contact_Name.id as contactId, Contact_Name.Email as Email,Contact_Name.Student_Grade as Student_Grade, Contact_Name.Student_Name as Student_Name, Quiz_Score, Contact_Name.Coins as Coins, Session.Number_of_Questions as Total_Questions from Attempts where Session.Session_Grade = '${gradeGroup}' limit ${
         currentPage * 2000
@@ -618,8 +594,8 @@ const getWeeklyWinners = async (grade) => {
 
     return {
       status: 200,
-      topFiveUsers,
-      topFivePercentageUsers,
+      topFiveUsers: topThreeUsers,
+      topFivePercentageUsers: topThreePercentageUsers,
       maxReferrals,
       maxOrders,
       maxCoins,
