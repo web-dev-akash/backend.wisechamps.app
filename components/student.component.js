@@ -47,6 +47,7 @@ const getStudentDetails = async (email) => {
     const contactId = contact.data.data[0].id;
     const grade = contact.data.data[0].Student_Grade;
     const address = contact.data.data[0].Address || null;
+    const pincode = contact.data.data[0].Pincode || null;
     const createdTime = contact.data.data[0].Created_Time;
     const difficultyLevel = contact.data.data[0].Difficulty;
 
@@ -175,7 +176,7 @@ const getStudentDetails = async (email) => {
         phone: phone,
         grade: grade,
         name,
-        address,
+        address: `${address}, ${pincode}`,
         referrals: 0,
         quizzes: attempts.status === 200 ? attempts.data.data : 0,
         age: age,
@@ -221,7 +222,7 @@ const getStudentDetails = async (email) => {
       phone: phone,
       grade: grade,
       name,
-      address,
+      address: `${address}, ${pincode}`,
       referrals: referralsAttempted,
       quizzes: attempts.status === 200 ? attempts.data.data : 0,
       age: age,
