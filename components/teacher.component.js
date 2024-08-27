@@ -4,6 +4,8 @@ const {
   getAnalysisData,
 } = require("./common.component");
 const moment = require("moment");
+const pLimit = require("p-limit");
+const limit = pLimit(20);
 
 const getTeacherDetailsWithEmail = async (email, pass) => {
   const accessToken = await getZohoTokenOptimized();
@@ -16,7 +18,7 @@ const getTeacherDetailsWithEmail = async (email, pass) => {
   };
 
   const contact = await axios.get(
-    `https://www.zohoapis.com/crm/v2/Teachers/search?criteria=((Email:equals:${email})and(Password:equals:${pass}))`,
+    `https://www.zohoapis.com/crm/v6/Teachers/search?criteria=((Email:equals:${email})and(Password:equals:${pass}))`,
     zohoConfig
   );
 
@@ -74,13 +76,13 @@ const getDailyReports = async (grade) => {
   };
 
   const report = await axios.post(
-    `https://www.zohoapis.com/crm/v3/coql`,
+    `https://www.zohoapis.com/crm/v6/coql`,
     reportBody,
     zohoConfig
   );
   if (report.status >= 400) {
     return {
-      status: attempt.status,
+      status: report.status,
       mode: "internalservererrorinfindingattempt",
     };
   }
@@ -92,11 +94,11 @@ const getDailyReports = async (grade) => {
   }
 
   const winnerBody = {
-    select_query: `select Contact_Name.Student_Name as Student_Name, Contact_Name.Team as Team,Contact_Name.id as Student_ID, Session_Date_Time, Quiz_Score, Quiz_Winner from Attempts where Session.Session_Grade = '${grade}' and Quiz_Winner is not null order by Session_Date_Time desc`,
+    select_query: `select Contact_Name.Student_Name as Student_Name, Contact_Name.Team as Team,Contact_Name.id as Student_ID, Session_Date_Time, Quiz_Score, Quiz_Winner from Attempts where Session.Session_Grade = '${grade}' and Quiz_Winner is not null order by Session_Date_Time desc limit 100`,
   };
 
   const winner = await axios.post(
-    `https://www.zohoapis.com/crm/v3/coql`,
+    `https://www.zohoapis.com/crm/v6/coql`,
     winnerBody,
     zohoConfig
   );
@@ -115,6 +117,7 @@ const getDailyReports = async (grade) => {
   }
 
   return {
+    status: 200,
     mode: "successReport",
     totalScore: totalScore,
     reports: finalReports,
@@ -149,7 +152,7 @@ const updateTeachersAttendance = async (requestBody) => {
   };
 
   const session = await axios.post(
-    `https://www.zohoapis.com/crm/v3/coql`,
+    `https://www.zohoapis.com/crm/v6/coql`,
     sessionBody,
     zohoConfig
   );
@@ -192,7 +195,7 @@ const updateTeachersAttendance = async (requestBody) => {
       };
 
       const attempt = await axios.post(
-        `https://www.zohoapis.com/crm/v3/coql`,
+        `https://www.zohoapis.com/crm/v6/coql`,
         attemptBody,
         zohoConfig
       );
@@ -232,13 +235,14 @@ const updateTeachersAttendance = async (requestBody) => {
       };
 
       const updateAttempt = await axios.post(
-        `https://www.zohoapis.com/crm/v3/Attempts/upsert`,
+        `https://www.zohoapis.com/crm/v6/Attempts/upsert`,
         updateAttemptBody,
         zohoConfig
       );
 
       if (updateAttempt.data.data[0].status !== "success") {
         return {
+          status: 400,
           mode: "errorInUpdating",
           attempt: updateAttempt.data.data[0],
         };
@@ -265,13 +269,85 @@ const updateTeachersAttendance = async (requestBody) => {
     trigger: ["workflow"],
   };
   const attendance = await axios.post(
-    `https://www.zohoapis.com/crm/v2/Teachers_Attendance`,
+    `https://www.zohoapis.com/crm/v6/Teachers_Attendance`,
     body,
     zohoConfig
   );
+
   return {
+    status: 200,
     mode: attendance.data.data[0].status,
-    attendance: attendance.data,
+  };
+};
+
+const getLastSessionReport = async (grade) => {
+  const zohoToken = await getZohoTokenOptimized();
+  const zohoConfig = {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${zohoToken}`,
+    },
+  };
+
+  const newgrade = grade.split(";");
+  const gradeFilter =
+    newgrade.length === 2
+      ? `((Student_Grade = '${newgrade[0]}') or (Student_Grade = '${newgrade[1]}'))`
+      : `(Student_Grade = '${grade}')`;
+
+  const reportBody = {
+    select_query: `select Email, Student_Name, id as Student_ID, Phone, Last_Name, Student_Grade, Credits from Contacts where (((Credits = 1) or (Credits = 2)) and ${gradeFilter})`,
+  };
+
+  const report = await axios.post(
+    `https://www.zohoapis.com/crm/v6/coql`,
+    reportBody,
+    zohoConfig
+  );
+
+  if (report.status >= 400) {
+    return {
+      status: report.status,
+      mode: "error",
+    };
+  }
+
+  if (report.status === 204) {
+    return {
+      status: report.status,
+      mode: "noreport",
+    };
+  }
+
+  const date = moment();
+  const formattedDateStart = `${date
+    .clone()
+    .subtract(15, "days")
+    .format("YYYY-MM-DD")}T00:00:00+05:30`;
+  const formattedDateEnd = `${date
+    .clone()
+    .format("YYYY-MM-DD")}T23:59:59+05:30`;
+
+  const users = report.data.data;
+  const finalUsers = [];
+  await Promise.all(
+    users.map(async (user) => {
+      const attemptsQuery = `select Session.id as Session_Id from Attempts where ((Contact_Name = '${user.Student_ID}') and (Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'))`;
+
+      const [attempt] = await Promise.all([
+        limit(() => getAnalysisData(attemptsQuery, zohoConfig)),
+      ]);
+
+      if (attempt.status === 200) {
+        finalUsers.push(user);
+      }
+    })
+  );
+
+  return {
+    status: 200,
+    reports: finalUsers,
   };
 };
 
@@ -279,4 +355,5 @@ module.exports = {
   getTeacherDetailsWithEmail,
   getDailyReports,
   updateTeachersAttendance,
+  getLastSessionReport,
 };
