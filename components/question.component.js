@@ -177,7 +177,7 @@ const dailyQuizQuestionsWithGrade = async (grade, contactId) => {
   const formattedDate = `${year}-${month}-${day}`;
 
   const alreadyAttemptedBody = {
-    select_query: `select Question.id as Question_Id, Question.Question as Question,Question.Option_1 as Option_1,Question.Option_2 as Option_2,Question.Option_3 as Option_3,Question.Option_4 as Option_4,Question.Question_Image_URL as Question_Image_URL, Correct_Answer, Option_Selected from Questions_Attempt where Attempt_Date = '${formattedDate}' and Contact_Name = '${contactId}'`,
+    select_query: `select Question.id as Question_Id, Question.Question as Question,Question.Option_1 as Option_1,Question.Option_2 as Option_2,Question.Option_3 as Option_3,Question.Option_4 as Option_4,Question.Question_Image_URL as Question_Image_URL, Correct_Answer, Question.Correct_Answer as Correct_Option, Option_Selected from Questions_Attempt where Attempt_Date = '${formattedDate}' and Contact_Name = '${contactId}'`,
   };
 
   const alreadyAttempted = await axios.post(
@@ -193,6 +193,7 @@ const dailyQuizQuestionsWithGrade = async (grade, contactId) => {
       id: attempt.Question_Id,
       question: attempt.Question,
       answer: attempt.Correct_Answer,
+      correctOption: attempt.Correct_Option,
       options: [
         attempt.Option_1,
         attempt.Option_2,
