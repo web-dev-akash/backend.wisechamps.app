@@ -177,7 +177,7 @@ const dailyQuizQuestionsWithGrade = async (grade, contactId) => {
   const formattedDate = `${year}-${month}-${day}`;
 
   const alreadyAttemptedBody = {
-    select_query: `select Question from Questions_Attempt where Attempt_Date = '${formattedDate}' and Contact_Name = '${contactId}'`,
+    select_query: `select Question.id as Question_Id, Question.Question as Question,Question.Option_1 as Option_1,Question.Option_2 as Option_2,Question.Option_3 as Option_3,Question.Option_4 as Option_4,Question.Question_Image_URL as Question_Image_URL, Correct_Answer, Option_Selected from Questions_Attempt where Attempt_Date = '${formattedDate}' and Contact_Name = '${contactId}'`,
   };
 
   const alreadyAttempted = await axios.post(
@@ -185,6 +185,24 @@ const dailyQuizQuestionsWithGrade = async (grade, contactId) => {
     alreadyAttemptedBody,
     zohoConfig
   );
+
+  if (alreadyAttempted.status === 200) {
+    const attempt = alreadyAttempted.data.data[0];
+    return {
+      status: 409,
+      id: attempt.Question_Id,
+      question: attempt.Question,
+      answer: attempt.Correct_Answer,
+      options: [
+        attempt.Option_1,
+        attempt.Option_2,
+        attempt.Option_3,
+        attempt.Option_4,
+      ],
+      image: attempt.Question_Image_URL,
+      selected: attempt.Option_Selected,
+    };
+  }
 
   let gradeGroup = null;
   if (grade == 1 || grade == 2) {
@@ -217,7 +235,7 @@ const dailyQuizQuestionsWithGrade = async (grade, contactId) => {
   const questionRes = question.data.data[0];
 
   return {
-    status: alreadyAttempted.status === 200 ? 409 : 200,
+    status: 200,
     id: questionRes.id,
     question: questionRes.Question,
     answer: questionRes.Correct_Answer,
