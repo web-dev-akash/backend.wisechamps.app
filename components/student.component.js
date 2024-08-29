@@ -91,7 +91,7 @@ const getStudentDetails = async (email) => {
 
     // const weeklyQuizzesQuery = `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, Session_Video_Link_2, Vevox_Survey_Link from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}' order by Session_Date_Time asc`;
 
-    const weeklyQuizzesQuery = `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, Session_Video_Link_2, Vevox_Survey_Link from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}')) and (Difficulty != 'Olympiad')) order by Session_Date_Time asc`;
+    const weeklyQuizzesQuery = `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, Session_Video_Link_2, Vevox_Survey_Link, Difficulty from Sessions where ((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}')) order by Session_Date_Time asc`;
 
     // const weeklyQuizzesQuery =
     //   !difficultyLevel || difficultyLevel === "Level 1"
@@ -109,6 +109,8 @@ const getStudentDetails = async (email) => {
       ]);
 
     const finalWeeklyQuizzes = [];
+    const sessionsByDateTime = {};
+
     if (weeklyQuizzes.status === 200) {
       const sessionData = weeklyQuizzes.data.data;
       let wordsToRemove = [
@@ -150,21 +152,42 @@ const getStudentDetails = async (email) => {
         "School",
       ];
 
-      for (let i = 0; i < sessionData.length; i++) {
-        const sessionName = sessionData[i].Session_Name;
-        let newString = sessionName;
-        let regexString = wordsToRemove.join("|");
-        let regex = new RegExp(
-          "\\b(" + regexString + ")\\b|\\d+|&|\\(|\\)",
-          "gi"
-        );
-        newString = newString.replace(regex, "");
-        finalWeeklyQuizzes.push({
-          ...sessionData[i],
-          Session_Name: newString.trim(),
+      const regexString = wordsToRemove.join("|");
+      const regex = new RegExp(
+        "\\b(" + regexString + ")\\b|\\d+|&|\\(|\\)",
+        "gi"
+      );
+
+      sessionData.forEach((session) => {
+        let newString = session.Session_Name.replace(regex, "").trim();
+        const dateTime = session.Session_Date_Time;
+        if (!sessionsByDateTime[dateTime]) {
+          sessionsByDateTime[dateTime] = [];
+        }
+        sessionsByDateTime[dateTime].push({
+          ...session,
+          Session_Name: newString,
         });
-      }
+      });
+
+      Object.keys(sessionsByDateTime).forEach((dateTime) => {
+        const sessions = sessionsByDateTime[dateTime];
+
+        if (sessions.length > 1) {
+          const matchingSession = sessions.find(
+            (session) => session.Difficulty === difficultyLevel
+          );
+          if (matchingSession) {
+            finalWeeklyQuizzes.push(matchingSession);
+          } else {
+            finalWeeklyQuizzes.push(sessions[0]);
+          }
+        } else {
+          finalWeeklyQuizzes.push(sessions[0]);
+        }
+      });
     }
+
     let newUser = numOfIntoMeetJoined < 5 ? true : false;
 
     if (referrals.status === 204) {

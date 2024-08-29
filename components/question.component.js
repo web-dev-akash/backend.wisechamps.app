@@ -177,7 +177,7 @@ const dailyQuizQuestionsWithGrade = async (grade, contactId) => {
   const formattedDate = `${year}-${month}-${day}`;
 
   const alreadyAttemptedBody = {
-    select_query: `select Question from Questions_Attempt where Attempt_Date = '${formattedDate}' and Contact_Name	= '${contactId}'`,
+    select_query: `select Question from Questions_Attempt where Attempt_Date = '${formattedDate}' and Contact_Name = '${contactId}'`,
   };
 
   const alreadyAttempted = await axios.post(
