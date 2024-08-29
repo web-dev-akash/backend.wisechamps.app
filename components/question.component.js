@@ -186,13 +186,6 @@ const dailyQuizQuestionsWithGrade = async (grade, contactId) => {
     zohoConfig
   );
 
-  if (alreadyAttempted.status === 200) {
-    return {
-      status: 409,
-      message: "Already Attempted today's Question",
-    };
-  }
-
   let gradeGroup = null;
   if (grade == 1 || grade == 2) {
     gradeGroup = "1;2";
@@ -224,7 +217,7 @@ const dailyQuizQuestionsWithGrade = async (grade, contactId) => {
   const questionRes = question.data.data[0];
 
   return {
-    status: 200,
+    status: alreadyAttempted.status === 200 ? 409 : 200,
     id: questionRes.id,
     question: questionRes.Question,
     answer: questionRes.Correct_Answer,
