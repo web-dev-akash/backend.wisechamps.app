@@ -140,18 +140,6 @@ const getQuizLink = async (emailParam) => {
 };
 
 const getWeeklyUserAttempts = async (email) => {
-  // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-  // logsData.reportLogs?.push({
-  //   email: email,
-  //   description: `EnteredEmail 200`,
-  //   date: new Date().toDateString(),
-  //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-  // });
-  // logsData.reportLogs
-  //   ? fs.writeFile("./logs.json", JSON.stringify(logsData, null, 2), (err) => {
-  //       if (err) throw err;
-  //     })
-  //   : null;
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -171,7 +159,6 @@ const getWeeklyUserAttempts = async (email) => {
       mode: "internalservererrorinfindinguser",
     };
   }
-  // return { contact };
   if (contact.status === 204) {
     // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
     // logsData.reportLogs?.push({
@@ -197,16 +184,20 @@ const getWeeklyUserAttempts = async (email) => {
 
   const contactid = contact.data.data[0].id;
   const grade = contact.data.data[0].Student_Grade;
+
   let gradeGroup;
   if (grade == 1 || grade == 2) {
     gradeGroup = "1;2";
   } else if (grade == 7 || grade == 8) {
     gradeGroup = "7;8";
   } else gradeGroup = grade;
+
   const name = contact.data.data[0].Student_Name;
   const credits = contact.data.data[0].Credits
     ? contact.data.data[0].Credits
     : 0;
+  const difficultyLevel = contact.data.data[0].Difficulty || "School";
+
   const today = moment();
   const currDay = today.day();
   let previousMonday, previousSunday;
@@ -228,23 +219,30 @@ const getWeeklyUserAttempts = async (email) => {
   )}T23:59:59+05:30`;
 
   const sessionBody = {
-    select_query: `select Name as Session_Name, Subject, Number_of_Questions as Total_Questions, Session_Date_Time from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
+    select_query: `select Name as Session_Name, Subject, Number_of_Questions as Total_Questions, Session_Date_Time from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' order by Session_Date_Time asc`,
   };
 
   const session = await axios.post(
-    `https://www.zohoapis.com/crm/v3/coql`,
+    `https://www.zohoapis.com/crm/v6/coql`,
     sessionBody,
     zohoConfig
   );
 
-  const sessionData = session.data.data;
+  if (session.status === 204) {
+    return {
+      status: session.status,
+      mode: "nosession",
+      name,
+      credits: credits,
+    };
+  }
 
   const attemptBody = {
     select_query: `select Session.id as Session_id, Session.Name as Session_Name,Session.Subject as Subject, Session.Number_of_Questions	as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
   };
 
   const attempt = await axios.post(
-    `https://www.zohoapis.com/crm/v3/coql`,
+    `https://www.zohoapis.com/crm/v6/coql`,
     attemptBody,
     zohoConfig
   );
@@ -256,30 +254,7 @@ const getWeeklyUserAttempts = async (email) => {
     };
   }
 
-  if (session.status === 204) {
-    // let oldDate = new Date().setMinutes(new Date().getMinutes() + 330);
-    // logsData.reportLogs?.push({
-    //   email: email,
-    //   description: `NoSessions 204`,
-    //   date: new Date().toDateString(),
-    //   time: new Date(oldDate).toLocaleTimeString("en-US"),
-    // });
-    // logsData.reportLogs
-    //   ? fs.writeFile(
-    //       "./logs.json",
-    //       JSON.stringify(logsData, null, 2),
-    //       (err) => {
-    //         if (err) throw err;
-    //       }
-    //     )
-    //   : null;
-    return {
-      status: session.status,
-      mode: "nosession",
-      name,
-      credits: credits,
-    };
-  }
+  const sessionData = session.data.data;
 
   let minPercentage = 0;
   let maxPercentage = 100;
@@ -288,7 +263,7 @@ const getWeeklyUserAttempts = async (email) => {
   let totalQuestion = 0;
 
   const finalAttempts = [];
-  const totalAttempts = attempt?.data.data;
+  const totalAttempts = attempt.status === 200 ? attempt.data.data : null;
   let wordsToRemove = [
     "Final",
     "&",
@@ -312,7 +287,24 @@ const getWeeklyUserAttempts = async (email) => {
     "Aug",
     "Sep",
     "Oct",
+    "November",
+    "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "Olympiad",
+    "Level",
+    "School",
   ];
+
+  const regexString = wordsToRemove.join("|");
+  const regex = new RegExp("\\b(" + regexString + ")\\b|\\d+|&|\\(|\\)", "gi");
 
   if (totalAttempts) {
     for (let i = 0; i < totalAttempts.length; i++) {
@@ -320,36 +312,50 @@ const getWeeklyUserAttempts = async (email) => {
     }
   }
 
-  const sortedSessionData = sessionData.sort(
-    (a, b) => new Date(a.Session_Date_Time) - new Date(b.Session_Date_Time)
-  );
-
   const sortedFinalData = [];
+  const sessionsByDateTime = {};
 
-  for (let i = 0; i < sortedSessionData.length; i++) {
+  sessionData.forEach((session) => {
     const attemptFound = finalAttempts?.filter(
-      (attempt) => attempt.Session_id == sortedSessionData[i].id
+      (attempt) => attempt.Session_id == session.id
     );
-    const sessionName = sortedSessionData[i].Session_Name;
-    let newString = sessionName;
-    let regexString = wordsToRemove.join("|");
-    let regex = new RegExp("\\b(" + regexString + ")\\b|\\d+|&", "gi");
-    newString = newString.replace(regex, "");
+    let newString = session.Session_Name.replace(regex, "").trim();
+    const dateTime = session.Session_Date_Time;
+    if (!sessionsByDateTime[dateTime]) {
+      sessionsByDateTime[dateTime] = [];
+    }
     if (attemptFound?.length > 0) {
-      sortedFinalData.push({
-        ...sortedSessionData[i],
+      sessionsByDateTime[dateTime].push({
+        ...session,
         Quiz_Score: attemptFound[0].Quiz_Score,
-        Session_Name: newString.trim(),
+        Session_Name: newString,
         attempted: true,
       });
     } else {
-      sortedFinalData.push({
-        ...sortedSessionData[i],
-        Session_Name: newString.trim(),
+      sessionsByDateTime[dateTime].push({
+        ...session,
+        Session_Name: newString,
         attempted: false,
       });
     }
-  }
+  });
+
+  Object.keys(sessionsByDateTime).forEach((dateTime) => {
+    const sessions = sessionsByDateTime[dateTime];
+
+    if (sessions.length > 1) {
+      const matchingSession = sessions.find(
+        (session) => session.Difficulty === difficultyLevel
+      );
+      if (matchingSession) {
+        sortedFinalData.push(matchingSession);
+      } else {
+        sortedFinalData.push(sessions[0]);
+      }
+    } else {
+      sortedFinalData.push(sessions[0]);
+    }
+  });
 
   for (let i = 0; i < sortedFinalData.length; i++) {
     totalAnswer += sortedFinalData[i].Quiz_Score

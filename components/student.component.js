@@ -49,7 +49,7 @@ const getStudentDetails = async (email) => {
     const address = contact.data.data[0].Address || null;
     const pincode = contact.data.data[0].Pincode || null;
     const createdTime = contact.data.data[0].Created_Time;
-    const difficultyLevel = contact.data.data[0].Difficulty;
+    const difficultyLevel = contact.data.data[0].Difficulty || "School";
 
     const joinedWisechamps = contact.data.data[0].Joined_Wisechampions
       ? true
