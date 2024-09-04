@@ -219,7 +219,7 @@ const getWeeklyUserAttempts = async (email) => {
   )}T23:59:59+05:30`;
 
   const sessionBody = {
-    select_query: `select Name as Session_Name, Subject, Number_of_Questions as Total_Questions, Session_Date_Time from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' order by Session_Date_Time asc`,
+    select_query: `select Name as Session_Name, Subject, Number_of_Questions as Total_Questions, Session_Date_Time, Difficulty from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' order by Session_Date_Time asc`,
   };
 
   const session = await axios.post(
@@ -238,7 +238,7 @@ const getWeeklyUserAttempts = async (email) => {
   }
 
   const attemptBody = {
-    select_query: `select Session.id as Session_id, Session.Name as Session_Name,Session.Subject as Subject, Session.Number_of_Questions	as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
+    select_query: `select Session.id as Session_id, Session.Name as Session_Name,Session.Subject as Subject, Session.Number_of_Questions as Total_Questions, Session_Date_Time, Quiz_Score from Attempts where Contact_Name = '${contactid}' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
   };
 
   const attempt = await axios.post(
@@ -317,7 +317,7 @@ const getWeeklyUserAttempts = async (email) => {
 
   sessionData.forEach((session) => {
     const attemptFound = finalAttempts?.filter(
-      (attempt) => attempt.Session_id == session.id
+      (attempt) => attempt.Session_id === session.id
     );
     let newString = session.Session_Name.replace(regex, "").trim();
     const dateTime = session.Session_Date_Time;
@@ -347,6 +347,7 @@ const getWeeklyUserAttempts = async (email) => {
       const matchingSession = sessions.find(
         (session) => session.Difficulty === difficultyLevel
       );
+
       if (matchingSession) {
         sortedFinalData.push(matchingSession);
       } else {
