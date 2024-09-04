@@ -496,8 +496,8 @@ const getReferralAnalysisData = async () => {
 
     while (true) {
       const layer1ReferralQuery = `select id, Email, Referral_Count from Contacts where Referee is not null and (Student_Grade != 0 and Blocked = false) limit ${
-        currentPage * 200
-      }, 200`;
+        currentPage * 2000
+      }, 2000`;
 
       const layer1ReferralResponse = await getAnalysisData(
         layer1ReferralQuery,

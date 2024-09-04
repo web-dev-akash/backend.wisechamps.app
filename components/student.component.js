@@ -506,25 +506,25 @@ const getWeeklyWinners = async (grade) => {
       "YYYY-MM-DD"
     )}' and '${sunday.format(
       "YYYY-MM-DD"
-    )}') and (Action_Type = 'Credit')) and (${gradeGroup3})) and (Description like 'Top 3%')) limit 2000`;
+    )}') and (Action_Type = 'Credit')) and (${gradeGroup3})) and (Description like 'Top 3%')) limit 200`;
 
-    const contactQuery = `select Email, Student_Grade, Student_Name, Referral_Count from Contacts where ((Referral_Count is not null and Blocked = false) and ${gradeGroup2}) order by Referral_Count desc limit 2000`;
+    const contactQuery = `select Email, Student_Grade, Student_Name, Referral_Count from Contacts where ((Referral_Count is not null and Blocked = false) and ${gradeGroup2}) order by Referral_Count desc limit 200`;
 
     const ordersQuery = `select Contact.Email as Email, Contact.Student_Grade as Student_Grade, Contact.Student_Name as Student_Name from Orders where (${gradeGroup3} and (Order_Date between '${monday.format(
       "YYYY-MM-DD"
-    )}' and '${sunday.format("YYYY-MM-DD")}')) limit 2000`;
+    )}' and '${sunday.format("YYYY-MM-DD")}')) limit 200`;
 
     const coinsQuery = `select Contact.Email as Email, Contact.Student_Grade as Student_Grade, Contact.Student_Name as Student_Name, Coins from Coins where (((Updated_Date between '${monday.format(
       "YYYY-MM-DD"
     )}' and '${sunday.format(
       "YYYY-MM-DD"
-    )}') and (Action_Type = 'Credit')) and ${gradeGroup3}) limit 2000`;
+    )}') and (Action_Type = 'Credit')) and ${gradeGroup3}) limit 1000`;
 
     const megaLuckyDrawQuery = `select Contact.Email as Email, Contact.Student_Grade as Student_Grade, Contact.Student_Name as Student_Name, Coins, Updated_Date, Description from Coins where ((Updated_Date between '${last16Days.format(
       "YYYY-MM-DD"
     )}' and '${today2.format(
       "YYYY-MM-DD"
-    )}') and (Description like '%winning refe%')) limit 2000`;
+    )}') and (Description like '%winning refe%')) limit 200`;
 
     const [winnersData, contact, orders, coins, megaLuckyDrawReq] =
       await Promise.all([
@@ -644,7 +644,7 @@ const getPaymentHistory = async (contactId) => {
       },
     };
 
-    const paymentQuery = `select Payment_Date, Amount, Credits from Payments where Conntact = '${contactId}' order by Payment_Date desc limit 2000`;
+    const paymentQuery = `select Payment_Date, Amount, Credits from Payments where Conntact = '${contactId}' order by Payment_Date desc limit 200`;
 
     const [payment] = await Promise.all([
       limit(() => getAnalysisData(paymentQuery, zohoConfig)),
