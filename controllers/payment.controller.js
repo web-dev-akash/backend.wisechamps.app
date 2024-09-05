@@ -29,13 +29,14 @@ paymentRouter.post("/payment_links", async (req, res) => {
         currency: "INR",
         description: `${subject} Test Series with 5 Mock Tests and 15 Doubt Sessions`,
         customer: {
+          name: subject,
           email,
-          subject,
         },
         callback_url: `https://students.wisechamps.com`,
         callback_method: "get",
         expire_by: expiryDate,
       });
+
       return res.status(200).send(data);
     }
 
@@ -67,12 +68,14 @@ paymentRouter.post("/payment/capture", async (req, res) => {
       999: 67,
       1999: 200,
     };
+
     const id = req.body.payload.payment_link.entity.id;
     const amount = Number(req.body.payload.payment_link.entity.amount) / 100;
     const email = req.body.payload.payment_link.entity.customer.email;
-    const subject = req.body.payload.payment_link.entity.customer.subject;
+    const subject = req.body.payload.payment_link.entity.customer.name;
     const payId = req.body.payload.payment.entity.id;
     const credits = !subject ? plans[amount] : 0;
+
     const createdPayment = await createPaymentEntry({
       amount: amount,
       id: id,
@@ -81,6 +84,7 @@ paymentRouter.post("/payment/capture", async (req, res) => {
       payId: payId,
       subject: subject,
     });
+
     return res.status(200).send({ status: "success", data: createdPayment });
   } catch (error) {
     console.log(error);
