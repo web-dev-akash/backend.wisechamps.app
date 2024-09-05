@@ -1,7 +1,14 @@
 const { default: axios } = require("axios");
 const { getZohoTokenOptimized } = require("./common.component");
 
-const createPaymentEntry = async ({ amount, id, email, credits, payId }) => {
+const createPaymentEntry = async ({
+  amount,
+  id,
+  email,
+  credits,
+  payId,
+  subject,
+}) => {
   const zohoToken = await getZohoTokenOptimized();
   const zohoConfig = {
     headers: {
@@ -12,7 +19,7 @@ const createPaymentEntry = async ({ amount, id, email, credits, payId }) => {
   };
 
   const paymentData = await axios.get(
-    `https://www.zohoapis.com/crm/v2/Payments/search?criteria=Payment_Link_ID:equals:${id}`,
+    `https://www.zohoapis.com/crm/v6/Payments/search?criteria=Payment_Link_ID:equals:${id}`,
     zohoConfig
   );
 
@@ -38,7 +45,7 @@ const createPaymentEntry = async ({ amount, id, email, credits, payId }) => {
       mode: "internalservererrorinfindinguser",
     };
   }
-  // return { contact };
+
   if (contact.status === 204) {
     return {
       status: contact.status,
@@ -62,6 +69,7 @@ const createPaymentEntry = async ({ amount, id, email, credits, payId }) => {
         Reference_ID: payId,
         Payment_Date: formattedDate,
         Credits: credits,
+        Test_Series_Subject: subject || "",
       },
     ],
     apply_feature_execution: [
