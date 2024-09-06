@@ -50,6 +50,9 @@ const getStudentDetails = async (email) => {
     const pincode = contact.data.data[0].Pincode || null;
     const createdTime = contact.data.data[0].Created_Time;
     const difficultyLevel = contact.data.data[0].Difficulty || "School";
+    const mathTestSeries = contact.data.data[0].Math_Test_Series;
+    const englishTestSeries = contact.data.data[0].English_Test_Series;
+    const scienceTestSeries = contact.data.data[0].Science_Test_Series;
 
     const joinedWisechamps = contact.data.data[0].Joined_Wisechampions
       ? true
@@ -212,6 +215,11 @@ const getStudentDetails = async (email) => {
         weeklyQuizzes: finalWeeklyQuizzes,
         newUser,
         difficulty: difficultyLevel === "Olympiad",
+        testSeries: {
+          Maths: mathTestSeries,
+          Science: scienceTestSeries,
+          English: englishTestSeries,
+        },
       };
     }
 
@@ -258,6 +266,11 @@ const getStudentDetails = async (email) => {
       weeklyQuizzes: finalWeeklyQuizzes,
       newUser,
       difficulty: difficultyLevel === "Olympiad",
+      testSeries: {
+        Maths: mathTestSeries,
+        Science: scienceTestSeries,
+        English: englishTestSeries,
+      },
     };
   } catch (error) {
     throw new Error(error);
