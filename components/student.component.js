@@ -736,6 +736,39 @@ const sendStudentFeedback = async ({
   }
 };
 
+const getTestSeriesByGrade = async (grade, subject) => {
+  try {
+    const accessToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+
+    const testSeriesQuery = `select Name, Activate_Date, Image, Survey_Link from Test_Series, Subject where Subject = '${subject}' and Grade like '%${grade}%' order by Activate_Date asc limit 200`;
+
+    const [testSeries] = await Promise.all([
+      limit(() => getAnalysisData(testSeriesQuery, zohoConfig)),
+    ]);
+
+    if (testSeries.status >= 204) {
+      return {
+        status: testSeries.status,
+        data: [],
+      };
+    }
+
+    return {
+      status: 200,
+      data: testSeries.data.data,
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 module.exports = {
   getStudentDetails,
   getStudentOrders,
@@ -744,4 +777,5 @@ module.exports = {
   getWeeklyWinners,
   getPaymentHistory,
   sendStudentFeedback,
+  getTestSeriesByGrade,
 };

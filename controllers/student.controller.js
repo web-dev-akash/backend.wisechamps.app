@@ -7,6 +7,7 @@ const {
   getWeeklyWinners,
   getPaymentHistory,
   sendStudentFeedback,
+  getTestSeriesByGrade,
 } = require("../components/student.component");
 const {
   getZohoTokenOptimized,
@@ -47,6 +48,20 @@ studentRouter.post("/introMeet", authMiddleware, async (req, res) => {
 studentRouter.get("/store", authMiddleware, async (req, res) => {
   try {
     const data = await getProductsFromStore();
+    return res.status(200).send(data);
+  } catch (error) {
+    return res.status(error.status || 500).send({
+      status: "error",
+      message: error.message,
+      code: error.status || 500,
+    });
+  }
+});
+
+studentRouter.post("/test-series", authMiddleware, async (req, res) => {
+  try {
+    const { grade, subject } = req.body;
+    const data = await getTestSeriesByGrade(grade, subject);
     return res.status(200).send(data);
   } catch (error) {
     return res.status(error.status || 500).send({
