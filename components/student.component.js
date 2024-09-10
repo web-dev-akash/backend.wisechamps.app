@@ -782,6 +782,39 @@ const getTestSeriesByGrade = async (grade, subject) => {
   }
 };
 
+const getTestSeriesDoubtSessions = async (subject) => {
+  try {
+    const accessToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+
+    const testSeriesQuery = `select Name, Zoom_Link,Recording_Link, Subject, Day, Time from Mock_Doubt_Sessions where Subject = '${subject}' limit 200`;
+
+    const [testSeries] = await Promise.all([
+      limit(() => getAnalysisData(testSeriesQuery, zohoConfig)),
+    ]);
+
+    if (testSeries.status >= 204) {
+      return {
+        status: testSeries.status,
+        data: [],
+      };
+    }
+
+    return {
+      status: 200,
+      data: testSeries.data.data,
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 module.exports = {
   getStudentDetails,
   getStudentOrders,
@@ -791,4 +824,5 @@ module.exports = {
   getPaymentHistory,
   sendStudentFeedback,
   getTestSeriesByGrade,
+  getTestSeriesDoubtSessions,
 };

@@ -8,6 +8,7 @@ const {
   getPaymentHistory,
   sendStudentFeedback,
   getTestSeriesByGrade,
+  getTestSeriesDoubtSessions,
 } = require("../components/student.component");
 const {
   getZohoTokenOptimized,
@@ -71,6 +72,24 @@ studentRouter.post("/test-series", authMiddleware, async (req, res) => {
     });
   }
 });
+
+studentRouter.post(
+  "/test-series/doubt-session",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const { subject } = req.body;
+      const data = await getTestSeriesDoubtSessions(subject);
+      return res.status(200).send(data);
+    } catch (error) {
+      return res.status(error.status || 500).send({
+        status: "error",
+        message: error.message,
+        code: error.status || 500,
+      });
+    }
+  }
+);
 
 studentRouter.post("/store/orders", authMiddleware, async (req, res) => {
   try {
