@@ -73,13 +73,12 @@ studentRouter.post("/test-series", authMiddleware, async (req, res) => {
   }
 });
 
-studentRouter.post(
+studentRouter.get(
   "/test-series/doubt-session",
   authMiddleware,
   async (req, res) => {
     try {
-      const { subject } = req.body;
-      const data = await getTestSeriesDoubtSessions(subject);
+      const data = await getTestSeriesDoubtSessions();
       return res.status(200).send(data);
     } catch (error) {
       return res.status(error.status || 500).send({

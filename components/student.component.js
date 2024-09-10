@@ -782,7 +782,7 @@ const getTestSeriesByGrade = async (grade, subject) => {
   }
 };
 
-const getTestSeriesDoubtSessions = async (subject) => {
+const getTestSeriesDoubtSessions = async () => {
   try {
     const accessToken = await getZohoTokenOptimized();
     const zohoConfig = {
@@ -793,7 +793,7 @@ const getTestSeriesDoubtSessions = async (subject) => {
       },
     };
 
-    const testSeriesQuery = `select Name, Zoom_Link,Recording_Link, Subject, Day, Time from Mock_Doubt_Sessions where Subject = '${subject}' limit 200`;
+    const testSeriesQuery = `select Name, Zoom_Link,Recording_Link, Subject, Day, Time from Mock_Doubt_Sessions where Subject is not null limit 200`;
 
     const [testSeries] = await Promise.all([
       limit(() => getAnalysisData(testSeriesQuery, zohoConfig)),
