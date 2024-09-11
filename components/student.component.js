@@ -749,7 +749,7 @@ const sendStudentFeedback = async ({
   }
 };
 
-const getTestSeriesByGrade = async (grade, subject) => {
+const getTestSeriesByGrade = async (grade) => {
   try {
     const accessToken = await getZohoTokenOptimized();
     const zohoConfig = {
@@ -760,7 +760,7 @@ const getTestSeriesByGrade = async (grade, subject) => {
       },
     };
 
-    const testSeriesQuery = `select Name, Activate_Date, Image as Test_Image, Survey_Link, Subject from Test_Series where Subject = '${subject}' and Grade like '%${grade}%' order by Activate_Date asc limit 200`;
+    const testSeriesQuery = `select Name, Activate_Date, Image as Test_Image, Survey_Link, Subject from Test_Series where Grade like '%${grade}%' order by Activate_Date asc limit 200`;
 
     const [testSeries] = await Promise.all([
       limit(() => getAnalysisData(testSeriesQuery, zohoConfig)),
