@@ -16,6 +16,8 @@ const {
   getProductsFromStore,
 } = require("../components/common.component");
 const { default: axios } = require("axios");
+const { google } = require("googleapis");
+const moment = require("moment");
 const studentRouter = express.Router();
 
 studentRouter.post("/", authMiddleware, async (req, res) => {
@@ -159,6 +161,50 @@ studentRouter.post("/feedback", authMiddleware, async (req, res) => {
     });
   }
 });
+
+studentRouter.post(
+  "/update-analysis-sheet",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const { email, description } = req.body;
+      const spreadsheetId = process.env.SPREADSHEET_ID;
+      const auth = new google.auth.GoogleAuth({
+        keyFile: "./key.json",
+        scopes: "https://www.googleapis.com/auth/spreadsheets",
+      });
+      const authClientObject = await auth.getClient();
+      const sheet = google.sheets({
+        version: "v4",
+        auth: authClientObject,
+      });
+      const values = [
+        [
+          email,
+          description,
+          moment().format("YYYY-MM-DD"),
+          moment().format("LT"),
+        ],
+      ];
+      const writeData = await sheet.spreadsheets.values.append({
+        auth,
+        spreadsheetId,
+        range: `Dashboard Interaction Analysis!A:D`,
+        valueInputOption: "USER_ENTERED",
+        resource: {
+          values: values,
+        },
+      });
+      return res.status(200).send(writeData.data);
+    } catch (error) {
+      return res.status(error.status || 500).send({
+        status: "error",
+        message: error.message,
+        code: error.status || 500,
+      });
+    }
+  }
+);
 
 studentRouter.post("/tution/create", authMiddleware, async (req, res) => {
   try {
