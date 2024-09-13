@@ -178,14 +178,11 @@ studentRouter.post(
         version: "v4",
         auth: authClientObject,
       });
-      const values = [
-        [
-          email,
-          description,
-          moment().format("YYYY-MM-DD"),
-          moment().utc(true).format("LT"),
-        ],
-      ];
+
+      const date = moment().format("YYYY-MM-DD");
+      const time = moment().add(5, "hours").add(30, "minutes").format("LT");
+
+      const values = [[email, description, date, time]];
       const writeData = await sheet.spreadsheets.values.append({
         auth,
         spreadsheetId,
