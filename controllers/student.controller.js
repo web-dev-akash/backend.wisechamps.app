@@ -183,7 +183,7 @@ studentRouter.post(
           email,
           description,
           moment().format("YYYY-MM-DD"),
-          moment().format("LT"),
+          moment().utc(true).format("LT"),
         ],
       ];
       const writeData = await sheet.spreadsheets.values.append({
