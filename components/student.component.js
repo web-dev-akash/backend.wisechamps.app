@@ -773,9 +773,35 @@ const getTestSeriesByGrade = async (grade) => {
       };
     }
 
+    const data = testSeries.data.data;
+
+    let wordsToRemove = [
+      "Grade 1 & 2",
+      "Grade 1&2",
+      "Grade 3",
+      "Grade 4",
+      "Grade 5",
+      "Grade 6",
+      "Grade 7 & 8",
+      "Grade 7&8",
+    ];
+
+    const regexString = wordsToRemove.join("|");
+    const regex = new RegExp("\\b(" + regexString + ")\\b|[()]", "gi");
+
+    const finalTestSeries = [];
+
+    data.forEach((session) => {
+      let newString = session.Name.replace(regex, "").trim();
+      finalTestSeries.push({
+        ...session,
+        Name: newString,
+      });
+    });
+
     return {
       status: 200,
-      data: testSeries.data.data,
+      data: finalTestSeries,
     };
   } catch (error) {
     throw new Error(error);

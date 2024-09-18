@@ -63,8 +63,8 @@ studentRouter.get("/store", authMiddleware, async (req, res) => {
 
 studentRouter.post("/test-series", authMiddleware, async (req, res) => {
   try {
-    const { grade, subject } = req.body;
-    const data = await getTestSeriesByGrade(grade, subject);
+    const { grade } = req.body;
+    const data = await getTestSeriesByGrade(grade);
     return res.status(200).send(data);
   } catch (error) {
     return res.status(error.status || 500).send({
