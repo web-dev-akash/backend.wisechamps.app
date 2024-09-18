@@ -787,7 +787,7 @@ const getTestSeriesByGrade = async (grade) => {
     ];
 
     const regexString = wordsToRemove.join("|");
-    const regex = new RegExp("\\b(" + regexString + ")\\b|[()]", "gi");
+    const regex = new RegExp("\\b(" + regexString + ")\\b", "gi");
 
     const finalTestSeries = [];
 
