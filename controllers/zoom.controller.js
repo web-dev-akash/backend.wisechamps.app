@@ -117,8 +117,11 @@ const streamToDropbox = async (
             console.log("++Sharing Link++", res);
           })
           .catch((error) => {
-            console.log("------Error Generating Link------", error);
+            console.log("------Error Generating Link------", error.error);
           });
+      })
+      .catch((error) => {
+        console.log("------Error Uploading File------", error.error);
       });
 
     return {
