@@ -175,6 +175,18 @@ const getProductsFromStore = async () => {
   }
 };
 
+const pLimitFactory = async (limit) => {
+  const p_limit = await import("p-limit");
+  const pLimit = p_limit.default(limit);
+  return pLimit;
+};
+
+const initializeQueue = async () => {
+  const PQueue = (await import("p-queue")).default;
+  const uploadQueue = new PQueue({ concurrency: 2 });
+  return uploadQueue;
+};
+
 module.exports = {
   getProductsFromStore,
   getZohoTokenOptimized,
@@ -182,4 +194,6 @@ module.exports = {
   getNumberOfDays,
   formatDateWithTimezone,
   authMiddleware,
+  pLimitFactory,
+  initializeQueue,
 };

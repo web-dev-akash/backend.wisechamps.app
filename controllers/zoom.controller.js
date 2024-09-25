@@ -6,6 +6,7 @@ const stream = require("stream");
 const moment = require("moment");
 const { default: axios } = require("axios");
 const fs = require("fs/promises");
+const { initializeQueue } = require("../components/common.component");
 
 const zoomIdToken = {
   1: "ZOOM_WEBHOOK_SECRET_TOKEN_1_2",
@@ -106,6 +107,9 @@ const streamToDropbox = async (
       path: dropboxPath,
       contents: fileBuffer,
     });
+
+    console.log("++Zoom File Uploaded++", data);
+
     return {
       status: 200,
       data: data,
@@ -188,9 +192,7 @@ zoomRouter.post("/recording/:id", async (req, res) => {
         plainToken: data.payload.plainToken,
         encryptedToken: hashForValidate,
       });
-    }
-
-    if (data.event === "recording.completed") {
+    } else if (data.event === "recording.completed") {
       res.status(200).send({ message: "success" });
       const files = data.payload.object.recording_files;
       const recording = files.find(
@@ -199,26 +201,42 @@ zoomRouter.post("/recording/:id", async (req, res) => {
       if (!recording || !recording.recording_start) {
         return;
       }
-      const recordingDate = moment(recording.recording_start).format(
-        "Do MMM h:mm A"
-      );
+      const recordingDate = moment(recording.recording_start)
+        .add(5, "hours")
+        .add(30, "minutes")
+        .format("Do MMM h:mm A");
       const recordingName = data.payload.object.topic;
+
+      if (!recordingName.includes("Mock Test Doubt Session")) {
+        console.log("Recording Not Required");
+        return;
+      }
+
       const fileSize = recording.file_size;
       const fileExtension = recording.file_extension;
       const recordingPath = `/Zoom Recording Math Olympiad/${dropboxPath[id]}/${recordingName} ${recordingDate}.${fileExtension}`;
       const recordingLink = recording.download_url;
       const downloadToken = data.download_token;
       const dropboxAccessToken = await getOptimizedAccessToken();
-      const uploadStatus = await streamToDropbox(
-        recordingLink,
-        recordingPath,
-        fileSize,
-        dropboxAccessToken,
-        downloadToken
-      );
+      const uploadQueue = await initializeQueue();
+
+      uploadQueue
+        .add(() =>
+          streamToDropbox(
+            recordingLink,
+            recordingPath,
+            fileSize,
+            dropboxAccessToken,
+            downloadToken
+          )
+        )
+        .catch((error) => {
+          console.error(`Failed to upload to Dropbox: ${error.message}`);
+        });
       return;
+    } else {
+      return res.status(200).send({ message: "success" });
     }
-    return res.status(200).send({ message: "success" });
   } catch (error) {
     console.log({
       status: error.status || 500,
