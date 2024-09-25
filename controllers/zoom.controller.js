@@ -123,7 +123,6 @@ const streamToDropbox = async (
 
     return {
       status: 200,
-      data: data,
     };
   } else {
     const maxBlob = 40 * 1024 * 1024; // 40 MB
