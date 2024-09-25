@@ -108,7 +108,11 @@ const streamToDropbox = async (
       contents: fileBuffer,
     });
 
-    console.log("++Zoom File Uploaded++", data);
+    const sharingLink = await dbx.sharingCreateSharedLinkWithSettings({
+      path: dropboxPath,
+    });
+
+    console.log("++Sharing Link++", sharingLink);
 
     return {
       status: 200,
@@ -169,7 +173,12 @@ const streamToDropbox = async (
         });
       }
     }
-    console.log(`Large file uploaded to Dropbox at ${dropboxPath}`);
+
+    const sharingLink = await dbx.sharingCreateSharedLinkWithSettings({
+      path: dropboxPath,
+    });
+
+    console.log(`Large file Sharing Link ${sharingLink}`);
     return {
       status: 200,
     };

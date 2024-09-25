@@ -183,7 +183,7 @@ const pLimitFactory = async (limit) => {
 
 const initializeQueue = async () => {
   const PQueue = (await import("p-queue")).default;
-  const uploadQueue = new PQueue({ concurrency: 2 });
+  const uploadQueue = new PQueue({ concurrency: 1 });
   return uploadQueue;
 };
 
