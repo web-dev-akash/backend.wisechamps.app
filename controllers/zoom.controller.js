@@ -103,16 +103,23 @@ const streamToDropbox = async (
       buffers.push(chunk);
     }
     const fileBuffer = Buffer.concat(buffers);
-    const data = await dbx.filesUpload({
-      path: dropboxPath,
-      contents: fileBuffer,
-    });
-
-    const sharingLink = await dbx.sharingCreateSharedLinkWithSettings({
-      path: dropboxPath,
-    });
-
-    console.log("++Sharing Link++", sharingLink);
+    dbx
+      .filesUpload({
+        path: dropboxPath,
+        contents: fileBuffer,
+      })
+      .then(() => {
+        dbx
+          .sharingCreateSharedLinkWithSettings({
+            path: dropboxPath,
+          })
+          .then((res) => {
+            console.log("++Sharing Link++", res);
+          })
+          .catch((error) => {
+            console.log("------Error Generating Link------", error);
+          });
+      });
 
     return {
       status: 200,
