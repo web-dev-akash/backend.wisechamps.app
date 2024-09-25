@@ -109,16 +109,20 @@ const streamToDropbox = async (
         contents: fileBuffer,
       })
       .then(() => {
-        dbx
-          .sharingCreateSharedLinkWithSettings({
-            path: dropboxPath,
-          })
-          .then((res) => {
-            console.log("++Sharing Link++", res);
-          })
-          .catch((error) => {
-            console.log("------Error Generating Link------", error.error);
-          });
+        console.log("------File Uploaded------");
+        // dbx
+        //   .sharingCreateSharedLinkWithSettings({
+        //     path: dropboxPath,
+        //   })
+        //   .then(async (res) => {
+        //     if (res.status === 200) {
+        //       const recordingLink = res.result.url;
+        //       await updateRecordingLinkInZoho(recordingLink)
+        //     }
+        //   })
+        //   .catch((error) => {
+        //     console.log("------Error Generating Link------", error.error);
+        //   });
       })
       .catch((error) => {
         console.log("------Error Uploading File------", error.error);
@@ -183,11 +187,7 @@ const streamToDropbox = async (
       }
     }
 
-    const sharingLink = await dbx.sharingCreateSharedLinkWithSettings({
-      path: dropboxPath,
-    });
-
-    console.log(`Large file Sharing Link ${sharingLink}`);
+    console.log(`Large file Uploaded ${dropboxPath}`);
     return {
       status: 200,
     };
