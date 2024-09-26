@@ -760,7 +760,7 @@ const getTestSeriesByGrade = async (grade) => {
       },
     };
 
-    const testSeriesQuery = `select Name, Activate_Date, Image as Test_Image, Survey_Link, Subject, Free from Test_Series where Active = 'true' and Grade like '%${grade}%' order by Activate_Date asc, Free desc limit 200`;
+    const testSeriesQuery = `select Name, Activate_Date, Survey_Link, Subject, Free from Test_Series where Active = 'true' and Grade like '%${grade}%' order by Subject desc, Free desc limit 200`;
 
     const [testSeries] = await Promise.all([
       limit(() => getAnalysisData(testSeriesQuery, zohoConfig)),

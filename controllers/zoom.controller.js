@@ -6,7 +6,10 @@ const stream = require("stream");
 const moment = require("moment");
 const { default: axios } = require("axios");
 const fs = require("fs/promises");
-const { initializeQueue } = require("../components/common.component");
+const {
+  initializeQueue,
+  getZohoTokenOptimized,
+} = require("../components/common.component");
 
 const zoomIdToken = {
   1: "ZOOM_WEBHOOK_SECRET_TOKEN_1_2",
@@ -78,12 +81,85 @@ const getOptimizedAccessToken = async () => {
   }
 };
 
+const updateRecordingLinkInZoho = async (recordingLink, grade) => {
+  try {
+    const accessToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+
+    const today = moment();
+    const formattedDateStart = `${today
+      .clone()
+      .format("YYYY-MM-DD")}T00:00:00+05:30`;
+
+    const formattedDateEnd = `${today
+      .clone()
+      .format("YYYY-MM-DD")}T23:59:59+05:30`;
+
+    const doubtSessionBody = {
+      select_query: `select id from Mock_Doubt_Sessions where Grade like '%${grade}%' and Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}'`,
+    };
+
+    const doubtSession = await axios.post(
+      `https://www.zohoapis.com/crm/v6/coql`,
+      doubtSessionBody,
+      zohoConfig
+    );
+
+    if (doubtSession.status >= 204) {
+      return {
+        status: doubtSession.status,
+      };
+    }
+
+    const id = doubtSession.data.data[0].id;
+
+    const body = {
+      data: [
+        {
+          id: id,
+          Recording_Link: recordingLink,
+        },
+      ],
+      duplicate_check_fields: ["id"],
+      apply_feature_execution: [
+        {
+          name: "layout_rules",
+        },
+      ],
+      trigger: ["workflow"],
+    };
+
+    await axios.post(
+      `https://www.zohoapis.com/crm/v6/Mock_Doubt_Sessions
+/upsert`,
+      body,
+      zohoConfig
+    );
+
+    return {
+      status: 200,
+    };
+  } catch (error) {
+    return {
+      status: error.status || 500,
+      message: error.message,
+    };
+  }
+};
+
 const streamToDropbox = async (
   recordingUrl,
   dropboxPath,
   fileSize,
   dropboxAccessToken,
-  downloadToken
+  downloadToken,
+  grade
 ) => {
   const dbx = new Dropbox({ accessToken: dropboxAccessToken });
   const response = await axios({
@@ -110,19 +186,19 @@ const streamToDropbox = async (
       })
       .then(() => {
         console.log("------File Uploaded------");
-        // dbx
-        //   .sharingCreateSharedLinkWithSettings({
-        //     path: dropboxPath,
-        //   })
-        //   .then(async (res) => {
-        //     if (res.status === 200) {
-        //       const recordingLink = res.result.url;
-        //       await updateRecordingLinkInZoho(recordingLink)
-        //     }
-        //   })
-        //   .catch((error) => {
-        //     console.log("------Error Generating Link------", error.error);
-        //   });
+        dbx
+          .sharingCreateSharedLinkWithSettings({
+            path: dropboxPath,
+          })
+          .then(async (res) => {
+            if (res.status === 200) {
+              const recordingLink = res.result.url;
+              await updateRecordingLinkInZoho(recordingLink, grade);
+            }
+          })
+          .catch((error) => {
+            console.log("------Error Generating Link------", error.error);
+          });
       })
       .catch((error) => {
         console.log("------Error Uploading File------", error.error);
@@ -224,13 +300,13 @@ zoomRouter.post("/recording/:id", async (req, res) => {
         .add(30, "minutes")
         .format("Do MMM h:mm A");
       const recordingName = data.payload.object.topic;
+      const fileSize = recording.file_size;
 
-      if (!recordingName.includes("Mock Test Doubt Session")) {
+      if (fileSize < 30 * 1024 * 1024 || !recordingName.includes("Mock Test")) {
         console.log("Recording Not Required");
         return;
       }
 
-      const fileSize = recording.file_size;
       const fileExtension = recording.file_extension;
       const recordingPath = `/Zoom Recording Math Olympiad/${dropboxPath[id]}/${recordingName} ${recordingDate}.${fileExtension}`;
       const recordingLink = recording.download_url;
@@ -245,11 +321,12 @@ zoomRouter.post("/recording/:id", async (req, res) => {
             recordingPath,
             fileSize,
             dropboxAccessToken,
-            downloadToken
+            downloadToken,
+            id
           )
         )
         .catch((error) => {
-          console.error(`Failed to upload to Dropbox: ${error.message}`);
+          console.error(`Failed to upload to Dropbox: ${error.error}`);
         });
       return;
     } else {
