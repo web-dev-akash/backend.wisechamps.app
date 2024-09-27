@@ -841,6 +841,18 @@ const getTestSeriesDoubtSessions = async (grade) => {
   }
 };
 
+const getStoryForUsers = async (grade) => {
+  try {
+    return {
+      status: 204,
+      solution: "",
+      quote: "",
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 module.exports = {
   getStudentDetails,
   getStudentOrders,
@@ -851,4 +863,5 @@ module.exports = {
   sendStudentFeedback,
   getTestSeriesByGrade,
   getTestSeriesDoubtSessions,
+  getStoryForUsers,
 };
