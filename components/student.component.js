@@ -59,6 +59,7 @@ const getStudentDetails = async (email) => {
     const mathTestSeries = contact.data.data[0].Math_Test_Series;
     const englishTestSeries = contact.data.data[0].English_Test_Series;
     const scienceTestSeries = contact.data.data[0].Science_Test_Series;
+    const FCM_TOKEN = contact.data.data[0].FCM_TOKEN || null;
 
     const joinedWisechamps = contact.data.data[0].Joined_Wisechampions
       ? true
@@ -226,6 +227,7 @@ const getStudentDetails = async (email) => {
           Science: scienceTestSeries,
           English: englishTestSeries,
         },
+        FCM_TOKEN,
       };
     }
 
@@ -277,6 +279,7 @@ const getStudentDetails = async (email) => {
         Science: scienceTestSeries,
         English: englishTestSeries,
       },
+      FCM_TOKEN,
     };
   } catch (error) {
     throw new Error(error);
