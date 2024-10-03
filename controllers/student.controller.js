@@ -10,6 +10,8 @@ const {
   getTestSeriesByGrade,
   getTestSeriesDoubtSessions,
   getStoryForUsers,
+  sendNotification,
+  updateTokenForUser,
 } = require("../components/student.component");
 const {
   getZohoTokenOptimized,
@@ -175,6 +177,40 @@ studentRouter.post("/feedback", authMiddleware, async (req, res) => {
       message: error.message,
       code: error.status || 500,
     });
+  }
+});
+
+studentRouter.post("/feedback", authMiddleware, async (req, res) => {
+  try {
+    const reqData = req.body;
+    const data = await sendStudentFeedback(reqData);
+    return res.status(200).send(data);
+  } catch (error) {
+    return res.status(error.status || 500).send({
+      status: "error",
+      message: error.message,
+      code: error.status || 500,
+    });
+  }
+});
+
+studentRouter.post("/send-notification", authMiddleware, async (req, res) => {
+  try {
+    const { message, tokens } = req.body;
+    const data = await sendNotification(message, tokens);
+    return res.status(200).send(data);
+  } catch (error) {
+    return res.status(500).send("Internal Server Error");
+  }
+});
+
+studentRouter.post("/update-fcm-token", authMiddleware, async (req, res) => {
+  try {
+    const { email, token } = req.body;
+    const data = await updateTokenForUser(email, token);
+    return res.status(200).send(data);
+  } catch (error) {
+    return res.status(500).send("Internal Server Error");
   }
 });
 

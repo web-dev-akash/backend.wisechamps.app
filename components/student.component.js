@@ -8,6 +8,12 @@ const moment = require("moment");
 const nodemailer = require("nodemailer");
 const pLimit = require("p-limit");
 const limit = pLimit(20);
+const admin = require("firebase-admin");
+const serviceAccount = require("../key2.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
 const getStudentDetails = async (email) => {
   try {
@@ -841,6 +847,23 @@ const getTestSeriesDoubtSessions = async (grade) => {
   }
 };
 
+const sendNotification = async (message, userTokens) => {
+  try {
+    const payload = {
+      notification: {
+        title: message.title,
+        body: message.body,
+      },
+      tokens: userTokens,
+    };
+
+    const response = await admin.messaging().sendEachForMulticast(payload);
+    return response;
+  } catch (error) {
+    return error;
+  }
+};
+
 const getStoryForUsers = async (grade) => {
   try {
     return {
@@ -850,6 +873,47 @@ const getStoryForUsers = async (grade) => {
     };
   } catch (error) {
     throw new Error(error);
+  }
+};
+
+const updateTokenForUser = async (email, token) => {
+  try {
+    const accessToken = await getZohoTokenOptimized();
+    const zohoConfig = {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+    const updateTokenBody = {
+      data: [
+        {
+          Email: email,
+          FCM_TOKEN: token,
+        },
+      ],
+      duplicate_check_fields: ["Email"],
+      apply_feature_execution: [
+        {
+          name: "layout_rules",
+        },
+      ],
+      trigger: [],
+    };
+
+    const updateData = await axios.post(
+      `https://www.zohoapis.com/crm/v6/Contacts/upsert`,
+      updateTokenBody,
+      zohoConfig
+    );
+
+    return {
+      status: 200,
+      message: "success",
+    };
+  } catch (error) {
+    return error;
   }
 };
 
@@ -864,4 +928,6 @@ module.exports = {
   getTestSeriesByGrade,
   getTestSeriesDoubtSessions,
   getStoryForUsers,
+  sendNotification,
+  updateTokenForUser,
 };
