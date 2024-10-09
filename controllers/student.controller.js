@@ -180,20 +180,6 @@ studentRouter.post("/feedback", authMiddleware, async (req, res) => {
   }
 });
 
-studentRouter.post("/feedback", authMiddleware, async (req, res) => {
-  try {
-    const reqData = req.body;
-    const data = await sendStudentFeedback(reqData);
-    return res.status(200).send(data);
-  } catch (error) {
-    return res.status(error.status || 500).send({
-      status: "error",
-      message: error.message,
-      code: error.status || 500,
-    });
-  }
-});
-
 studentRouter.post("/send-notification", authMiddleware, async (req, res) => {
   try {
     const { message, tokens } = req.body;

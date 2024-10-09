@@ -852,15 +852,49 @@ const getTestSeriesDoubtSessions = async (grade) => {
 
 const sendNotification = async (message, userTokens) => {
   try {
-    const payload = {
-      notification: {
-        title: message.title,
-        body: message.body,
-      },
+    const response = await admin.messaging().sendEachForMulticast({
       tokens: userTokens,
-    };
-
-    const response = await admin.messaging().sendEachForMulticast(payload);
+      webpush: {
+        headers: {
+          Urgency: "high",
+        },
+        notification: {
+          title: message.title,
+          body: message.body,
+          image: message.image,
+          tag: "reminder",
+          renotify: true,
+          dir: "rtl",
+          vibrate: [200, 100, 200],
+          requireInteraction: true,
+          silent: false,
+          actions: [
+            {
+              action: "view",
+              title: "Join Now",
+            },
+            {
+              action: "close",
+              title: "Close",
+            },
+          ],
+        },
+      },
+      android: {
+        priority: "high",
+        notification: {
+          sound: "default",
+        },
+      },
+      apns: {
+        payload: {
+          aps: {
+            contentAvailable: 1,
+            sound: "default",
+          },
+        },
+      },
+    });
     return response;
   } catch (error) {
     return error;
