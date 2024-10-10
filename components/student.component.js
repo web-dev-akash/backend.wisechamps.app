@@ -858,42 +858,37 @@ const sendNotification = async (message, userTokens) => {
         headers: {
           Urgency: "high",
         },
-        notification: {
+        data: {
           title: message.title,
           body: message.body,
-          image: message.image,
-          tag: "reminder",
-          renotify: true,
-          dir: "rtl",
-          vibrate: [200, 100, 200],
-          requireInteraction: true,
-          silent: false,
-          actions: [
-            {
-              action: "view",
-              title: "Join Now",
-            },
-            {
-              action: "close",
-              title: "Close",
-            },
-          ],
+        },
+        fcmOptions: {
+          link: "https://students.wisechamps.com",
         },
       },
       android: {
+        channelId: "default",
         priority: "high",
-        notification: {
-          sound: "default",
-        },
+        actions: [
+          {
+            title: "Join Now",
+            pressAction: {
+              id: "view",
+            },
+          },
+        ],
       },
       apns: {
         payload: {
           aps: {
             contentAvailable: 1,
             sound: "default",
+            category: "reminder",
+            threadId: "reminder",
           },
         },
       },
+      priority: "high",
     });
     return response;
   } catch (error) {

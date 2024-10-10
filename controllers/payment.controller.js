@@ -27,7 +27,7 @@ paymentRouter.post("/payment_links", async (req, res) => {
       const data = await instance.paymentLink.create({
         amount: amount * 100,
         currency: "INR",
-        description: `${subject} Test Series with 5 Mock Tests and 15 Doubt Sessions`,
+        description: `${subject} Test Series with 5 Mock Tests`,
         customer: {
           name: subject,
           email,
@@ -72,7 +72,7 @@ paymentRouter.post("/payment/capture", async (req, res) => {
     const id = req.body.payload.payment_link.entity.id;
     const amount = Number(req.body.payload.payment_link.entity.amount) / 100;
     const email = req.body.payload.payment_link.entity.customer.email;
-    const subject = req.body.payload.payment_link.entity.customer.name;
+    const subject = req.body.payload.payment_link.entity.customer.name || null;
     const payId = req.body.payload.payment.entity.id;
     const credits = !subject ? plans[amount] : 0;
 
