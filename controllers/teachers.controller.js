@@ -22,7 +22,6 @@ teacherRouter.post("/report", authMiddleware, async (req, res) => {
     const data = await getDailyReports(grade, date);
     res.status(200).send(data);
   } catch (error) {
-    // console.log("error---", error);
     return res.status(500).send(error);
   }
 });
