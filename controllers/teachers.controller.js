@@ -18,8 +18,8 @@ teacherRouter.post("/", authMiddleware, async (req, res) => {
 
 teacherRouter.post("/report", authMiddleware, async (req, res) => {
   try {
-    const { grade } = req.body;
-    const data = await getDailyReports(grade);
+    const { grade, date } = req.body;
+    const data = await getDailyReports(grade, date);
     res.status(200).send(data);
   } catch (error) {
     // console.log("error---", error);

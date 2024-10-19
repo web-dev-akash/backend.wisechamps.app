@@ -861,35 +861,28 @@ const sendNotification = async (message, userTokens) => {
         data: {
           title: message.title,
           body: message.body,
-        },
-        fcmOptions: {
-          link: "https://students.wisechamps.com",
+          url: message.url,
         },
       },
       android: {
-        channelId: "default",
         priority: "high",
-        actions: [
-          {
-            title: "Join Now",
-            pressAction: {
-              id: "view",
-            },
-          },
-        ],
+        notification: {
+          channelId: "default",
+          sound: "default",
+          visibility: "public",
+          priority: "max",
+        },
       },
       apns: {
         payload: {
           aps: {
-            contentAvailable: 1,
             sound: "default",
-            category: "reminder",
-            threadId: "reminder",
           },
         },
       },
-      priority: "high",
+      priority: 10,
     });
+
     return response;
   } catch (error) {
     return error;
