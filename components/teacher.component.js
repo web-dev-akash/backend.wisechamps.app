@@ -7,6 +7,7 @@ const moment = require("moment");
 const pLimit = require("p-limit");
 const limit = pLimit(20);
 
+// find and login teachers
 const getTeacherDetailsWithEmail = async (email, pass) => {
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
@@ -54,6 +55,7 @@ const getTeacherDetailsWithEmail = async (email, pass) => {
   };
 };
 
+// get students reports based on grade and date
 const getDailyReports = async (grade, currDate) => {
   const zohoToken = await getZohoTokenOptimized();
   const zohoConfig = {
@@ -125,6 +127,7 @@ const getDailyReports = async (grade, currDate) => {
   };
 };
 
+// add teachers attendance in zoho
 const updateTeachersAttendance = async (requestBody) => {
   const {
     sessionDate,
@@ -188,6 +191,7 @@ const updateTeachersAttendance = async (requestBody) => {
     };
   }
 
+  // mark winners for the day if ids are available
   if (winners && winners.length > 0) {
     winners.forEach(async (winner) => {
       const attemptBody = {
@@ -280,6 +284,7 @@ const updateTeachersAttendance = async (requestBody) => {
   };
 };
 
+// get students having only 1 or 2 credits and have joined the quiz in last 15 days
 const getLastSessionReport = async (grade) => {
   const zohoToken = await getZohoTokenOptimized();
   const zohoConfig = {

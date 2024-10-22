@@ -13,6 +13,7 @@ const {
 const { getMeetingLink } = require("../components/meeting.component");
 const { default: axios } = require("axios");
 
+// get quiz link
 quizRouter.post("/", async (req, res) => {
   const { email } = req.body;
   const data = await getQuizLink(email);
@@ -21,6 +22,7 @@ quizRouter.post("/", async (req, res) => {
   });
 });
 
+// get weekly report
 quizRouter.post("/report", async (req, res) => {
   try {
     const { email } = req.body;
@@ -32,6 +34,7 @@ quizRouter.post("/report", async (req, res) => {
   }
 });
 
+// update user address
 quizRouter.post("/address", async (req, res) => {
   try {
     const { email, address, pincode } = req.body;
@@ -43,6 +46,7 @@ quizRouter.post("/address", async (req, res) => {
   }
 });
 
+// get weekly analysis data
 quizRouter.post("/analysis/weekly", async (req, res) => {
   try {
     const { startDate, endDate, range } = req.body;
@@ -57,6 +61,7 @@ quizRouter.post("/analysis/weekly", async (req, res) => {
   }
 });
 
+// not in use
 quizRouter.post("/loginLink", authMiddleware, async (req, res) => {
   try {
     const { email, surveyId } = req.body;
@@ -79,6 +84,7 @@ quizRouter.post("/loginLink", authMiddleware, async (req, res) => {
   }
 });
 
+// not in use
 quizRouter.post("/team", async (req, res) => {
   try {
     const { email, team, grade } = req.body;
@@ -177,6 +183,7 @@ quizRouter.post("/team", async (req, res) => {
   }
 });
 
+// for testing
 quizRouter.post("/test", async (req, res) => {
   const { word } = req.body;
   const accessToken = await getZohoTokenOptimized();

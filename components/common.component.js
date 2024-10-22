@@ -30,6 +30,7 @@ const getZohoToken = async () => {
   }
 };
 
+// Check for a token in token.js file and if the token is generated 40+ minutes ago then generate a new and update it in token.js file else renturn the same token
 const getZohoTokenOptimized = async () => {
   if (!accessToken) {
     accessToken = await getZohoToken();
@@ -61,6 +62,7 @@ const getZohoTokenOptimized = async () => {
   return accessToken;
 };
 
+// common function to fetch different kind of Zoho COQL queies.
 const getAnalysisData = async (query, zohoConfig) => {
   try {
     const response = await axios.post(
@@ -80,6 +82,7 @@ const getAnalysisData = async (query, zohoConfig) => {
   }
 };
 
+// get total number of days in the provided and current date
 const getNumberOfDays = (start) => {
   const date1 = new Date(start);
   const date2 = new Date();
@@ -121,6 +124,7 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
+// Get all the active gifts from the Products Module and move '25 Quiz Balance' to first place
 const getProductsFromStore = async () => {
   try {
     const accessToken = await getZohoTokenOptimized();
@@ -175,12 +179,14 @@ const getProductsFromStore = async () => {
   }
 };
 
+// Limit the concurrent Zoho Api Requests.
 const pLimitFactory = async (limit) => {
   const p_limit = await import("p-limit");
   const pLimit = p_limit.default(limit);
   return pLimit;
 };
 
+// Handle concurrent request to upload zoom cloud recordings to dropbox.
 const initializeQueue = async () => {
   const PQueue = (await import("p-queue")).default;
   const uploadQueue = new PQueue({ concurrency: 1 });

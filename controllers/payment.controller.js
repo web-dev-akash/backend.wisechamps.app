@@ -4,6 +4,7 @@ const { createPaymentEntry } = require("../components/payment.component");
 require("dotenv").config();
 const paymentRouter = express.Router();
 
+// create custom razorpay payment links for each user
 paymentRouter.post("/payment_links", async (req, res) => {
   try {
     const { email, amount, subject } = req.body;
@@ -59,6 +60,7 @@ paymentRouter.post("/payment_links", async (req, res) => {
   }
 });
 
+// capture payment using razorpay webhook and update payment history in zoho
 paymentRouter.post("/payment/capture", async (req, res) => {
   try {
     const plans = {

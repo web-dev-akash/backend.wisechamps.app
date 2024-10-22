@@ -1,6 +1,7 @@
 const express = require("express");
 const logsRouter = express.Router();
 
+// update logs to sheet and remove from the file
 logsRouter.get("/updateLogs", (req, res) => {
   try {
     fs.readFile("./logs.json", async (err, data) => {

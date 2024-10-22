@@ -1,6 +1,7 @@
 const { default: axios } = require("axios");
 const { getZohoTokenOptimized } = require("./common.component");
 
+// Create Payment Entry in Zoho
 const createPaymentEntry = async ({
   amount,
   id,
@@ -18,6 +19,7 @@ const createPaymentEntry = async ({
     },
   };
 
+  // check if the payment is already captured in zoho
   const paymentData = await axios.get(
     `https://www.zohoapis.com/crm/v6/Payments/search?criteria=Payment_Link_ID:equals:${id}`,
     zohoConfig

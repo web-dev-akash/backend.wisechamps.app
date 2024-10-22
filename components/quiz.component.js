@@ -44,6 +44,7 @@ const getQuizLink = async (emailParam) => {
   const grade = contact.data.data[0].Student_Grade;
   const difficultyLevel = contact.data.data[0].Difficulty;
 
+  // combined grade as per zoho query syntax
   let gradeGroup;
   if (grade == 1 || grade == 2) {
     gradeGroup = "1;2";
@@ -58,6 +59,8 @@ const getQuizLink = async (emailParam) => {
   const pincode = contact.data.data[0].Pincode;
   const date = new Date();
   const start = new Date();
+  // convert to IST timezone when deployed on AWS server.
+  // +5:30 will be 330 minutes but added 260 so that user can access the quiz till 70 minutes from the start time
   start.setMinutes(start.getMinutes() + 260);
   // start.setMinutes(start.getMinutes() + 0);
   const end = new Date();
@@ -72,6 +75,7 @@ const getQuizLink = async (emailParam) => {
   const formattedDateStart = `${year}-${month}-${day}T${startHours}:${startMinutes}:00+05:30`;
   const formattedDateEnd = `${year}-${month}-${day}T${endHours}:${endMinutes}:00+05:30`;
 
+  // find session based on the user difficulty
   const sessionBody = {
     select_query:
       !difficultyLevel || difficultyLevel === "School"
@@ -101,6 +105,7 @@ const getQuizLink = async (emailParam) => {
     };
   }
 
+  // no credits or 0 credits
   if (!credits || credits === 0) {
     return {
       mode: "nocredits",
@@ -113,17 +118,25 @@ const getQuizLink = async (emailParam) => {
       pincode,
     };
   }
+
+  // there is no lms activity link found in zoho Session Module
   if (!session.data.data[0].LMS_Activity_ID) {
     return {
       status: 500,
       mode: "noactivityid",
     };
   }
+
   const sessionid = session.data.data[0].LMS_Activity_ID.toString();
+
+  // generate one time login link using moodle plugin
   const loginURL = `https://wisechamps.app/webservice/rest/server.php?wstoken=${wstoken}&wsfunction=${wsfunction}&user[email]=${emailParam}&moodlewsrestformat=json`;
+
   const loginRes = await axios.get(loginURL);
   const loginLink = loginRes.data.loginurl;
   const quizLink = `https://wisechamps.app/mod/lti/view.php?id=${sessionid}`;
+
+  // return the final link
   const finalLink = `${loginLink}&wantsurl=${quizLink}`;
   return {
     status: 200,

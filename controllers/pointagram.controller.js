@@ -9,6 +9,8 @@ const {
 require("dotenv").config();
 const pointagramRouter = express.Router();
 
+// not in use
+
 pointagramRouter.post("/hash", async (req, res) => {
   try {
     const { email } = req.body;

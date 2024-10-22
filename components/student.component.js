@@ -15,6 +15,7 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
+// main function for student dashboard
 const getStudentDetails = async (email) => {
   try {
     const accessToken = await getZohoTokenOptimized();
@@ -44,6 +45,7 @@ const getStudentDetails = async (email) => {
       };
     }
 
+    // USER DATA
     const studentName =
       contact.data.data[0].Student_Name.toLowerCase().split(" ")[0];
     const name = contact.data.data[0].Full_Name;
@@ -67,6 +69,8 @@ const getStudentDetails = async (email) => {
     const numOfIntoMeetJoined =
       contact.data.data[0].Number_of_Intro_Meeting_Joined || 0;
     const tags = contact.data.data[0].Tag;
+
+    // category based on the tags added to the users account
     const category = tags.filter(
       ({ name }) =>
         name === "Regular" ||
@@ -76,12 +80,15 @@ const getStudentDetails = async (email) => {
         name === "Revival" ||
         name === "Dropouts"
     );
+
     let gradeGroup;
     if (grade == 1 || grade == 2) {
       gradeGroup = "1;2";
     } else if (grade == 7 || grade == 8) {
       gradeGroup = "7;8";
     } else gradeGroup = grade;
+
+    // get users age in teh system from created time.
     const age = getNumberOfDays(createdTime);
 
     const currentDate = moment();
@@ -95,12 +102,15 @@ const getStudentDetails = async (email) => {
       .add(7, "days")
       .format("YYYY-MM-DD")}T23:59:59+05:30`;
 
+    // get total referrals
     const referralsQuery = `select Email, Student_Name, Student_Grade, Phone, Credits from Contacts where Referee = '${contactId}'`;
 
+    // get total attempts
     const attemptsQuery = `select Session_Date_Time, Quiz_Score, Session.Name as Session_Name, Created_Time from Attempts where Contact_Name = '${contactId}' order by Session_Date_Time desc limit 1000`;
 
     // const weeklyQuizzesQuery = `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, Session_Video_Link_2, Vevox_Survey_Link from Sessions where Session_Grade = '${gradeGroup}' and Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}' order by Session_Date_Time asc`;
 
+    // get quizzes sessions from lastSevenDays to nextSevenDays
     const weeklyQuizzesQuery = `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, Session_Video_Link_2, Vevox_Survey_Link, Difficulty from Sessions where ((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}')) order by Session_Date_Time asc`;
 
     // const weeklyQuizzesQuery =
@@ -108,8 +118,10 @@ const getStudentDetails = async (email) => {
     //     ? `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, Session_Video_Link_2, Vevox_Survey_Link from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}')) and (Difficulty != 'Level 2')) order by Session_Date_Time asc`
     //     : `select Name as Session_Name, Subject, Session_Date_Time, Session_Image_Link, Session_Video_Link, Session_Video_Link_2, Vevox_Survey_Link from Sessions where (((Session_Grade = '${gradeGroup}') and (Session_Date_Time between '${sevenDaysBefore}' and '${sevenDaysAfter}')) and (Difficulty = 'Level 2')) order by Session_Date_Time asc`;
 
+    // get coins transaction history
     const coinsQuery = `select Coins, Updated_Date, Action_Type, Description from Coins where Contact = '${contactId}' order by Updated_Date desc limit 200`;
 
+    // limit the concurrent api calls to 20 for zoho using p-limit
     const [referrals, attempts, coinsHistory, weeklyQuizzes] =
       await Promise.all([
         limit(() => getAnalysisData(referralsQuery, zohoConfig)),
@@ -123,6 +135,7 @@ const getStudentDetails = async (email) => {
 
     if (weeklyQuizzes.status === 200) {
       const sessionData = weeklyQuizzes.data.data;
+      // remove unwanted words from the session names
       let wordsToRemove = [
         "Final",
         "&",
@@ -168,6 +181,7 @@ const getStudentDetails = async (email) => {
         "gi"
       );
 
+      // fix the session names
       sessionData.forEach((session) => {
         let newString = session.Session_Name.replace(regex, "").trim();
         const dateTime = session.Session_Date_Time;
@@ -180,6 +194,7 @@ const getStudentDetails = async (email) => {
         });
       });
 
+      // merge sessions based on the user difficulty based on the same session date
       Object.keys(sessionsByDateTime).forEach((dateTime) => {
         const sessions = sessionsByDateTime[dateTime];
 
@@ -200,6 +215,7 @@ const getStudentDetails = async (email) => {
 
     let newUser = numOfIntoMeetJoined < 5 ? true : false;
 
+    // if no referrals found
     if (referrals.status === 204) {
       return {
         status: 200,
@@ -231,6 +247,7 @@ const getStudentDetails = async (email) => {
       };
     }
 
+    // get the referrals
     const referralsAttempted = await Promise.all(
       referrals.data.data.map(async (user) => {
         const attemptsQuery = `select Contact_Name.id as ContactId from Attempts where Contact_Name = '${user.id}'`;
@@ -251,6 +268,7 @@ const getStudentDetails = async (email) => {
       })
     );
 
+    // sort the referrals based on their attempts in descending order.
     referralsAttempted.sort((a, b) => b.quizAttempted - a.quizAttempted);
 
     return {
@@ -286,6 +304,7 @@ const getStudentDetails = async (email) => {
   }
 };
 
+// get the gift orders
 const getStudentOrders = async (contactId) => {
   try {
     const accessToken = await getZohoTokenOptimized();
@@ -322,6 +341,7 @@ const getStudentOrders = async (contactId) => {
   }
 };
 
+// check and update how many times a user has joined Intro meet
 const updateIntroMeetData = async (contactId) => {
   try {
     const accessToken = await getZohoTokenOptimized();
@@ -399,6 +419,7 @@ const updateIntroMeetData = async (contactId) => {
   }
 };
 
+// place gift order from student dashboard and make history in zoho
 const placeStudentOrder = async (contactId, productId) => {
   try {
     const accessToken = await getZohoTokenOptimized();
@@ -485,6 +506,7 @@ const placeStudentOrder = async (contactId, productId) => {
   }
 };
 
+// get weekly winners for multiple categories
 const getWeeklyWinners = async (grade) => {
   try {
     const accessToken = await getZohoTokenOptimized();
@@ -507,6 +529,8 @@ const getWeeklyWinners = async (grade) => {
 
     const formattedDateStart = `${monday.format("YYYY-MM-DD")}T00:00:00+05:30`;
     const formattedDateEnd = `${sunday.format("YYYY-MM-DD")}T23:59:59+05:30`;
+
+    // grades as per the COQL syntax
     let gradeGroup;
     let gradeGroup2;
     let gradeGroup3;
@@ -850,6 +874,7 @@ const getTestSeriesDoubtSessions = async (grade) => {
   }
 };
 
+// send firebase push notifications
 const sendNotification = async (message, userTokens) => {
   try {
     const response = await admin.messaging().sendEachForMulticast({
@@ -889,6 +914,7 @@ const sendNotification = async (message, userTokens) => {
   }
 };
 
+// not in use yet
 const getStoryForUsers = async (grade) => {
   try {
     return {
@@ -901,6 +927,7 @@ const getStoryForUsers = async (grade) => {
   }
 };
 
+// store FCM Token for each user in zoho
 const updateTokenForUser = async (email, token) => {
   try {
     const accessToken = await getZohoTokenOptimized();

@@ -9,6 +9,7 @@ const { google } = require("googleapis");
 
 const limit = pLimit(20);
 
+// not in use
 const getZohoUserDetailsWithEmail = async (email) => {
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
@@ -225,6 +226,7 @@ const getZohoUserDetailsWithPhone = async (phone, referral) => {
   };
 };
 
+// register a new user
 const addUserToZoho = async ({
   email,
   phone,
@@ -299,6 +301,7 @@ const addUserToZoho = async ({
   }
 };
 
+// generate an opt and send it using MSG91 services
 const generateAndSendOtp = async (
   phone,
   email,
@@ -412,6 +415,7 @@ const generateAndSendOtp = async (
   }
 };
 
+// resend an otp
 const resendOTP = async (phone) => {
   try {
     const newphone = `91${phone
@@ -443,6 +447,7 @@ const resendOTP = async (phone) => {
   }
 };
 
+// update referral analysis data in the sheet
 const updateDataInSheet = async (data) => {
   const spreadsheetId = process.env.SPREADSHEET_ID;
   const auth = new google.auth.GoogleAuth({
@@ -480,6 +485,7 @@ const updateDataInSheet = async (data) => {
   return writeData.data;
 };
 
+// get the referrals analysis data from zoho
 const getReferralAnalysisData = async () => {
   try {
     const zohoToken = await getZohoTokenOptimized();
@@ -562,6 +568,7 @@ const getReferralAnalysisData = async () => {
   }
 };
 
+// change usee difficulty level from dashboard
 const updateUserDifficulty = async ({ contactId, difficulty }) => {
   try {
     const zohoToken = await getZohoTokenOptimized();
@@ -607,6 +614,7 @@ const updateUserDifficulty = async ({ contactId, difficulty }) => {
   }
 };
 
+// track revenue per day after removing 5 free credits for each student
 const updateRevenueDataInSheet = async (data) => {
   const spreadsheetId = process.env.SPREADSHEET_ID;
   const auth = new google.auth.GoogleAuth({

@@ -7,6 +7,7 @@ const {
 const { authMiddleware } = require("../components/common.component");
 const questionRouter = express.Router();
 
+// not in use
 questionRouter.post("/dailyQuiz", async (req, res) => {
   try {
     const { email } = req.body;

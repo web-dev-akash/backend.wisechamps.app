@@ -103,12 +103,15 @@ const updateCoinsForWeeklyToppers = async () => {
     const diff = today.date() - currDay + (currDay === 0 ? -6 : 1);
     const monday = moment(new Date(today.date(diff)));
     const sunday = monday.clone().add(6, "days");
+    // current week's Monday
     const formattedDateStart = `${monday.format("YYYY-MM-DD")}T00:00:00+05:30`;
+    // current week's Sunday
     const formattedDateEnd = `${sunday.format("YYYY-MM-DD")}T23:59:59+05:30`;
 
     let currentPage = 0;
     const attempts = [];
     while (true) {
+      // Find all attempts for this week from Monday to Sunday
       const attemptsQuery = `select Contact_Name.id as contactId, Contact_Name.Email as Email,Contact_Name.Student_Grade as Student_Grade, Quiz_Score, Contact_Name.Coins as Coins, Session.Number_of_Questions as Total_Questions from Attempts where Session_Date_Time between '${formattedDateStart}' and '${formattedDateEnd}' order by Session_Date_Time asc limit ${
         currentPage * 2000
       }, 2000`;
@@ -116,6 +119,7 @@ const updateCoinsForWeeklyToppers = async () => {
       if (attemptsResponse.status === 204) {
         return { status: "noattempts" };
       }
+      // Add the attempts to array until no more attmepts
       attempts.push(...attemptsResponse.data.data);
       if (!attemptsResponse.data.info.more_records) {
         break;
@@ -123,6 +127,7 @@ const updateCoinsForWeeklyToppers = async () => {
       currentPage++;
     }
     const uniqueUsers = {};
+    // combine quiz score for each user
     attempts.forEach((attempt) => {
       if (uniqueUsers[attempt.Email]) {
         uniqueUsers[attempt.Email].Quiz_Score += attempt.Quiz_Score;
@@ -140,6 +145,7 @@ const updateCoinsForWeeklyToppers = async () => {
     const grade6 = [];
     const grade7And8 = [];
 
+    // split the attempts grade wise
     uniqueUsersArray.forEach((attempt) => {
       switch (attempt.Student_Grade) {
         case "1":
@@ -167,6 +173,7 @@ const updateCoinsForWeeklyToppers = async () => {
       }
     });
 
+    // get top 3 from each grade based on the quiz score.
     const topThreeUsers = [];
     const grades = [grade1And2, grade3, grade4, grade5, grade6, grade7And8];
     grades.forEach((grade) => {
@@ -176,18 +183,22 @@ const updateCoinsForWeeklyToppers = async () => {
       topThreeUsers.push(...topThree);
     });
 
+    // remove top 3 from the grades array
     const filterTopThree = (grade) =>
       grade.filter(
         (user) => !topThreeUsers.some((topUser) => topUser.Email === user.Email)
       );
 
     const filteredGrades = grades.map(filterTopThree);
+
+    // add percentage for the remaining users per grade
     filteredGrades.forEach((grade) => {
       grade.forEach((user) => {
         user.percentage = (user.Quiz_Score / user.Total_Questions) * 100;
       });
     });
 
+    // get top 3 users based on the percentage.
     const topThreePercentageUsers = [];
     filteredGrades.forEach((grade) => {
       const topThree = grade
@@ -196,6 +207,7 @@ const updateCoinsForWeeklyToppers = async () => {
       topThreePercentageUsers.push(...topThree);
     });
 
+    // update coins and create coins history on zoho for top 3 scorers.
     await Promise.all(
       topThreeUsers.map(async (user) => {
         const [updateCoinsResult, addCoinsHistoryResult] = await Promise.all([
@@ -209,6 +221,7 @@ const updateCoinsForWeeklyToppers = async () => {
       })
     );
 
+    // update coins and create coins history on zoho for top 3 percentage users.
     await Promise.all(
       topThreePercentageUsers.map(async (user) => {
         const [updateCoinsResult, addCoinsHistoryResult] = await Promise.all([

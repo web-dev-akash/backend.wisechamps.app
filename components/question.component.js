@@ -1,6 +1,7 @@
 const { default: axios } = require("axios");
 const { getZohoTokenOptimized } = require("./common.component");
 
+// discontinued for now
 const dailyQuizQuestions = async (email) => {
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
@@ -161,6 +162,7 @@ const dailyQuizQuestions = async (email) => {
   };
 };
 
+// get Question of the day from Questions Module
 const dailyQuizQuestionsWithGrade = async (grade, contactId) => {
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
@@ -176,6 +178,7 @@ const dailyQuizQuestionsWithGrade = async (grade, contactId) => {
   const day = date.getDate().toString().padStart(2, "0");
   const formattedDate = `${year}-${month}-${day}`;
 
+  // check if the already attempted for the current date
   const alreadyAttemptedBody = {
     select_query: `select Question.id as Question_Id, Question.Question as Question,Question.Option_1 as Option_1,Question.Option_2 as Option_2,Question.Option_3 as Option_3,Question.Option_4 as Option_4,Question.Question_Image_URL as Question_Image_URL, Correct_Answer, Question.Correct_Answer as Correct_Option, Option_Selected from Questions_Attempt where Attempt_Date = '${formattedDate}' and Contact_Name = '${contactId}'`,
   };
@@ -185,7 +188,7 @@ const dailyQuizQuestionsWithGrade = async (grade, contactId) => {
     alreadyAttemptedBody,
     zohoConfig
   );
-
+  //  show the question and correct answer if already attempted.
   if (alreadyAttempted.status === 200) {
     const attempt = alreadyAttempted.data.data[0];
     return {
@@ -215,7 +218,7 @@ const dailyQuizQuestionsWithGrade = async (grade, contactId) => {
   } else if (grade == 7 || grade == 8) {
     gradeGroup = "7;8";
   }
-
+  //  seach for the question of the day
   const questionBody = {
     select_query: `select Correct_Answer,Question,Question_Image_URL,Option_1,Option_2,Option_3,Option_4 from Questions where Question_Date = '${formattedDate}' and Question_Grade	= '${gradeGroup}'`,
   };
@@ -250,6 +253,7 @@ const dailyQuizQuestionsWithGrade = async (grade, contactId) => {
   };
 };
 
+// Update the question attempts on zoho
 const createQuestionAttemptEntry = async ({
   contactId,
   questionId,

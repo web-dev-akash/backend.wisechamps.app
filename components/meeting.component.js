@@ -3,19 +3,6 @@ const { getZohoTokenOptimized } = require("./common.component");
 
 const freeMeetLink = process.env.FREE_MEETING_LINK;
 
-const isDateInRange = () => {
-  const currentDate = new Date();
-  const currentMonth = currentDate.getMonth() + 1;
-  if (currentMonth === 3 || currentMonth === 4) {
-    if (currentMonth === 3 && currentDate.getDate() >= 1) {
-      return true;
-    } else if (currentMonth === 4 && currentDate.getDate() <= 15) {
-      return true;
-    }
-  }
-  return false;
-};
-
 const getMeetingLink = async (emailParam) => {
   const accessToken = await getZohoTokenOptimized();
   const zohoConfig = {
@@ -34,7 +21,7 @@ const getMeetingLink = async (emailParam) => {
   if (contact.status >= 400) {
     return {
       status: contact.status,
-      mode: "internalservererrorinfindinguser",
+      mode: "error",
     };
   }
 
@@ -50,6 +37,7 @@ const getMeetingLink = async (emailParam) => {
   const grade = contact.data.data[0].Student_Grade;
   const difficultyLevel = contact.data.data[0].Difficulty;
 
+  // combined grade as per zoho query syntax
   let gradeGroup;
   if (grade == 1 || grade == 2) {
     gradeGroup = "1;2";
@@ -65,6 +53,8 @@ const getMeetingLink = async (emailParam) => {
   const gradeUpdated = contact.data.data[0].Grade_Updated;
   const date = new Date();
   const start = new Date();
+  // convert to IST timezone when deployed on AWS server.
+  // +5:30 will be 330 minutes but added 260 so that user can access the meeting till 70 minutes from the start time
   start.setMinutes(start.getMinutes() + 260);
   // start.setMinutes(start.getMinutes() + 0);
   const end = new Date();
@@ -82,6 +72,7 @@ const getMeetingLink = async (emailParam) => {
   const updateGrade =
     source_campaign === "old olympiad data" && !gradeUpdated ? true : false;
 
+  // return to free meet if the user has 0 credits
   if (!credits || credits === 0) {
     return {
       status: 200,
@@ -97,6 +88,7 @@ const getMeetingLink = async (emailParam) => {
     };
   }
 
+  // find session based on the user difficulty
   const sessionBody = {
     select_query:
       !difficultyLevel || difficultyLevel === "School"

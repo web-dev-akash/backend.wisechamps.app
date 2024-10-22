@@ -1,6 +1,7 @@
 const { default: axios } = require("axios");
 const { getZohoTokenOptimized } = require("./common.component");
 
+// not is use anymore
 const getZohoUserData = async (phone) => {
   const zohoToken = await getZohoTokenOptimized();
   const zohoConfig = {

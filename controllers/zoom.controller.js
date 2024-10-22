@@ -31,6 +31,7 @@ const dropboxPath = {
   "001": "wisechampteacher001@gmail.com",
 };
 
+// generate a dropbox access token
 const getDropboxAccessToken = async () => {
   const dropboxRefreshToken = process.env.DROPBOX_REFRESH_TOKEN;
   const dropboxAppKey = process.env.DROPBOX_APP_KEY;
@@ -81,6 +82,7 @@ const getOptimizedAccessToken = async () => {
   }
 };
 
+// update dropbox recording link in zoho
 const updateRecordingLinkInZoho = async (recordingLink, grade) => {
   try {
     const accessToken = await getZohoTokenOptimized();
@@ -153,6 +155,7 @@ const updateRecordingLinkInZoho = async (recordingLink, grade) => {
   }
 };
 
+// upload zoom cloud recording to dropbox
 const streamToDropbox = async (
   recordingUrl,
   dropboxPath,
@@ -171,6 +174,7 @@ const streamToDropbox = async (
     },
   });
 
+  // if file size is less then 150MB
   if (fileSize < 150 * 1024 * 1024) {
     const uploadStream = new stream.PassThrough();
     response.data.pipe(uploadStream);
@@ -208,6 +212,7 @@ const streamToDropbox = async (
       status: 200,
     };
   } else {
+    // create a 40MB blob and upload in multiple parts
     const maxBlob = 40 * 1024 * 1024; // 40 MB
     let buffer = [];
     let bufferLength = 0;
@@ -270,6 +275,7 @@ const streamToDropbox = async (
   }
 };
 
+// capture recording.completed event from zoom webhook
 zoomRouter.post("/recording/:id", async (req, res) => {
   try {
     const data = req.body;
@@ -313,7 +319,7 @@ zoomRouter.post("/recording/:id", async (req, res) => {
       const downloadToken = data.download_token;
       const dropboxAccessToken = await getOptimizedAccessToken();
       const uploadQueue = await initializeQueue();
-
+      // add all the concurrent requests to queue and handle them 1 by 1 to optimize the server load.
       uploadQueue
         .add(() =>
           streamToDropbox(
