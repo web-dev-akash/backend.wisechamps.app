@@ -211,7 +211,7 @@ const getWeeklyUserAttempts = async (email) => {
     : 0;
   const difficultyLevel = contact.data.data[0].Difficulty || "School";
 
-  const today = moment();
+  const today = moment("2024-10-13");
   const currDay = today.day();
   let previousMonday, previousSunday;
   if (currDay !== 0) {
