@@ -91,7 +91,7 @@ const getStudentDetails = async (email) => {
     // get users age in teh system from created time.
     const age = getNumberOfDays(createdTime);
 
-    const currentDate = moment();
+    const currentDate = moment("2024-10-13");
     const sevenDaysBefore = `${currentDate
       .clone()
       .subtract(7, "days")
